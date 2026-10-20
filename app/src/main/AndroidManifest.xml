@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Shadow Weaver - manifest
+
+    NOTE ON PERMISSIONS: there are none, and that is intentional. The game is
+    fully offline: it draws with Canvas, synthesises its own audio with
+    AudioTrack, and stores nothing but a single integer in SharedPreferences.
+    No INTERNET, no storage, no ads, no in-app purchases.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.mobodevs.shadowweaver">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/ShadowWeaverTheme">
+
+        <!--
+            Single activity. Everything is drawn by GameView on a SurfaceView,
+            so there are no layouts and no fragments.
+            screenOrientation is left unlocked on purpose: the scene is
+            resolution independent and simply rescales, so the game works in
+            landscape too, and a rotating phone is fine.
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize"
+            android:launchMode="singleTop"
+            android:theme="@style/ShadowWeaverTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

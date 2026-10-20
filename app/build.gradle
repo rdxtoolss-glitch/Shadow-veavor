@@ -1,0 +1,54 @@
+apply plugin: 'com.android.application'
+
+// ---------------------------------------------------------------------------
+// Shadow Weaver - app module
+//
+// Deliberately ZERO third-party dependencies. The game is SurfaceView +
+// Canvas + AudioTrack, all of which are in the Android framework itself, so
+// there is nothing to resolve and nothing that can break on a bad network or
+// a stale repository. No AdMob, no billing, no analytics, no permissions.
+// ---------------------------------------------------------------------------
+
+android {
+    // Toolchain note
+    // --------------
+    // These three numbers are pinned to what the AndroidIDE scaffold that
+    // ships with this project actually supports: Gradle 6.1.1 and the Android
+    // Gradle Plugin 3.5.3 (see the root build.gradle). AGP 3.5.3 cannot
+    // compile against a modern API level, so compileSdkVersion is held at 29
+    // even though API 36 is installed on this machine.
+    //
+    // To move to a current toolchain, upgrade all three layers together and
+    // then edit this block:
+    //     1. gradle/wrapper/gradle-wrapper.properties -> Gradle 8.x
+    //     2. root build.gradle  -> AGP 8.x
+    //     3. this block         -> compileSdkVersion 34/35/36
+    // Nothing in the game source depends on any of these numbers.
+    compileSdkVersion 29
+
+    defaultConfig {
+        applicationId "com.mobodevs.shadowweaver"
+        minSdkVersion 21
+        targetSdkVersion 29
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            // No ProGuard config: the game has no reflection, no serialization
+            // and no dependency jars, so there is nothing for a shrinker to
+            // preserve. Skipping it also avoids a proguard-rules.pro that would
+            // never need editing.
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+// No dependencies block entries: the game uses only android.jar.
+// (The level design harness in tools/ is a plain main() and needs none either.)

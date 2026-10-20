@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Shadow Weaver - theme.
+
+    The old scaffold used Theme.AppCompat.Light.DarkActionBar, which pulled in
+    the AppCompat and Material libraries. The game is a single fullscreen
+    SurfaceView with no widgets at all, so it now uses a plain platform theme
+    instead. That removes every third-party dependency from the build while
+    changing nothing on screen.
+-->
+<resources>
+
+    <style name="ShadowWeaverTheme" parent="@android:style/Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/sw_backdrop_deep</item>
+        <item name="android:colorBackground">@color/sw_backdrop_deep</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+</resources>

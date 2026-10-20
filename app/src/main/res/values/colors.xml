@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Shadow Weaver - palette.
+
+    Every colour the game uses is defined here so the candlelit look can be
+    retuned in one place. The whole game is drawn in software onto a Canvas,
+    so there is no XML theming involved beyond this.
+
+    The scheme is a warm, dark interior lit by a single candle: near-black
+    brown at the edges, a deep amber glow around the light source, and pale
+    pastel outlines for the shapes so that the eye is drawn to the shadows
+    rather than to the shapes themselves.
+-->
+<resources>
+
+    <!-- Background: a very dark warm brown, not black. Black reads as a dead
+         screen; brown reads as a room with the lights off. -->
+    <color name="sw_backdrop_deep">#FF140D08</color>
+    <color name="sw_backdrop_mid">#FF26170D</color>
+    <color name="sw_backdrop_near">#FF3A2210</color>
+
+    <!-- Candle / glow -->
+    <color name="sw_flame_core">#FFFFF0C4</color>
+    <color name="sw_flame_mid">#FFFFC46A</color>
+    <color name="sw_flame_outer">#66FF9A3C</color>
+    <color name="sw_glow_faint">#1AFFB25E</color>
+
+    <!-- The wall the shadows land on: slightly lighter than the room, with a
+         warm top edge so it reads as a distinct surface. -->
+    <color name="sw_wall_fill">#FF3B2717</color>
+    <color name="sw_wall_edge">#FF6B4A2A</color>
+    <color name="sw_wall_base">#FF1A1009</color>
+
+    <!-- Shadows: not black. A warm near-black reads far better on a warm
+         background than pure black does. -->
+    <color name="sw_shadow_core">#B3100703</color>
+    <color name="sw_shadow_mid">#66100703</color>
+    <color name="sw_shadow_halo">#33100703</color>
+
+    <!-- The ghost target silhouette on the wall. Very low alpha by design;
+         it is a hint, never an instruction. -->
+    <color name="sw_target_ghost">#26FFE0B0</color>
+    <color name="sw_target_matched">#59FFD79A</color>
+
+    <!-- Shapes on the stage: soft pastel outlines, never solid fills. -->
+    <color name="sw_shape_stroke">#B8F2D9BE</color>
+    <color name="sw_shape_selected">#E6FFF0DC</color>
+    <color name="sw_shape_fill">#14F2D9BE</color>
+    <color name="sw_handle_fill">#CCFFE9C4</color>
+
+    <!-- HUD: present but quiet. -->
+    <color name="sw_text">#D9F0DFC6</color>
+    <color name="sw_text_dim">#8AF0DFC6</color>
+    <color name="sw_text_faint">#4DF0DFC6</color>
+
+    <!-- Overlays -->
+    <color name="sw_scrim">#D9100703</color>
+    <color name="sw_button_fill">#33FFC98A</color>
+    <color name="sw_button_stroke">#80FFE0B0</color>
+    <color name="sw_button_pressed">#55FFC98A</color>
+
+</resources>
