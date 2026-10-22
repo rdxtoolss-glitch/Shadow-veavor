@@ -7,8 +7,9 @@
     AudioTrack, and stores nothing but a single integer in SharedPreferences.
     No INTERNET, no storage, no ads, no in-app purchases.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mobodevs.shadowweaver">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:allowBackup="true"

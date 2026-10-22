@@ -8,41 +8,24 @@ import android.graphics.RectF;
 /**
  * Shadow Weaver - LevelCompleteOverlay
  * =====================================
- * The win panel, drawn over the solved scene.
- *
- * ------------------------------------------------------------------
- * WHY THIS IS DRAWN, NOT A VIEW
- * ------------------------------------------------------------------
- * A separate Android View would need to be added, measured and laid out on
- * every frame it animates in, and it would sit in a different window from the
- * SurfaceView - so the moment it appeared the shadows behind it would be a
- * frame out of date. Drawing it inside the same Canvas, from the same loop
- * thread, guarantees it is pixel-synchronised with the scene and costs
- * nothing to animate.
- *
- * The interaction contract is therefore tiny: GameView owns the hit testing
- * for the buttons and hands the result to the overlay's action enum. That
- * keeps all pointer logic in one place instead of splitting it across two
- * windows that can disagree about what is under the finger.
+ * Modern, frosted glass victory modal with 3-star rating reveal,
+ * par stats, and tactile action buttons.
  */
 final class LevelCompleteOverlay {
 
-    /** What the player tapped. */
     enum Action {
         NONE, NEXT, RETRY, LEVEL_SELECT
     }
 
     private static final RectF rect = new RectF();
+    private static final Path starPath = new Path();
 
     private static final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    // ---- Button geometry, in SCENE units. Shared by draw() and hitTest()
-    // so the two can never disagree about where a button is. ---------------
-
-    private static final float CARD_W = 620f;
-    private static final float CARD_H = 380f;
+    private static final float CARD_W = 660f;
+    private static final float CARD_H = 500f;
 
     private static float cardLeft;
     private static float cardTop;
@@ -55,10 +38,10 @@ final class LevelCompleteOverlay {
         cardLeft = cx - CARD_W * 0.5f;
         cardTop = (ShadowCalculator.SCENE_H - CARD_H) * 0.5f;
 
-        float pad = 26f;
-        float btnY = cardTop + 208f;
-        float btnH = 64f;
-        float btnW = 268f;
+        float pad = 24f;
+        float btnY = cardTop + 330f;
+        float btnH = 68f;
+        float btnW = 284f;
 
         nextLeft = cx - btnW - pad * 0.5f;
         nextRight = nextLeft + btnW;
@@ -70,35 +53,18 @@ final class LevelCompleteOverlay {
         retryTop = btnY;
         retryBottom = btnY + btnH;
 
-        // Level select sits full width under the pair.
-        selectLeft = cardLeft + 40f;
-        selectRight = cardLeft + CARD_W - 40f;
-        selectTop = btnBottom() + 20f;
-        selectBottom = selectTop + 52f;
+        selectLeft = cardLeft + 52f;
+        selectRight = cardLeft + CARD_W - 52f;
+        selectTop = nextBottom + 20f;
+        selectBottom = selectTop + 56f;
     }
 
-    private static float btnBottom() {
-        return nextBottom;
-    }
-
-    /** Recompute geometry. Called by hitTest() so it works even before a draw. */
     static void ensureLayout() {
         layout();
     }
 
-    // ======================================================================
-    // HIT TESTING  (UI thread, SCENE coordinates)
-    // ======================================================================
-
-    /**
-     * Which button, if any, is at this point.
-     *
-     * The card background swallows taps so a stray tap in the scrim does not
-     * fall through to the scene behind - important because the scene is still
-     * live underneath, and a tap landing on a shape would grab it.
-     */
     static Action hitTest(float sceneX, float sceneY) {
-        layout();
+        ensureLayout();
 
         if (inRect(nextLeft, nextTop, nextRight, nextBottom, sceneX, sceneY)) {
             return Action.NEXT;
@@ -112,7 +78,6 @@ final class LevelCompleteOverlay {
         if (inRect(cardLeft, cardTop, cardLeft + CARD_W, cardTop + CARD_H, sceneX, sceneY)) {
             return Action.NONE;
         }
-        // Outside the card: treat as a dismiss tap on the scrim.
         return Action.NONE;
     }
 
@@ -120,103 +85,145 @@ final class LevelCompleteOverlay {
         return x >= l && x <= r && y >= t && y <= b;
     }
 
-    // ======================================================================
-    // DRAW  (loop thread)
-    // ======================================================================
-
-    /**
-     * @param reveal 0..1 progress of the panel's entrance, so it can slide up
-     *                and fade in rather than appearing instantly
-     */
     static void draw(Canvas c, GameThread g) {
         draw(c, g, 1f);
     }
 
     static void draw(Canvas c, GameThread g, float reveal) {
-        layout();
+        ensureLayout();
         if (reveal <= 0f) return;
         if (reveal > 1f) reveal = 1f;
 
-        // Ease-out, so the panel decelerates into place.
         float e = 1f - (1f - reveal) * (1f - reveal);
 
-        // Scrim, so the scene is clearly inactive behind the card. The scrim
-        // does not slide - only the card does.
-        fill.setColor(withAlpha(0xFF100703, (int) (200 * e)));
+        // Dark modal scrim
+        fill.setColor(withAlpha(0xFF0E0A06, (int) (210 * e)));
         c.drawRect(0, 0, ShadowCalculator.SCENE_W, ShadowCalculator.SCENE_H, fill);
 
-        // Slide the whole card group as one. Translating the canvas is used
-        // rather than offsetting every rect, so hitTest() can keep using the
-        // static layout and never has to know about the animation.
         int save = c.save();
-        c.translate(0f, (1f - e) * 60f);
+        c.translate(0f, (1f - e) * 70f);
 
-        // Card.
-        fill.setColor(withAlpha(0xFF26170D, (int) (246 * e)));
+        // Card body (frosted dark obsidian panel)
         rect.set(cardLeft, cardTop, cardLeft + CARD_W, cardTop + CARD_H);
-        c.drawRoundRect(rect, 22f, 22f, fill);
+        fill.setColor(withAlpha(0xFF24170E, (int) (250 * e)));
+        c.drawRoundRect(rect, 26f, 26f, fill);
 
+        // Gold border
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2f);
-        stroke.setColor(withAlpha(0xFF6B4A2A, (int) (220 * e)));
-        c.drawRoundRect(rect, 22f, 22f, stroke);
+        stroke.setStrokeWidth(2.5f);
+        stroke.setColor(withAlpha(0xFFFFE0A8, (int) (230 * e)));
+        c.drawRoundRect(rect, 26f, 26f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
-        float textBase = cardTop;
 
-        // Title.
+        // Title
         text.setTextAlign(Paint.Align.CENTER);
-        text.setColor(withAlpha(0xFFF0DFC6, (int) (255 * e)));
+        text.setColor(withAlpha(0xFFFFE9C4, (int) (255 * e)));
         text.setTextSize(46f);
         text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        c.drawText("Shadow Matched", cx, textBase + 78f, text);
+        c.drawText("SHADOW WOVEN", cx, cardTop + 72f, text);
 
-        // The level name, so the player is reminded what they just solved.
-        text.setColor(withAlpha(0x8AF0DFC6, (int) (255 * e)));
-        text.setTextSize(27f);
+        // Level Title
+        text.setColor(withAlpha(0xBBF0DFC6, (int) (255 * e)));
+        text.setTextSize(26f);
         text.setTypeface(android.graphics.Typeface.DEFAULT);
-        c.drawText(g.levelTitle(), cx, textBase + 118f, text);
+        c.drawText(g.levelTitle(), cx, cardTop + 112f, text);
 
-        // Elapsed time. Shown because it is quietly motivating and because
-        // players like seeing it; it is never a fail condition - there is no
-        // time limit, and the game's whole pitch is that it cannot be rushed
-        // into a mistake.
-        long ms = g.elapsedMillis();
-        text.setColor(withAlpha(0x8AF0DFC6, (int) (200 * e)));
-        text.setTextSize(24f);
-        c.drawText(formatTime(ms), cx, textBase + 164f, text);
+        // Calculate stars
+        long elapsed = g.elapsedMillis();
+        int moves = g.moveCount();
+        int earnedStars = LevelProgress.calculateStars(g.levelIndex(), elapsed, moves);
 
-        // Buttons.
-        drawButton(c, "Next", nextLeft, nextTop, nextRight, nextBottom, e, false);
-        drawButton(c, "Retry", retryLeft, retryTop, retryRight, retryBottom, e, false);
-        drawButton(c, "All levels", selectLeft, selectTop, selectRight, selectBottom, e, true);
+        // Draw 3 Rating Stars
+        drawStarsRow(c, cx, cardTop + 172f, earnedStars, e);
 
-        // Final score line, small and quiet.
-        text.setColor(withAlpha(0x4DF0DFC6, (int) (255 * e)));
-        text.setTextSize(21f);
-        c.drawText("level " + (g.levelIndex() + 1) + " / " + g.levelCount(), cx, textBase + CARD_H - 18f, text);
+        // Stats line: Time & Moves vs Par
+        long parTime = LevelProgress.getParTimeMillis(g.levelIndex());
+        int parMoves = LevelProgress.getParMoves(g.levelIndex());
+        String timeStr = "Time: " + formatTime(elapsed) + " (Par: " + (parTime / 1000L) + "s)";
+        String moveStr = "Moves: " + moves + " (Par: " + parMoves + ")";
+
+        text.setColor(withAlpha(0xEEF0DFC6, (int) (220 * e)));
+        text.setTextSize(22f);
+        c.drawText(timeStr + "   |   " + moveStr, cx, cardTop + 248f, text);
+
+        // Buttons
+        drawButton(c, "NEXT LEVEL", nextLeft, nextTop, nextRight, nextBottom, e, true);
+        drawButton(c, "REPLAY", retryLeft, retryTop, retryRight, retryBottom, e, false);
+        drawButton(c, "LEVEL SELECT", selectLeft, selectTop, selectRight, selectBottom, e, false);
 
         c.restoreToCount(save);
         text.setTextAlign(Paint.Align.LEFT);
     }
 
+    private static void drawStarsRow(Canvas c, float cx, float cy, int stars, float e) {
+        float starR = 32f;
+        float spacing = 76f;
+        for (int i = 0; i < 3; i++) {
+            float sx = cx + (i - 1) * spacing;
+            boolean active = (i < stars);
+            drawStar(c, sx, cy, starR, active, e);
+        }
+    }
+
+    private static void drawStar(Canvas c, float cx, float cy, float r, boolean filled, float e) {
+        starPath.reset();
+        for (int i = 0; i < 10; i++) {
+            float rad = (float) Math.toRadians(i * 36 - 90);
+            float currR = (i % 2 == 0) ? r : (r * 0.45f);
+            float px = cx + (float) Math.cos(rad) * currR;
+            float py = cy + (float) Math.sin(rad) * currR;
+            if (i == 0) starPath.moveTo(px, py);
+            else starPath.lineTo(px, py);
+        }
+        starPath.close();
+
+        if (filled) {
+            // Golden star with glow
+            fill.setColor(withAlpha(0xFFFFD54F, (int) (255 * e)));
+            c.drawPath(starPath, fill);
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(2f);
+            stroke.setColor(withAlpha(0xFFFFF8E1, (int) (255 * e)));
+            c.drawPath(starPath, stroke);
+            stroke.setStyle(Paint.Style.FILL);
+        } else {
+            // Faint outline of empty star
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(2f);
+            stroke.setColor(withAlpha(0x44FFE0A8, (int) (180 * e)));
+            c.drawPath(starPath, stroke);
+            stroke.setStyle(Paint.Style.FILL);
+        }
+    }
+
     private static void drawButton(Canvas c, String label,
                                    float l, float t, float r, float b,
-                                   float e, boolean secondary) {
-        fill.setColor(withAlpha(secondary ? 0x1AFFC98A : 0x33FFC98A, (int) (255 * e)));
+                                   float e, boolean primary) {
         rect.set(l, t, r, b);
-        c.drawRoundRect(rect, 14f, 14f, fill);
-
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(1.8f);
-        stroke.setColor(withAlpha(0xFF6B4A2A, (int) (190 * e)));
-        c.drawRoundRect(rect, 14f, 14f, stroke);
-        stroke.setStyle(Paint.Style.FILL);
+        if (primary) {
+            fill.setColor(withAlpha(0xEEB37834, (int) (255 * e)));
+            c.drawRoundRect(rect, 16f, 16f, fill);
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(2.5f);
+            stroke.setColor(withAlpha(0xFFFFE0A8, (int) (255 * e)));
+            c.drawRoundRect(rect, 16f, 16f, stroke);
+            stroke.setStyle(Paint.Style.FILL);
+            text.setColor(withAlpha(0xFFFFFFFF, (int) (255 * e)));
+        } else {
+            fill.setColor(withAlpha(0x33F0DFC6, (int) (255 * e)));
+            c.drawRoundRect(rect, 16f, 16f, fill);
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(1.8f);
+            stroke.setColor(withAlpha(0x66FFE0A8, (int) (200 * e)));
+            c.drawRoundRect(rect, 16f, 16f, stroke);
+            stroke.setStyle(Paint.Style.FILL);
+            text.setColor(withAlpha(0xEEF0DFC6, (int) (240 * e)));
+        }
 
         text.setTextAlign(Paint.Align.CENTER);
-        text.setColor(withAlpha(0xFFF0DFC6, (int) (235 * e)));
-        text.setTextSize(26f);
+        text.setTextSize(24f);
         text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         c.drawText(label, (l + r) * 0.5f, (t + b) * 0.5f + 9f, text);
         text.setTextAlign(Paint.Align.LEFT);

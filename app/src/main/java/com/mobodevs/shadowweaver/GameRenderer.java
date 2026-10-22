@@ -130,6 +130,7 @@ final class GameRenderer {
 
         drawBackdrop(canvas, g.candleFlicker());
         drawCandle(canvas, g.candleFlicker());
+        g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
         drawWall(canvas, g.candleFlicker());
         drawTargetGhost(canvas, g);
         drawLightRays(canvas, g);
@@ -137,10 +138,13 @@ final class GameRenderer {
         // buffer is sized in real pixels, not scene units.
         drawShadows(canvas, g, scale);
         drawShapes(canvas, g);
+        g.particles().drawSparks(canvas, fill);
         drawHud(canvas, g);
 
         if (g.showingLevelSelect()) {
-            LevelSelectOverlay.draw(canvas, g.unlockedLevel(), g.levelIndex());
+            LevelSelectOverlay.draw(canvas, g.progress(), g.levelIndex());
+        } else if (g.showingPause()) {
+            PauseOverlay.draw(canvas, g, g.isSoundEnabled(), g.isHapticsEnabled());
         } else if (g.celebration()) {
             LevelCompleteOverlay.draw(canvas, g);
         }
@@ -263,18 +267,49 @@ final class GameRenderer {
      * would remove the challenge entirely.
      */
     private static void drawTargetGhost(Canvas c, GameThread g) {
-        if (g.celebration()) return;
-
-        float match = g.matchPercent() / 100f;
-        float alpha = 0.15f * (1f - 0.55f * match);
-
         float[][] target = g.targetPolygons();
         if (target == null) return;
+
+        if (g.isSolved() || g.celebration()) {
+            // Radiant golden silhouette reveal on victory
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(5f);
+            stroke.setColor(0x88FFD54F);
+            for (float[] poly : target) {
+                buildPath(poly);
+                c.drawPath(path, stroke);
+            }
+
+            fill.setColor(0xCCFFE082);
+            for (float[] poly : target) {
+                buildPath(poly);
+                c.drawPath(path, fill);
+            }
+            stroke.setStyle(Paint.Style.FILL);
+            return;
+        }
+
+        float match = g.matchPercent() / 100f;
+        float alpha = 0.16f * (1f - 0.50f * match);
+        if (g.isHintActive()) {
+            alpha = 0.36f;
+        }
 
         fill.setColor(withAlpha(0xFFFFE0B0, (int) (255 * alpha)));
         for (float[] poly : target) {
             buildPath(poly);
             c.drawPath(path, fill);
+        }
+
+        if (g.isHintActive()) {
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(2.5f);
+            stroke.setColor(0x88FFD54F);
+            for (float[] poly : target) {
+                buildPath(poly);
+                c.drawPath(path, stroke);
+            }
+            stroke.setStyle(Paint.Style.FILL);
         }
     }
 
@@ -447,37 +482,93 @@ final class GameRenderer {
             float[] poly = s.applyTransform();
             buildPath(poly);
 
-            boolean isSel = i == sel;
-            // Non-selected shapes recede; the selected one lifts forward. This
-            // is the only place selection is communicated on the stage, so it
-            // has to be unmissable.
-            int fillA = isSel ? 0x22 : 0x0E;
-            fill.setColor(withAlpha(0xFFF2D9BE, fillA));
+            boolean isSel = (i == sel);
+
+            // 1. Stage drop shadow (expands with elevation)
+            float shadowOffsetY = 12f + s.elevation * 18f;
+            float shadowAlpha = 0.22f + s.elevation * 0.16f;
+            int saveShadow = c.save();
+            c.translate(0, shadowOffsetY);
+            fill.setColor(withAlpha(0xFF000000, (int) (255 * shadowAlpha)));
+            c.drawPath(path, fill);
+            c.restoreToCount(saveShadow);
+
+            // 2. Beveled tactile token body
+            int fillA = isSel ? 0xF0 : 0xCC;
+            int bodyColor = isSel ? 0xFF4A3420 : 0xFF352416;
+            fill.setColor(withAlpha(bodyColor, fillA));
             c.drawPath(path, fill);
 
-            stroke.setStrokeWidth(isSel ? 4.5f + 1.5f * pulse : 3f);
+            // Perimeter brass border
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(isSel ? 4.5f + 1.5f * pulse : 3.0f);
             stroke.setColor(isSel
-                    ? withAlpha(0xFFFFF0DC, (int) (210 + 45 * pulse))
-                    : 0xB8F2D9BE);
+                    ? withAlpha(0xFFFFE0B0, (int) (225 + 30 * pulse))
+                    : 0x99D8B896);
             c.drawPath(path, stroke);
+            stroke.setStyle(Paint.Style.FILL);
 
+            // Center brass pivot rivet
+            fill.setColor(isSel ? 0xFFFFD880 : 0xFFB08D5B);
+            c.drawCircle(s.x, s.y, 7f, fill);
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(1.6f);
+            stroke.setColor(0x88000000);
+            c.drawCircle(s.x, s.y, 7f, stroke);
+            stroke.setStyle(Paint.Style.FILL);
+
+            // 3. Mechanical Precision Rotation Dial
             if (isSel) {
-                // Rotation handle: a dot on the shape's rim, plus a faint
-                // circle showing the whole rotation track. The track matters -
-                // without it the player has no visual idea that rotating is
-                // even possible.
                 float r = s.maxRadius();
-                stroke.setStrokeWidth(1.6f);
-                stroke.setColor(0x33FFE9C4);
-                c.drawCircle(s.x, s.y, r + 16f, stroke);
+                float dialR = r + 24f;
 
-                float hr = r + 16f;
-                float hrx = s.x + hr * (float) Math.cos(Math.toRadians(s.rotation));
-                float hry = s.y + hr * (float) Math.sin(Math.toRadians(s.rotation));
+                // Circular dial track
+                stroke.setStyle(Paint.Style.STROKE);
+                stroke.setStrokeWidth(2.0f);
+                stroke.setColor(0x38FFE0A8);
+                c.drawCircle(s.x, s.y, dialR, stroke);
+
+                // Notches: 15° minor, 45° semi, 90° major ticks
+                for (int deg = 0; deg < 360; deg += 15) {
+                    float rad = (float) Math.toRadians(deg);
+                    boolean isMajor = (deg % 90 == 0);
+                    boolean isSemi = (deg % 45 == 0);
+                    float tickLen = isMajor ? 11f : (isSemi ? 7f : 4f);
+                    float t1 = dialR - tickLen * 0.5f;
+                    float t2 = dialR + tickLen * 0.5f;
+                    float cos = (float) Math.cos(rad);
+                    float sin = (float) Math.sin(rad);
+                    stroke.setStrokeWidth(isMajor ? 2.5f : 1.3f);
+                    stroke.setColor(isMajor ? 0x99FFE9C4 : (isSemi ? 0x66FFE9C4 : 0x33FFE9C4));
+                    c.drawLine(s.x + cos * t1, s.y + sin * t1, s.x + cos * t2, s.y + sin * t2, stroke);
+                }
+
+                // Spoke arm to rotary knob
+                float handleAngleRad = (float) Math.toRadians(s.rotation);
+                float cosA = (float) Math.cos(handleAngleRad);
+                float sinA = (float) Math.sin(handleAngleRad);
+                float hrx = s.x + dialR * cosA;
+                float hry = s.y + dialR * sinA;
+
+                stroke.setStrokeWidth(2.2f);
+                stroke.setColor(0x66FFE0A8);
                 c.drawLine(s.x, s.y, hrx, hry, stroke);
+                stroke.setStyle(Paint.Style.FILL);
 
-                fill.setColor(0xCCFFE9C4);
-                c.drawCircle(hrx, hry, 11f + 1.5f * pulse, fill);
+                // Rotary knob with glowing core and brass bezel
+                fill.setColor(withAlpha(0xFFFFC46A, (int) (65 + 40 * pulse)));
+                c.drawCircle(hrx, hry, 16f + 2f * pulse, fill);
+
+                fill.setColor(0xFFECC27D);
+                c.drawCircle(hrx, hry, 11f, fill);
+                stroke.setStyle(Paint.Style.STROKE);
+                stroke.setStrokeWidth(2f);
+                stroke.setColor(0xFF332010);
+                c.drawCircle(hrx, hry, 11f, stroke);
+                stroke.setStyle(Paint.Style.FILL);
+
+                fill.setColor(0xFFFFFFFF);
+                c.drawCircle(hrx, hry, 4f, fill);
             }
         }
     }
@@ -491,30 +582,94 @@ final class GameRenderer {
         String hint = g.levelHint();
         float match = g.matchPercent();
 
-        // Top-left: level number and title.
-        text.setColor(0xD9F0DFC6);
-        text.setTextSize(30f);
+        // 1. Top-Left: Pause button
+        float pauseX = 64f;
+        float pauseY = 82f;
+        float pauseR = 30f;
+        fill.setColor(0x33F0DFC6);
+        c.drawCircle(pauseX, pauseY, pauseR, fill);
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(1.8f);
+        stroke.setColor(0x66FFE0A8);
+        c.drawCircle(pauseX, pauseY, pauseR, stroke);
+
+        // Pause icon (two vertical bars)
+        fill.setColor(0xFFF0DFC6);
+        stroke.setStyle(Paint.Style.FILL);
+        rect.set(pauseX - 8f, pauseY - 11f, pauseX - 3f, pauseY + 11f);
+        c.drawRoundRect(rect, 2f, 2f, fill);
+        rect.set(pauseX + 3f, pauseY - 11f, pauseX + 8f, pauseY + 11f);
+        c.drawRoundRect(rect, 2f, 2f, fill);
+
+        // 2. Top-Center: Level Title and Chapter
+        float cx = ShadowCalculator.SCENE_W * 0.5f;
+        text.setTextAlign(Paint.Align.CENTER);
+        text.setColor(0xFFF0DFC6);
+        text.setTextSize(32f);
         text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        c.drawText(title, 56f, 82f, text);
+        c.drawText(title, cx, 80f, text);
 
         text.setColor(0x8AF0DFC6);
-        text.setTextSize(24f);
+        text.setTextSize(22f);
         text.setTypeface(android.graphics.Typeface.DEFAULT);
-        c.drawText("Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), 56f, 116f, text);
+        c.drawText("Chapter I  *  Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, 114f, text);
 
-        // Top-right: the match meter. Deliberately a simple arc + a
-        // percentage, not a "stars" indicator: this is a precision game and a
-        // continuous number is more honest than a discretised one.
+        // 3. Top-Right: Precision Circular Match Meter
         drawMatchMeter(c, g, match);
 
-        // Bottom: hint, fading out once the player is clearly on their way, so
-        // the tutorial is present but not nagging.
-        if (match < 55f) {
-            float a = 1f - match / 55f;
-            text.setColor(withAlpha(0x8AF0DFC6, (int) (255 * a * 0.9f)));
-            text.setTextSize(26f);
-            c.drawText(hint, 56f, ShadowCalculator.SCENE_H - 46f, text);
+        // 4. Bottom-Left: Hint Button
+        float hintX = 96f;
+        float hintY = ShadowCalculator.SCENE_H - 72f;
+        float btnR = 34f;
+        boolean hintOn = g.isHintActive();
+
+        fill.setColor(hintOn ? 0xCCB37834 : 0x33F0DFC6);
+        c.drawCircle(hintX, hintY, btnR, fill);
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(1.8f);
+        stroke.setColor(hintOn ? 0xFFFFE0A8 : 0x55FFE0A8);
+        c.drawCircle(hintX, hintY, btnR, stroke);
+        stroke.setStyle(Paint.Style.FILL);
+
+        // Lightbulb glyph
+        fill.setColor(hintOn ? 0xFFFFFFFF : 0xFFF0DFC6);
+        c.drawCircle(hintX, hintY - 4f, 10f, fill);
+        rect.set(hintX - 5f, hintY + 6f, hintX + 5f, hintY + 12f);
+        c.drawRoundRect(rect, 1.5f, 1.5f, fill);
+
+        // 5. Bottom-Right: Reset Level Button
+        float rstX = ShadowCalculator.SCENE_W - 96f;
+        float rstY = ShadowCalculator.SCENE_H - 72f;
+        fill.setColor(0x33F0DFC6);
+        c.drawCircle(rstX, rstY, btnR, fill);
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(1.8f);
+        stroke.setColor(0x55FFE0A8);
+        c.drawCircle(rstX, rstY, btnR, stroke);
+
+        // Curved reload arrow glyph
+        stroke.setStrokeWidth(2.6f);
+        stroke.setColor(0xFFF0DFC6);
+        rect.set(rstX - 11f, rstY - 11f, rstX + 11f, rstY + 11f);
+        c.drawArc(rect, 45f, 270f, false, stroke);
+        stroke.setStyle(Paint.Style.FILL);
+        fill.setColor(0xFFF0DFC6);
+        path.reset();
+        path.moveTo(rstX + 10f, rstY - 13f);
+        path.lineTo(rstX + 16f, rstY - 4f);
+        path.lineTo(rstX + 6f, rstY - 4f);
+        path.close();
+        c.drawPath(path, fill);
+
+        // 6. Hint text (fades when progress is high, or shown when hint toggle is on)
+        if (hintOn || match < 55f) {
+            float a = hintOn ? 1.0f : (1f - match / 55f);
+            text.setColor(withAlpha(0xAAF0DFC6, (int) (255 * a * 0.95f)));
+            text.setTextSize(24f);
+            text.setTextAlign(Paint.Align.CENTER);
+            c.drawText(hint, cx, ShadowCalculator.SCENE_H - 70f, text);
         }
+        text.setTextAlign(Paint.Align.LEFT);
     }
 
     private static void drawMatchMeter(Canvas c, GameThread g, float match) {
@@ -522,21 +677,29 @@ final class GameRenderer {
         float cy = 92f;
         float r = 42f;
 
-        // Track.
+        // Track
+        stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeWidth(9f);
         stroke.setStrokeCap(Paint.Cap.ROUND);
         stroke.setColor(0x33F0DFC6);
         rect.set(cx - r, cy - r, cx + r, cy + r);
         c.drawArc(rect, 0, 360, false, stroke);
 
-        // Fill. Colour shifts warm -> bright as it climbs, so progress is
-        // legible from the colour alone without reading the number.
+        // Fill arc
         float clamped = match < 0f ? 0f : (match > 100f ? 100f : match);
         if (clamped > 0.5f) {
             stroke.setStrokeWidth(9f);
             stroke.setColor(mix(0xFFFFC46A, 0xFFFFE9C4, clamped / 100f));
             rect.set(cx - r, cy - r, cx + r, cy + r);
             c.drawArc(rect, -90f, 360f * clamped / 100f, false, stroke);
+
+            // Glowing bead at the tip of progress
+            float angleRad = (float) Math.toRadians(-90f + 360f * clamped / 100f);
+            float beadX = cx + r * (float) Math.cos(angleRad);
+            float beadY = cy + r * (float) Math.sin(angleRad);
+            stroke.setStyle(Paint.Style.FILL);
+            fill.setColor(0xFFFFFFFF);
+            c.drawCircle(beadX, beadY, 5.5f, fill);
         }
         stroke.setStrokeCap(Paint.Cap.BUTT);
 

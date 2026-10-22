@@ -56,7 +56,7 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
 
     /** Notified on the loop thread whenever a level is solved. */
     public interface LevelListener {
-        void onLevelComplete(int levelIndex, long elapsedMillis);
+        void onLevelComplete(int levelIndex, long elapsedMillis, int moves);
     }
 
     // ---- Surface / thread --------------------------------------------------
@@ -96,6 +96,12 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
     private long levelElapsedMillis;
 
     private boolean showCelebration;
+
+    private final ParticleSystem particles = new ParticleSystem(ShadowCalculator.SCENE_W, ShadowCalculator.SCENE_H);
+    private HapticManager hapticSink;
+    private LevelProgress progress;
+    private int moveCount;
+    private boolean hintActive;
 
     // ---- Simulation (loop thread only) ------------------------------------
 
@@ -285,11 +291,97 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
                     dragging = false;
                     pinching = false;
                     pendingCount = 0;
+                    moveCount = 0;
+                    hintActive = false;
                     levelStartNanos = System.nanoTime();
                     levelElapsedMillis = 0L;
                 }
             }
         });
+    }
+
+    public ParticleSystem particles() {
+        return particles;
+    }
+
+    public void attachHaptics(HapticManager haptic) {
+        this.hapticSink = haptic;
+    }
+
+    public void attachProgress(LevelProgress progress) {
+        this.progress = progress;
+    }
+
+    public LevelProgress progress() {
+        return progress;
+    }
+
+    public boolean isSoundEnabled() {
+        return chimeSink != null && !chimeSink.isMuted();
+    }
+
+    public boolean isHapticsEnabled() {
+        return hapticSink != null && hapticSink.isEnabled();
+    }
+
+    public int moveCount() {
+        synchronized (stateLock) {
+            return moveCount;
+        }
+    }
+
+    public boolean isHintActive() {
+        synchronized (stateLock) {
+            return hintActive;
+        }
+    }
+
+    public void toggleHint() {
+        synchronized (stateLock) {
+            hintActive = !hintActive;
+        }
+    }
+
+    public void deselect() {
+        synchronized (stateLock) {
+            if (selected >= 0 && selected < shapes.length) {
+                shapes[selected].targetElevation = 0f;
+            }
+            selected = -1;
+            dragging = false;
+            pinching = false;
+        }
+    }
+
+    public ShapeObject getSelectedShape() {
+        synchronized (stateLock) {
+            if (selected >= 0 && selected < shapes.length) {
+                return shapes[selected];
+            }
+            return null;
+        }
+    }
+
+    public boolean hitTestRotationHandle(float sceneX, float sceneY) {
+        synchronized (stateLock) {
+            if (selected < 0 || selected >= shapes.length) return false;
+            ShapeObject s = shapes[selected];
+            float dialR = s.maxRadius() + 24f;
+            float handleAngleRad = (float) Math.toRadians(s.rotation);
+            float hrx = s.x + dialR * (float) Math.cos(handleAngleRad);
+            float hry = s.y + dialR * (float) Math.sin(handleAngleRad);
+
+            // Distance to knob
+            float dx = sceneX - hrx;
+            float dy = sceneY - hry;
+            if (dx * dx + dy * dy <= 44f * 44f) return true;
+
+            // Distance to ring band
+            float cdx = sceneX - s.x;
+            float cdy = sceneY - s.y;
+            float dist = (float) Math.hypot(cdx, cdy);
+            return Math.abs(dist - dialR) <= 24f;
+        }
     }
 
     public int levelIndex() {
@@ -403,6 +495,8 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
     public void beginDrag(int index, float sceneX, float sceneY) {
         if (index < 0 || index >= shapes.length) return;
         selected = index;
+        shapes[index].targetElevation = 1.0f;
+        moveCount++;
         beginDragInternal(index, sceneX, sceneY);
     }
 
@@ -424,6 +518,7 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
 
     public static final int MODE_PLAY = 0;
     public static final int MODE_SELECT = 1;
+    public static final int MODE_PAUSE = 2;
 
     private int mode = MODE_PLAY;
     private int unlocked;
@@ -446,6 +541,18 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         }
     }
 
+    public void showPause() {
+        synchronized (stateLock) {
+            mode = MODE_PAUSE;
+        }
+    }
+
+    public void resumePlay() {
+        synchronized (stateLock) {
+            mode = MODE_PLAY;
+        }
+    }
+
     public void showPlay() {
         synchronized (stateLock) {
             mode = MODE_PLAY;
@@ -460,6 +567,10 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
 
     public boolean showingLevelSelect() {
         return mode() == MODE_SELECT;
+    }
+
+    public boolean showingPause() {
+        return mode() == MODE_PAUSE;
     }
 
     /** Select a level from the grid and return to play. */
@@ -616,6 +727,8 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
     public void beginRotate(int index, float gestureAngle) {
         if (index < 0 || index >= shapes.length) return;
         selected = index;
+        shapes[index].targetElevation = 1.0f;
+        moveCount++;
         dragging = true;
         dragStartRotation = shapes[index].rotation;
         dragStartAngle = gestureAngle;
@@ -623,12 +736,23 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
     }
 
     public void updateRotate(float gestureAngle) {
-        if (!pinching || selected < 0) return;
+        if (!pinching || selected < 0 || selected >= shapes.length) return;
         float delta = ShapeObject.normalizeAngle(gestureAngle - dragStartAngle);
-        shapes[selected].rotation = ShapeObject.normalizeAngle(dragStartRotation + delta);
+        float newRot = ShapeObject.normalizeAngle(dragStartRotation + delta);
+        shapes[selected].rotation = newRot;
+
+        int detent = (int) Math.floor((newRot + 7.5f) / 15f);
+        if (shapes[selected].lastDetentIndex != -1 && shapes[selected].lastDetentIndex != detent) {
+            if (hapticSink != null) hapticSink.detent();
+            if (chimeSink != null) chimeSink.playTick();
+        }
+        shapes[selected].lastDetentIndex = detent;
     }
 
     public void endGesture() {
+        if (selected >= 0 && selected < shapes.length) {
+            shapes[selected].targetElevation = 0f;
+        }
         dragging = false;
         pinching = false;
     }
@@ -652,10 +776,12 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         synchronized (stateLock) {
             if (level == null) return;
         }
+        particles.update(dt, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, candleFlicker);
         for (ShapeObject s : shapes) {
+            s.updateElevation(dt);
             // A held shape is perfectly still. That is important: a shape that
             // wiggles under the finger makes precise placement feel impossible.
-            if (dragging && shapes[selected] == s) continue;
+            if (dragging && selected >= 0 && shapes[selected] == s) continue;
 
             if (s.spin != 0f) s.rotation = ShapeObject.normalizeAngle(s.rotation + s.spin * dt);
             if (s.vx != 0f || s.vy != 0f) {
@@ -734,7 +860,10 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         // may call back in, which would deadlock a non-reentrant lock.
         if (celebrateNow) {
             celebrateNow = false;
-            if (listener != null) listener.onLevelComplete(levelIndex, levelElapsedMillis);
+            particles.burstCelebration(500f, 380f);
+            if (hapticSink != null) hapticSink.victory();
+            if (chimeSink != null) chimeSink.playCelebration();
+            if (listener != null) listener.onLevelComplete(levelIndex, levelElapsedMillis, moveCount);
         }
     }
 

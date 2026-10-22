@@ -70,7 +70,11 @@ public class AudioManager {
      * player crosses two match marks almost simultaneously both are heard
      * rather than the second cutting off the first.
      */
-    private static final int CHIME_VOICES = 3;
+    private static final int CHIME_VOICES = 5;
+
+    // Precomputed micro-effects for instant, zero-allocation playback
+    private static short[] tickBuffer;
+    private static short[] celebrationBuffer;
 
     // ---- State ------------------------------------------------------------
 
@@ -180,6 +184,13 @@ public class AudioManager {
 
     public boolean isMuted() {
         return muted;
+    }
+
+    public void setMuted(boolean muted) {
+        this.muted = muted;
+        synchronized (lock) {
+            applyVolume();
+        }
     }
 
     /**
@@ -293,6 +304,51 @@ public class AudioManager {
         if ((bitmask & (1 << CHIME_HALF)) != 0) playChime(CHIME_HALF);
         if ((bitmask & (1 << CHIME_GOOD)) != 0) playChime(CHIME_GOOD);
         if ((bitmask & (1 << CHIME_DONE)) != 0) playChime(CHIME_DONE);
+    }
+
+    /**
+     * Play a subtle acoustic click when a shape turns past a 15-degree detent.
+     */
+    public void playTick() {
+        if (released || muted) return;
+        if (tickBuffer == null) {
+            tickBuffer = buildTickBuffer();
+        }
+        playRawPcm(tickBuffer, 0.18f);
+    }
+
+    /**
+     * Play a lush ascending celebratory chord arpeggio when a level is completed.
+     */
+    public void playCelebration() {
+        if (released || muted) return;
+        if (celebrationBuffer == null) {
+            celebrationBuffer = buildCelebrationBuffer();
+        }
+        playRawPcm(celebrationBuffer, 0.40f);
+    }
+
+    private void playRawPcm(short[] buffer, float gain) {
+        synchronized (lock) {
+            if (released) return;
+            try {
+                AudioTrack voice = chimes[nextChime];
+                if (voice == null) {
+                    voice = buildStaticTrack(buffer, (float) buffer.length / CHIME_RATE);
+                    chimes[nextChime] = voice;
+                } else {
+                    voice.pause();
+                    voice.flush();
+                    voice.reloadStaticData();
+                }
+                voice.write(buffer, 0, buffer.length);
+                voice.setVolume(masterVolume * gain);
+                voice.play();
+                nextChime = (nextChime + 1) % CHIME_VOICES;
+            } catch (Throwable t) {
+                Log.w(TAG, "sfx voice unavailable", t);
+            }
+        }
     }
 
     // ======================================================================
@@ -468,6 +524,66 @@ public class AudioManager {
         for (int i = 0; i < n; i++) {
             float v = out[i] * gain;
             v = (float) Math.tanh(v);
+            pcm[i] = (short) (v * Short.MAX_VALUE);
+        }
+        return pcm;
+    }
+
+    /**
+     * Build an ultra-short, satisfying wooden mechanical click for rotation detents.
+     */
+    private static short[] buildTickBuffer() {
+        final int n = (int) (0.020f * CHIME_RATE); // 20ms
+        final short[] pcm = new short[n];
+        double phase = 0;
+        double w = 2.0 * Math.PI * 1150.0 / CHIME_RATE;
+        for (int i = 0; i < n; i++) {
+            float t = i / (float) CHIME_RATE;
+            float env = (float) Math.exp(-t * 280f);
+            float s = (float) (Math.sin(phase) * env);
+            phase += w;
+            pcm[i] = (short) (s * Short.MAX_VALUE * 0.45f);
+        }
+        return pcm;
+    }
+
+    /**
+     * Build a lush ascending celebratory chord arpeggio for level complete.
+     */
+    private static short[] buildCelebrationBuffer() {
+        final float duration = 2.4f;
+        final int n = (int) (duration * CHIME_RATE);
+        final float[] out = new float[n];
+
+        // Ascending major arpeggio: C5 -> E5 -> G5 -> C6
+        float[] notes = {523.25f, 659.25f, 783.99f, 1046.50f};
+        float[] startTimes = {0.0f, 0.16f, 0.32f, 0.48f};
+        float[] ratios = {1.0f, 2.0f, 3.0f};
+        float[] amps = {1.0f, 0.35f, 0.15f};
+
+        for (int note = 0; note < notes.length; note++) {
+            float noteStart = startTimes[note];
+            int startIdx = (int) (noteStart * CHIME_RATE);
+            float baseHz = notes[note];
+
+            for (int r = 0; r < ratios.length; r++) {
+                double w = 2.0 * Math.PI * (baseHz * ratios[r]) / CHIME_RATE;
+                double phase = note * 0.9 + r * 1.3;
+                float harmonicAmp = amps[r];
+
+                for (int i = startIdx; i < n; i++) {
+                    float t = (i - startIdx) / (float) CHIME_RATE;
+                    float env = (float) Math.exp(-t * 1.8f);
+                    float attack = Math.min(1f, t / 0.008f);
+                    out[i] += (float) (harmonicAmp * env * attack * Math.sin(phase) * 0.32f);
+                    phase += w;
+                }
+            }
+        }
+
+        short[] pcm = new short[n];
+        for (int i = 0; i < n; i++) {
+            float v = (float) Math.tanh(out[i]);
             pcm[i] = (short) (v * Short.MAX_VALUE);
         }
         return pcm;

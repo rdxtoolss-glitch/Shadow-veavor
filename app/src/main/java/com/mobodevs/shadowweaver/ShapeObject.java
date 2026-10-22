@@ -65,6 +65,20 @@ public class ShapeObject {
     /** Rotational drift, degrees per second. Cosmetic only, same as above. */
     public float spin;
 
+    /**
+     * Visual elevation factor (0.0 = resting on stage, 1.0 = lifted on touch).
+     * Drives drop shadow offset/blur, scale lift, and tactile lighting.
+     */
+    public float elevation;
+    public float targetElevation;
+    public boolean isDragging;
+    public int lastDetentIndex = -1;
+
+    public void updateElevation(float dt) {
+        float speed = 16f;
+        elevation += (targetElevation - elevation) * Math.min(1.0f, dt * speed);
+    }
+
     public ShapeObject(Kind kind, float width, float height, float x, float y, float rotation) {
         this.kind = kind;
         this.width = width;

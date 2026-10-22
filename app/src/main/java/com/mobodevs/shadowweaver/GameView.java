@@ -9,48 +9,16 @@ import android.view.SurfaceView;
 /**
  * Shadow Weaver - GameView
  * ========================
- * The SurfaceView: owns the surface, hands the loop a looper, and converts
- * touches into SCENE coordinates.
- *
- * ------------------------------------------------------------------
- * WHY THERE IS NO onDraw
- * ------------------------------------------------------------------
- * A SurfaceView has no window of its own. It is a hole punched through the
- * view hierarchy that the app draws into directly, which is exactly why it
- * can be driven from a background thread and why it never sees the normal
- * invalidate/draw cycle. So all drawing lives in GameThread via the holder,
- * and this class is the plumbing plus the input handling - input being the one
- * thing that genuinely has to run on the UI thread.
- *
- * ------------------------------------------------------------------
- * WHY GameView KNOWS ALMOST NOTHING
- * ------------------------------------------------------------------
- * Screen mode, unlocked level, current level, and selection all live in
- * GameThread, not here. There is exactly one owner for that state, so there
- * is no possibility of the view and the loop disagreeing about which screen
- * is showing - which is the failure mode that produces "I tapped a button
- * and the wrong thing happened" bugs in a two-owner design.
- *
- * ------------------------------------------------------------------
- * COORDINATES
- * ------------------------------------------------------------------
- * The game is authored in a fixed 1000x1600 scene; the surface is whatever
- * the device gives us. Every touch is inverted through the same transform the
- * renderer uses, so the game only ever speaks scene units. This is the single
- * place that conversion happens.
- *
- * ------------------------------------------------------------------
- * GESTURES
- * ------------------------------------------------------------------
- * One finger drags the selected shape. Two fingers rotate it, by tracking the
- * angle between the fingers against the angle when the second finger landed.
- * A second finger cancels an in-progress drag rather than compounding with
- * it, so a player who starts a drag and then adds a finger does not get a
- * shape that jumps.
+ * The SurfaceView: owns the surface, forwards lifecycle to GameThread,
+ * and handles modern touch gestures (1-finger drag, 1-finger dial rotate,
+ * 2-finger twist, and HUD button taps).
  */
 public class GameView extends SurfaceView implements GameThread.Looper {
 
     private final GameThread thread;
+    private final HapticManager haptic;
+    private final LevelProgress progress;
+    private final AudioManager audio;
 
     // ---- Touch tracking (UI thread only) ----------------------------------
 
@@ -60,7 +28,6 @@ public class GameView extends SurfaceView implements GameThread.Looper {
 
     // ---- Persistence hook -------------------------------------------------
 
-    /** Notified on the UI thread when the unlocked level advances. */
     public interface Progress {
         void report(int highestUnlocked);
     }
@@ -69,19 +36,26 @@ public class GameView extends SurfaceView implements GameThread.Looper {
     private int lastReportedUnlocked = -1;
 
     public GameView(Context context, int startLevel, int unlocked, AudioManager audio) {
+        this(context, startLevel, new LevelProgress(), audio, new HapticManager(context));
+    }
+
+    public GameView(Context context, int startLevel, LevelProgress progress, AudioManager audio, HapticManager haptic) {
         super(context);
+        this.progress = progress;
+        this.audio = audio;
+        this.haptic = haptic;
 
         SurfaceHolder holder = getHolder();
 
         thread = new GameThread(holder, new GameThread.LevelListener() {
             @Override
-            public void onLevelComplete(final int levelIndex, final long elapsedMillis) {
-                // Bounce to the UI thread: the listener is invoked on the loop
-                // thread, and anything that touches views or preferences
-                // belongs on the main thread.
+            public void onLevelComplete(final int levelIndex, final long elapsedMillis, final int moves) {
                 post(new Runnable() {
                     @Override
                     public void run() {
+                        if (GameView.this.progress != null) {
+                            GameView.this.progress.recordCompletion(getContext(), levelIndex, elapsedMillis, moves);
+                        }
                         if (onProgress != null) {
                             int u = thread.unlockedLevel();
                             if (u != lastReportedUnlocked) {
@@ -93,16 +67,17 @@ public class GameView extends SurfaceView implements GameThread.Looper {
                 });
             }
         });
+
         thread.attachLoopOwner(this);
         thread.attachAudio(audio);
+        thread.attachHaptics(haptic);
+        thread.attachProgress(progress);
 
-        // Registered last, once the loop is fully constructed: the surface may
-        // already exist, and surfaceCreated can therefore arrive
-        // synchronously from inside addCallback.
         holder.addCallback(thread);
 
-        thread.setUnlocked(unlocked);
-        lastReportedUnlocked = unlocked;
+        int unlockedLevel = (progress != null) ? progress.getHighestUnlocked() : 0;
+        thread.setUnlocked(unlockedLevel);
+        lastReportedUnlocked = unlockedLevel;
         thread.loadLevel(startLevel);
 
         setFocusable(true);
@@ -110,7 +85,7 @@ public class GameView extends SurfaceView implements GameThread.Looper {
     }
 
     // ======================================================================
-    // LIFECYCLE  (all called by the activity)
+    // LIFECYCLE
     // ======================================================================
 
     public void onResume() {
@@ -150,34 +125,78 @@ public class GameView extends SurfaceView implements GameThread.Looper {
         switch (e.getActionMasked()) {
 
             case MotionEvent.ACTION_DOWN: {
+                if (thread.showingPause()) {
+                    handlePauseAction(PauseOverlay.hitTest(sx, sy));
+                    return true;
+                }
                 if (thread.showingLevelSelect()) {
                     handleLevelSelect(sx, sy);
                     return true;
                 }
                 if (thread.celebrationVisible()) {
-                    // The win panel is modal: it owns every tap while it is up,
-                    // so a tap cannot fall through and grab a shape behind it.
-                    handleOverlayAction(
-                            LevelCompleteOverlay.hitTest(sx, sy));
+                    handleOverlayAction(LevelCompleteOverlay.hitTest(sx, sy));
                     return true;
+                }
+
+                // Check HUD Pause button (cx = 64f, cy = 82f)
+                float pdx = sx - 64f;
+                float pdy = sy - 82f;
+                if (pdx * pdx + pdy * pdy <= 42f * 42f) {
+                    thread.showPause();
+                    if (haptic != null) haptic.tap();
+                    return true;
+                }
+
+                // Check HUD Hint button (cx = 96f, cy = SCENE_H - 72f)
+                float hdx = sx - 96f;
+                float hdy = sy - (ShadowCalculator.SCENE_H - 72f);
+                if (hdx * hdx + hdy * hdy <= 44f * 44f) {
+                    thread.toggleHint();
+                    if (haptic != null) haptic.tap();
+                    return true;
+                }
+
+                // Check HUD Reset button (cx = SCENE_W - 96f, cy = SCENE_H - 72f)
+                float rdx = sx - (ShadowCalculator.SCENE_W - 96f);
+                float rdy = sy - (ShadowCalculator.SCENE_H - 72f);
+                if (rdx * rdx + rdy * rdy <= 44f * 44f) {
+                    thread.restart();
+                    if (haptic != null) haptic.tap();
+                    return true;
+                }
+
+                // Check rotation handle on active shape
+                if (thread.hitTestRotationHandle(sx, sy)) {
+                    int sel = thread.selectedIndex();
+                    if (sel >= 0) {
+                        trackingRotate = true;
+                        dragActive = false;
+                        ShapeObject s = thread.getSelectedShape();
+                        float centerAngle = (s != null)
+                                ? (float) Math.toDegrees(Math.atan2(sy - s.y, sx - s.x))
+                                : 0f;
+                        rotateStartAngle = centerAngle;
+                        thread.beginRotate(sel, rotateStartAngle);
+                        return true;
+                    }
                 }
 
                 int hit = thread.hitTestAt(sx, sy);
                 if (hit >= 0) {
                     dragActive = true;
                     thread.beginDrag(hit, sx, sy);
+                    if (haptic != null) haptic.tap();
+                } else {
+                    thread.deselect();
                 }
                 return true;
             }
 
             case MotionEvent.ACTION_POINTER_DOWN: {
-                if (thread.showingLevelSelect() || thread.celebrationVisible()) {
+                if (thread.showingLevelSelect() || thread.showingPause() || thread.celebrationVisible()) {
                     return true;
                 }
                 if (e.getPointerCount() >= 2) {
-                    // Second finger down: stop any drag and switch to rotate.
-                    // Cancelling the drag is what prevents the shape from
-                    // snapping under the first finger.
                     dragActive = false;
                     int idx = thread.selectedIndex();
                     if (idx >= 0) {
@@ -190,11 +209,19 @@ public class GameView extends SurfaceView implements GameThread.Looper {
             }
 
             case MotionEvent.ACTION_MOVE: {
-                if (thread.showingLevelSelect() || thread.celebrationVisible()) {
+                if (thread.showingLevelSelect() || thread.showingPause() || thread.celebrationVisible()) {
                     return true;
                 }
-                if (trackingRotate && e.getPointerCount() >= 2) {
-                    thread.updateRotate(gestureAngle(e) - rotateStartAngle);
+                if (trackingRotate) {
+                    if (e.getPointerCount() >= 2) {
+                        thread.updateRotate(gestureAngle(e) - rotateStartAngle);
+                    } else {
+                        ShapeObject s = thread.getSelectedShape();
+                        if (s != null) {
+                            float currentAngle = (float) Math.toDegrees(Math.atan2(sy - s.y, sx - s.x));
+                            thread.updateRotate(currentAngle - rotateStartAngle);
+                        }
+                    }
                 } else if (dragActive) {
                     thread.onTouch(GameThread.EVENT_MOVE, sx, sy);
                 }
@@ -202,9 +229,6 @@ public class GameView extends SurfaceView implements GameThread.Looper {
             }
 
             case MotionEvent.ACTION_POINTER_UP: {
-                // When a finger leaves a two-finger gesture, end the rotation
-                // rather than falling back to a drag, otherwise the remaining
-                // finger would drag the shape somewhere unexpected.
                 if (e.getPointerCount() <= 2) {
                     trackingRotate = false;
                     thread.endGesture();
@@ -214,7 +238,7 @@ public class GameView extends SurfaceView implements GameThread.Looper {
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL: {
-                if (!thread.showingLevelSelect() && !thread.celebrationVisible()) {
+                if (!thread.showingLevelSelect() && !thread.showingPause() && !thread.celebrationVisible()) {
                     thread.onTouch(GameThread.EVENT_UP, sx, sy);
                 }
                 dragActive = false;
@@ -226,17 +250,56 @@ public class GameView extends SurfaceView implements GameThread.Looper {
         return true;
     }
 
+    private void handlePauseAction(PauseOverlay.Action action) {
+        if (haptic != null) haptic.tap();
+        switch (action) {
+            case RESUME:
+                thread.resumePlay();
+                break;
+            case RESTART:
+                thread.restart();
+                thread.resumePlay();
+                break;
+            case TOGGLE_SOUND:
+                if (audio != null) {
+                    audio.toggleMute();
+                    if (progress != null) {
+                        progress.setSoundMuted(audio.isMuted());
+                        progress.save(getContext());
+                    }
+                }
+                break;
+            case TOGGLE_HAPTICS:
+                if (haptic != null) {
+                    haptic.setEnabled(!haptic.isEnabled());
+                    if (progress != null) {
+                        progress.setHapticsEnabled(haptic.isEnabled());
+                        progress.save(getContext());
+                    }
+                }
+                break;
+            case LEVEL_SELECT:
+                thread.showLevelSelect();
+                break;
+            case NONE:
+                break;
+        }
+    }
+
     private void handleLevelSelect(float sx, float sy) {
-        int level = LevelSelectOverlay.pickedLevel(sx, sy, thread.unlockedLevel());
+        int unlocked = (progress != null) ? progress.getHighestUnlocked() : thread.unlockedLevel();
+        int level = LevelSelectOverlay.pickedLevel(sx, sy, unlocked);
         if (level >= 0) {
+            if (haptic != null) haptic.tap();
             thread.pickLevel(level);
-        } else if (LevelSelectOverlay.hitTest(sx, sy, thread.unlockedLevel())
-                == LevelSelectOverlay.Action.CLOSE) {
+        } else if (LevelSelectOverlay.hitTest(sx, sy, unlocked) == LevelSelectOverlay.Action.CLOSE) {
+            if (haptic != null) haptic.tap();
             thread.showPlay();
         }
     }
 
     private void handleOverlayAction(LevelCompleteOverlay.Action action) {
+        if (haptic != null) haptic.tap();
         if (action == LevelCompleteOverlay.Action.NEXT) {
             thread.advance();
         } else if (action == LevelCompleteOverlay.Action.RETRY) {
