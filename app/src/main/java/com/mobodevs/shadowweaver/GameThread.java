@@ -300,6 +300,24 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         });
     }
 
+    public ShapeObject findSolutionFor(ShapeObject s) {
+        if (solution == null || s == null) return null;
+        ShapeObject bestSol = null;
+        float bestDistSq = Float.MAX_VALUE;
+        for (ShapeObject sol : solution) {
+            if (sol.kind == s.kind && Math.abs(sol.width - s.width) < 1f && Math.abs(sol.height - s.height) < 1f) {
+                float dx = sol.x - s.x;
+                float dy = sol.y - s.y;
+                float d2 = dx * dx + dy * dy;
+                if (d2 < bestDistSq) {
+                    bestDistSq = d2;
+                    bestSol = sol;
+                }
+            }
+        }
+        return bestSol;
+    }
+
     public ParticleSystem particles() {
         return particles;
     }
@@ -646,6 +664,7 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         stepIdleDrift(dt);
         stepCandle(dt);
         stepSelection(dt);
+        updateResonance(dt);
         evaluateMatch();
     }
 
@@ -694,8 +713,7 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
                 break;
             }
             case EVENT_UP: {
-                dragging = false;
-                pinching = false;
+                endGesture();
                 break;
             }
         }
@@ -705,6 +723,10 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         ShapeObject s = shapes[index];
         dragGrabDX = s.x - x;
         dragGrabDY = s.y - y;
+        s.targetX = s.x;
+        s.targetY = s.y;
+        s.isDragging = true;
+        s.isSnapping = false;
         dragging = true;
     }
 
@@ -712,11 +734,10 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         ShapeObject s = shapes[selected];
         float nx = ShadowCalculator.clampStageX(x + dragGrabDX);
         float ny = ShadowCalculator.clampStageY(y + dragGrabDY);
-        s.x = nx;
-        s.y = ny;
-        // Touching a shape kills its idle drift for as long as it is held.
-        s.vx = 0f;
-        s.vy = 0f;
+        s.targetX = nx;
+        s.targetY = ny;
+        s.isDragging = true;
+        s.isSnapping = false;
         s.spin = 0f;
     }
 
@@ -727,34 +748,114 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
     public void beginRotate(int index, float gestureAngle) {
         if (index < 0 || index >= shapes.length) return;
         selected = index;
-        shapes[index].targetElevation = 1.0f;
+        ShapeObject s = shapes[index];
+        s.targetElevation = 1.0f;
+        s.isRotating = true;
+        s.isSnapping = false;
         moveCount++;
         dragging = true;
-        dragStartRotation = shapes[index].rotation;
+        dragStartRotation = s.rotation;
         dragStartAngle = gestureAngle;
+        s.targetRotation = s.rotation;
         pinching = true;
     }
 
     public void updateRotate(float gestureAngle) {
         if (!pinching || selected < 0 || selected >= shapes.length) return;
-        float delta = ShapeObject.normalizeAngle(gestureAngle - dragStartAngle);
+        ShapeObject s = shapes[selected];
+        float delta = ShapeObject.normalizeDeltaAngle(gestureAngle - dragStartAngle);
         float newRot = ShapeObject.normalizeAngle(dragStartRotation + delta);
-        shapes[selected].rotation = newRot;
+        s.targetRotation = newRot;
+        s.isRotating = true;
+        s.isSnapping = false;
 
         int detent = (int) Math.floor((newRot + 7.5f) / 15f);
-        if (shapes[selected].lastDetentIndex != -1 && shapes[selected].lastDetentIndex != detent) {
+        if (s.lastDetentIndex != -1 && s.lastDetentIndex != detent) {
             if (hapticSink != null) hapticSink.detent();
             if (chimeSink != null) chimeSink.playTick();
         }
-        shapes[selected].lastDetentIndex = detent;
+        s.lastDetentIndex = detent;
     }
 
     public void endGesture() {
         if (selected >= 0 && selected < shapes.length) {
-            shapes[selected].targetElevation = 0f;
+            ShapeObject s = shapes[selected];
+            s.targetElevation = 0f;
+            s.isDragging = false;
+            s.isRotating = false;
+            checkAndApplySnap(s);
+        }
+        for (ShapeObject s : shapes) {
+            s.isDragging = false;
+            s.isRotating = false;
         }
         dragging = false;
         pinching = false;
+    }
+
+    private void checkAndApplySnap(ShapeObject s) {
+        if (solution == null || solved) return;
+        ShapeObject bestSol = null;
+        float bestDistSq = Float.MAX_VALUE;
+
+        for (ShapeObject sol : solution) {
+            if (sol.kind == s.kind && Math.abs(sol.width - s.width) < 1f && Math.abs(sol.height - s.height) < 1f) {
+                float dx = sol.x - s.x;
+                float dy = sol.y - s.y;
+                float d2 = dx * dx + dy * dy;
+                if (d2 < bestDistSq) {
+                    bestDistSq = d2;
+                    bestSol = sol;
+                }
+            }
+        }
+
+        if (bestSol != null) {
+            float posDist = (float) Math.sqrt(bestDistSq);
+            float rotDiff = ShapeObject.computeAngularDifference(s.kind, s.rotation, bestSol.rotation);
+
+            // Lock field threshold: posDist <= 32f and rotDiff <= 10f
+            if (posDist <= 32f && rotDiff <= 10f) {
+                s.snapTo(bestSol.x, bestSol.y, bestSol.rotation);
+                if (hapticSink != null) hapticSink.tap();
+                if (chimeSink != null) chimeSink.playSnap();
+                particles.burst(s.x, s.y, 10);
+            }
+        }
+    }
+
+    private void updateResonance(float dt) {
+        if (solution == null || shapes == null) return;
+        for (int i = 0; i < shapes.length; i++) {
+            ShapeObject s = shapes[i];
+            ShapeObject bestSol = null;
+            float bestDistSq = Float.MAX_VALUE;
+
+            for (ShapeObject sol : solution) {
+                if (sol.kind == s.kind && Math.abs(sol.width - s.width) < 1f && Math.abs(sol.height - s.height) < 1f) {
+                    float dx = sol.x - s.x;
+                    float dy = sol.y - s.y;
+                    float d2 = dx * dx + dy * dy;
+                    if (d2 < bestDistSq) {
+                        bestDistSq = d2;
+                        bestSol = sol;
+                    }
+                }
+            }
+
+            if (bestSol != null) {
+                float posDist = (float) Math.sqrt(bestDistSq);
+                float rotDiff = ShapeObject.computeAngularDifference(s.kind, s.rotation, bestSol.rotation);
+
+                float posFactor = Math.max(0f, 1f - posDist / 90f);
+                float rotFactor = Math.max(0f, 1f - rotDiff / 18f);
+                float targetResonance = posFactor * rotFactor;
+
+                s.proximityResonance += (targetResonance - s.proximityResonance) * Math.min(1.0f, dt * 10f);
+            } else {
+                s.proximityResonance = 0f;
+            }
+        }
     }
 
     /** Which shape is under this point, if any. Front-most (highest index) wins. */
@@ -778,15 +879,11 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         }
         particles.update(dt, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, candleFlicker);
         for (ShapeObject s : shapes) {
-            s.updateElevation(dt);
-            // A held shape is perfectly still. That is important: a shape that
-            // wiggles under the finger makes precise placement feel impossible.
-            if (dragging && selected >= 0 && shapes[selected] == s) continue;
-
-            if (s.spin != 0f) s.rotation = ShapeObject.normalizeAngle(s.rotation + s.spin * dt);
-            if (s.vx != 0f || s.vy != 0f) {
-                s.x = ShadowCalculator.clampStageX(s.x + s.vx * dt);
-                s.y = ShadowCalculator.clampStageY(s.y + s.vy * dt);
+            s.stepPhysics(dt);
+        }
+        for (int i = 0; i < shapes.length; i++) {
+            for (int j = i + 1; j < shapes.length; j++) {
+                ShapeObject.applySoftRepulsion(shapes[i], shapes[j], dt);
             }
         }
     }

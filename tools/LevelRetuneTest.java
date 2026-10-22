@@ -1,7 +1,4 @@
-import com.mobodevs.shadowweaver.ShapeObject;
-import com.mobodevs.shadowweaver.ShadowCalculator;
-import com.mobodevs.shadowweaver.SilhouetteMatcher;
-import com.mobodevs.shadowweaver.LevelLoader;
+package com.mobodevs.shadowweaver;
 
 /**
  * Projection-retune regression test.

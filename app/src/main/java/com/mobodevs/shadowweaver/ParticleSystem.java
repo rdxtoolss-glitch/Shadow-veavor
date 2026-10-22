@@ -112,6 +112,35 @@ public class ParticleSystem {
     }
 
     /**
+     * Trigger a subtle spark burst for tactile snap assist.
+     */
+    public void burst(float cx, float cy, int count) {
+        long seed = System.nanoTime();
+        int[] palette = {0xFFFFD572, 0xFFFFE49E, 0xFFFFA834};
+        int emitted = 0;
+        for (int i = 0; i < MAX_SPARKS && emitted < count; i++) {
+            if (sparkLife[i] > 0.3f) continue; // don't clobber active celebration sparks
+            sparkX[i] = cx;
+            sparkY[i] = cy;
+
+            seed = seed * 1664525L + 1013904223L;
+            double angle = (Math.abs(seed % 6283) / 1000.0);
+            seed = seed * 1664525L + 1013904223L;
+            float speed = 80f + (Math.abs(seed % 1000) / 1000f) * 160f;
+
+            sparkVx[i] = (float) (Math.cos(angle) * speed);
+            sparkVy[i] = (float) (Math.sin(angle) * speed) - 30f;
+
+            sparkLife[i] = 0.8f;
+            seed = seed * 1664525L + 1013904223L;
+            sparkDecay[i] = 1.4f + (Math.abs(seed % 1000) / 1000f) * 0.8f; // fast fade: ~0.4s
+            sparkSize[i] = 3.0f + (Math.abs(seed % 1000) / 1000f) * 3.0f;
+            sparkColor[i] = palette[Math.abs((int) (seed % palette.length))];
+            emitted++;
+        }
+    }
+
+    /**
      * Trigger a burst of golden sparks from a central point.
      */
     public void burstCelebration(float cx, float cy) {

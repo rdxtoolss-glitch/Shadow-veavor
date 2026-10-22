@@ -74,6 +74,7 @@ public class AudioManager {
 
     // Precomputed micro-effects for instant, zero-allocation playback
     private static short[] tickBuffer;
+    private static short[] snapBuffer;
     private static short[] celebrationBuffer;
 
     // ---- State ------------------------------------------------------------
@@ -318,6 +319,17 @@ public class AudioManager {
     }
 
     /**
+     * Play a tactile wooden "thunk" with brass ring when a shape magnetically snaps into place.
+     */
+    public void playSnap() {
+        if (released || muted) return;
+        if (snapBuffer == null) {
+            snapBuffer = buildSnapBuffer();
+        }
+        playRawPcm(snapBuffer, 0.42f);
+    }
+
+    /**
      * Play a lush ascending celebratory chord arpeggio when a level is completed.
      */
     public void playCelebration() {
@@ -543,6 +555,34 @@ public class AudioManager {
             float s = (float) (Math.sin(phase) * env);
             phase += w;
             pcm[i] = (short) (s * Short.MAX_VALUE * 0.45f);
+        }
+        return pcm;
+    }
+
+    /**
+     * Build a tactile wooden thunk with subtle brass resonance for snap assist.
+     */
+    private static short[] buildSnapBuffer() {
+        final float duration = 0.14f;
+        final int n = (int) (duration * CHIME_RATE);
+        final short[] pcm = new short[n];
+        double phaseThud = 0;
+        double phaseRing = 0;
+        for (int i = 0; i < n; i++) {
+            float t = i / (float) CHIME_RATE;
+            float hzThud = 340f - 180f * (t / duration);
+            double wThud = 2.0 * Math.PI * hzThud / CHIME_RATE;
+            float envThud = (float) Math.exp(-t * 36f);
+            float sThud = (float) (Math.sin(phaseThud) * envThud * 0.7f);
+            phaseThud += wThud;
+
+            double wRing = 2.0 * Math.PI * 880.0 / CHIME_RATE;
+            float envRing = (float) Math.exp(-t * 22f);
+            float sRing = (float) (Math.sin(phaseRing) * envRing * 0.25f);
+            phaseRing += wRing;
+
+            float combined = (float) Math.tanh(sThud + sRing);
+            pcm[i] = (short) (combined * Short.MAX_VALUE * 0.55f);
         }
         return pcm;
     }

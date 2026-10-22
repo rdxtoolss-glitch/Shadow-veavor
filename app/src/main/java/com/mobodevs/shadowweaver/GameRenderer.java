@@ -129,10 +129,13 @@ final class GameRenderer {
         canvas.clipRect(0, 0, ShadowCalculator.SCENE_W, ShadowCalculator.SCENE_H);
 
         drawBackdrop(canvas, g.candleFlicker());
+        drawStageWorkbench(canvas, g.candleFlicker());
+        drawVolumetricLightRays(canvas, g.candleFlicker(), g.timeSeconds());
         drawCandle(canvas, g.candleFlicker());
         g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
         drawWall(canvas, g.candleFlicker());
         drawTargetGhost(canvas, g);
+        drawMagneticTethers(canvas, g);
         drawLightRays(canvas, g);
         // scale is handed to the shadow pass because the offscreen shadow
         // buffer is sized in real pixels, not scene units.
@@ -171,6 +174,136 @@ final class GameRenderer {
     }
 
     // ======================================================================
+    // ASTROLABE STAGE WORKBENCH
+    // ======================================================================
+
+    private static void drawStageWorkbench(Canvas c, float flicker) {
+        float l = ShadowCalculator.STAGE_LEFT;
+        float r = ShadowCalculator.STAGE_RIGHT;
+        float t = ShadowCalculator.STAGE_TOP;
+        float b = ShadowCalculator.STAGE_BOTTOM;
+
+        // Inlaid dark walnut stage surface
+        rect.set(l, t, r, b);
+        fill.setColor(0xFF1B120A);
+        c.drawRoundRect(rect, 14f, 14f, fill);
+
+        // Stage border inlay (antique brass)
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2.5f);
+        stroke.setColor(withAlpha(0xFFC5A059, (int) (110 * flicker)));
+        c.drawRoundRect(rect, 14f, 14f, stroke);
+
+        // Corner bracket flourishes
+        float cw = 28f;
+        drawCornerBracket(c, l, t, cw, 0f);
+        drawCornerBracket(c, r, t, cw, 90f);
+        drawCornerBracket(c, r, b, cw, 180f);
+        drawCornerBracket(c, l, b, cw, 270f);
+
+        // Concentric Astrolabe Coordinate Rings
+        float cx = (l + r) * 0.5f;
+        float cy = (t + b) * 0.5f;
+
+        stroke.setStrokeWidth(1.4f);
+        stroke.setColor(withAlpha(0xFFFFE0B0, 32));
+        c.drawCircle(cx, cy, 120f, stroke);
+        c.drawCircle(cx, cy, 240f, stroke);
+        c.drawCircle(cx, cy, 360f, stroke);
+
+        // Outer ring with fine degree ticks
+        stroke.setColor(withAlpha(0xFFFFD54F, (int) (55 * flicker)));
+        c.drawCircle(cx, cy, 460f, stroke);
+
+        for (int deg = 0; deg < 360; deg += 10) {
+            float rad = (float) Math.toRadians(deg);
+            boolean major = (deg % 30 == 0);
+            float len = major ? 12f : 6f;
+            float cos = (float) Math.cos(rad);
+            float sin = (float) Math.sin(rad);
+            stroke.setStrokeWidth(major ? 1.8f : 1.0f);
+            stroke.setColor(major ? withAlpha(0xFFFFD54F, 70) : withAlpha(0xFFFFE0B0, 30));
+            c.drawLine(cx + cos * (460f - len), cy + sin * (460f - len), cx + cos * 460f, cy + sin * 460f, stroke);
+        }
+
+        // Cardinal and diagonal compass azimuth rays
+        stroke.setStrokeWidth(1.2f);
+        stroke.setColor(withAlpha(0xFFFFE0B0, 20));
+        for (int deg = 0; deg < 180; deg += 45) {
+            float rad = (float) Math.toRadians(deg);
+            float cos = (float) Math.cos(rad);
+            float sin = (float) Math.sin(rad);
+            c.drawLine(cx - cos * 460f, cy - sin * 460f, cx + cos * 460f, cy + sin * 460f, stroke);
+        }
+
+        stroke.setStyle(Paint.Style.FILL);
+    }
+
+    private static void drawCornerBracket(Canvas c, float x, float y, float len, float rotDeg) {
+        int save = c.save();
+        c.translate(x, y);
+        c.rotate(rotDeg);
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2.2f);
+        stroke.setColor(0x88C5A059);
+        path.reset();
+        path.moveTo(0f, len);
+        path.lineTo(len * 0.4f, len * 0.4f);
+        path.lineTo(len, 0f);
+        c.drawPath(path, stroke);
+
+        fill.setColor(0xAAC5A059);
+        c.drawCircle(len * 0.35f, len * 0.35f, 2.5f, fill);
+        c.restoreToCount(save);
+    }
+
+    // ======================================================================
+    // VOLUMETRIC GOD RAYS
+    // ======================================================================
+
+    private static void drawVolumetricLightRays(Canvas c, float flicker, float time) {
+        float lx = ShadowCalculator.LIGHT_X;
+        float ly = ShadowCalculator.LIGHT_Y;
+
+        // 5 conical volumetric shafts fanning downward across the chamber
+        float length = 1100f;
+        float halfSpread = 8f;
+
+        glow.setStyle(Paint.Style.FILL);
+        for (int k = -2; k <= 2; k++) {
+            float baseAngle = 90f + k * 14f;
+            float wobble = 2.5f * (float) Math.sin(time * 0.8f + k * 1.3f);
+            float centerAngle = baseAngle + wobble;
+
+            float radL = (float) Math.toRadians(centerAngle - halfSpread);
+            float radR = (float) Math.toRadians(centerAngle + halfSpread);
+
+            float x1 = lx + length * (float) Math.cos(radL);
+            float y1 = ly + length * (float) Math.sin(radL);
+            float x2 = lx + length * (float) Math.cos(radR);
+            float y2 = ly + length * (float) Math.sin(radR);
+
+            path.reset();
+            path.moveTo(lx, ly);
+            path.lineTo(x1, y1);
+            path.lineTo(x2, y2);
+            path.close();
+
+            int rayAlpha = (int) ((k == 0 ? 32 : 22) * flicker);
+            glow.setShader(new LinearGradient(lx, ly, lx, ly + length,
+                    new int[]{
+                            withAlpha(0xFFFFD54F, rayAlpha),
+                            withAlpha(0xFFFFB74D, (int) (rayAlpha * 0.6f)),
+                            0x00000000
+                    },
+                    new float[]{0f, 0.4f, 1f},
+                    Shader.TileMode.CLAMP));
+            c.drawPath(path, glow);
+        }
+        glow.setShader(null);
+    }
+
+    // ======================================================================
     // CANDLE
     // ======================================================================
 
@@ -178,14 +311,12 @@ final class GameRenderer {
         float lx = ShadowCalculator.LIGHT_X;
         float ly = ShadowCalculator.LIGHT_Y;
 
-        // Broad ambient pool of light behind everything, breathing with the
-        // flame. A large, very soft radial is far cheaper than a blur and
-        // looks better for this.
-        float rOuter = 620f * (0.94f + 0.06f * flicker);
+        // Broad ambient pool of light behind everything
+        float rOuter = 650f * (0.94f + 0.06f * flicker);
         glow.setShader(new RadialGradient(lx, ly, rOuter,
                 new int[]{
-                        withAlpha(0xFFFFC46A, (int) (70 * flicker)),
-                        withAlpha(0xFFFF9A3C, 22),
+                        withAlpha(0xFFFFC46A, (int) (75 * flicker)),
+                        withAlpha(0xFFFF9A3C, 24),
                         0x00000000
                 },
                 new float[]{0f, 0.45f, 1f},
@@ -193,25 +324,71 @@ final class GameRenderer {
         c.drawCircle(lx, ly, rOuter, glow);
         glow.setShader(null);
 
-        // Wick + flame.
-        fill.setColor(0xFF6B4A2A);
-        rect.set(lx - 4f, ly + 6f, lx + 4f, ly + 40f);
+        // Candle ivory tallow pillar
+        fill.setColor(0xFFDFD4C4);
+        rect.set(lx - 10f, ly + 14f, lx + 10f, ly + 95f);
+        c.drawRoundRect(rect, 4f, 4f, fill);
+
+        // Shaded side of pillar
+        fill.setColor(0x332A180C);
+        rect.set(lx + 2f, ly + 14f, lx + 10f, ly + 95f);
+        c.drawRoundRect(rect, 4f, 4f, fill);
+
+        // Melted wax drips
+        fill.setColor(0xFFE8E0D2);
+        c.drawCircle(lx - 7f, ly + 36f, 4f, fill);
+        c.drawCircle(lx + 7f, ly + 46f, 3.5f, fill);
+        c.drawCircle(lx - 6f, ly + 58f, 3f, fill);
+
+        // Brass candleholder dish rim
+        rect.set(lx - 26f, ly + 88f, lx + 26f, ly + 98f);
+        fill.setColor(0xFFC5A059);
         c.drawRoundRect(rect, 3f, 3f, fill);
 
-        float flameH = 34f * (0.9f + 0.1f * flicker);
+        // Wick
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2.5f);
+        stroke.setColor(0xFF3E2723);
+        c.drawLine(lx, ly + 16f, lx, ly + 4f, stroke);
+        stroke.setStyle(Paint.Style.FILL);
+
+        // Multi-lobe flame
+        float flameH = 38f * (0.88f + 0.12f * flicker);
+        float flameW = 14f * (0.92f + 0.08f * flicker);
+
+        // 1. Outer warm amber corona
         path.reset();
         path.moveTo(lx, ly - flameH);
-        path.cubicTo(lx + 11f * flicker, ly - flameH * 0.45f,
-                lx + 9f, ly + 4f, lx, ly + 5f);
-        path.cubicTo(lx - 9f, ly + 4f,
-                lx - 11f * flicker, ly - flameH * 0.45f, lx, ly - flameH);
+        path.cubicTo(lx + flameW * 1.2f * flicker, ly - flameH * 0.45f,
+                lx + flameW, ly + 6f, lx, ly + 7f);
+        path.cubicTo(lx - flameW, ly + 6f,
+                lx - flameW * 1.2f * flicker, ly - flameH * 0.45f, lx, ly - flameH);
         path.close();
 
-        glow.setShader(new RadialGradient(lx, ly - flameH * 0.3f, flameH,
-                new int[]{0xFFFFF0C4, 0xFFFFC46A, 0xCCFF9A3C},
-                new float[]{0f, 0.5f, 1f},
+        glow.setShader(new RadialGradient(lx, ly - flameH * 0.35f, flameH * 1.1f,
+                new int[]{0xFFFFD54F, 0xFFFF8F00, 0x00FF6F00},
+                new float[]{0f, 0.6f, 1f},
                 Shader.TileMode.CLAMP));
         c.drawPath(path, glow);
+
+        // 2. Inner incandescent white core
+        float coreH = flameH * 0.62f;
+        float coreW = flameW * 0.52f;
+        path.reset();
+        path.moveTo(lx, ly - flameH * 0.2f - coreH);
+        path.cubicTo(lx + coreW, ly - flameH * 0.2f - coreH * 0.4f,
+                lx + coreW * 0.8f, ly + 4f, lx, ly + 4f);
+        path.cubicTo(lx - coreW * 0.8f, ly + 4f,
+                lx - coreW, ly - flameH * 0.2f - coreH * 0.4f, lx, ly - flameH * 0.2f - coreH);
+        path.close();
+
+        fill.setColor(0xFFFFFFFF);
+        c.drawPath(path, fill);
+
+        // 3. Blue wick base
+        fill.setColor(0xBB3F51B5);
+        c.drawCircle(lx, ly + 4f, 4.5f, fill);
+
         glow.setShader(null);
     }
 
@@ -270,35 +447,71 @@ final class GameRenderer {
         float[][] target = g.targetPolygons();
         if (target == null) return;
 
+        ShapeObject[] shapes = g.shapes();
+
         if (g.isSolved() || g.celebration()) {
-            // Radiant golden silhouette reveal on victory
+            // Radiant celestial constellation reveal on victory
+            fill.setColor(0xDDFFE082);
+            for (float[] poly : target) {
+                buildPath(poly);
+                c.drawPath(path, fill);
+            }
+
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(5f);
-            stroke.setColor(0x88FFD54F);
+            stroke.setStrokeWidth(4.5f);
+            stroke.setColor(0xFFFFD54F);
             for (float[] poly : target) {
                 buildPath(poly);
                 c.drawPath(path, stroke);
             }
 
-            fill.setColor(0xCCFFE082);
+            // Draw golden constellation star lines and diamond star vertices
+            stroke.setStrokeWidth(2.0f);
+            stroke.setColor(0xFFFFF9C4);
             for (float[] poly : target) {
-                buildPath(poly);
-                c.drawPath(path, fill);
+                for (int i = 0; i + 1 < poly.length; i += 2) {
+                    float vx = poly[i];
+                    float vy = poly[i + 1];
+                    fill.setColor(0xFFFFFFFF);
+                    c.drawCircle(vx, vy, 4.0f, fill);
+                    c.drawLine(vx - 7f, vy, vx + 7f, vy, stroke);
+                    c.drawLine(vx, vy - 7f, vx, vy + 7f, stroke);
+                }
             }
             stroke.setStyle(Paint.Style.FILL);
             return;
         }
 
         float match = g.matchPercent() / 100f;
-        float alpha = 0.16f * (1f - 0.50f * match);
+        float baseAlpha = 0.16f * (1f - 0.50f * match);
         if (g.isHintActive()) {
-            alpha = 0.36f;
+            baseAlpha = 0.38f;
         }
 
-        fill.setColor(withAlpha(0xFFFFE0B0, (int) (255 * alpha)));
+        // Base target ghost
+        fill.setColor(withAlpha(0xFFFFE0B0, (int) (255 * baseAlpha)));
         for (float[] poly : target) {
             buildPath(poly);
             c.drawPath(path, fill);
+        }
+
+        // Segmented Silhouette Illumination: individual aligned shapes light up!
+        if (shapes != null) {
+            for (int i = 0; i < Math.min(target.length, shapes.length); i++) {
+                ShapeObject s = shapes[i];
+                if (s.proximityResonance > 0.35f) {
+                    float t = (s.proximityResonance - 0.35f) / 0.65f;
+                    fill.setColor(withAlpha(0xFFFFCA28, (int) (130 * t)));
+                    buildPath(target[i]);
+                    c.drawPath(path, fill);
+
+                    stroke.setStyle(Paint.Style.STROKE);
+                    stroke.setStrokeWidth(2.5f + 1.5f * t);
+                    stroke.setColor(withAlpha(0xFFFFE082, (int) (190 * t)));
+                    c.drawPath(path, stroke);
+                    stroke.setStyle(Paint.Style.FILL);
+                }
+            }
         }
 
         if (g.isHintActive()) {
@@ -311,6 +524,45 @@ final class GameRenderer {
             }
             stroke.setStyle(Paint.Style.FILL);
         }
+    }
+
+    // ======================================================================
+    // MAGNETIC TETHERS
+    // ======================================================================
+
+    private static void drawMagneticTethers(Canvas c, GameThread g) {
+        ShapeObject[] shapes = g.shapes();
+        if (shapes == null || g.isSolved()) return;
+
+        stroke.setStyle(Paint.Style.STROKE);
+        for (ShapeObject s : shapes) {
+            if (s.proximityResonance > 0.25f && s.isDragging) {
+                ShapeObject sol = g.findSolutionFor(s);
+                if (sol != null) {
+                    float t = (s.proximityResonance - 0.25f) / 0.75f;
+                    int alpha = (int) (190 * t);
+                    stroke.setStrokeWidth(2.5f * t + 1.0f);
+                    stroke.setColor(withAlpha(0xFFFFD54F, alpha));
+
+                    float phase = (g.timeSeconds() * 80f) % 20f;
+                    DashPathEffect dash = new DashPathEffect(new float[]{8f, 6f}, phase);
+                    stroke.setPathEffect(dash);
+
+                    path.reset();
+                    path.moveTo(s.x, s.y);
+                    path.quadTo((s.x + sol.x) * 0.5f, (s.y + sol.y) * 0.5f - 20f * t, sol.x, sol.y);
+                    c.drawPath(path, stroke);
+
+                    stroke.setPathEffect(null);
+
+                    // Glowing target reticle at solution
+                    stroke.setStrokeWidth(1.8f);
+                    stroke.setColor(withAlpha(0xFFFFD54F, (int) (120 * t)));
+                    c.drawCircle(sol.x, sol.y, 14f * (1f - 0.3f * t), stroke);
+                }
+            }
+        }
+        stroke.setStyle(Paint.Style.FILL);
     }
 
     // ======================================================================
@@ -476,56 +728,88 @@ final class GameRenderer {
         ShapeObject[] shapes = g.shapes();
         int sel = g.selectedIndex();
         float pulse = g.selectPulse();
+        float flicker = g.candleFlicker();
 
         for (int i = 0; i < shapes.length; i++) {
             ShapeObject s = shapes[i];
+            boolean isSel = (i == sel);
+
+            int saveShape = c.save();
+
+            // Pseudo-3D velocity tilt
+            c.translate(s.x, s.y);
+            float tiltSkewX = (float) Math.tan(Math.toRadians(s.tiltY * 0.35f));
+            float tiltSkewY = (float) Math.tan(Math.toRadians(s.tiltX * 0.35f));
+            c.skew(tiltSkewX, tiltSkewY);
+            c.translate(-s.x, -s.y);
+
             float[] poly = s.applyTransform();
             buildPath(poly);
 
-            boolean isSel = (i == sel);
-
             // 1. Stage drop shadow (expands with elevation)
-            float shadowOffsetY = 12f + s.elevation * 18f;
-            float shadowAlpha = 0.22f + s.elevation * 0.16f;
+            float shadowOffsetY = 12f + s.elevation * 20f;
+            float shadowAlpha = 0.25f + s.elevation * 0.18f;
             int saveShadow = c.save();
             c.translate(0, shadowOffsetY);
             fill.setColor(withAlpha(0xFF000000, (int) (255 * shadowAlpha)));
             c.drawPath(path, fill);
             c.restoreToCount(saveShadow);
 
-            // 2. Beveled tactile token body
-            int fillA = isSel ? 0xF0 : 0xCC;
-            int bodyColor = isSel ? 0xFF4A3420 : 0xFF352416;
+            // 2. Proximity Resonance Golden Aura
+            if (s.proximityResonance > 0.05f) {
+                stroke.setStyle(Paint.Style.STROKE);
+                float auraWidth = 6f + 8f * s.proximityResonance;
+                int auraAlpha = (int) (140 * s.proximityResonance * (0.85f + 0.15f * flicker));
+                stroke.setStrokeWidth(auraWidth);
+                stroke.setColor(withAlpha(0xFFFFD54F, auraAlpha));
+                c.drawPath(path, stroke);
+                stroke.setStyle(Paint.Style.FILL);
+            }
+
+            // 3. 2.5D Crafted Obsidian Body
+            int fillA = isSel ? 0xF6 : 0xDD;
+            int bodyColor = isSel ? 0xFF3D2A18 : 0xFF2A1C12;
             fill.setColor(withAlpha(bodyColor, fillA));
             c.drawPath(path, fill);
 
-            // Perimeter brass border
+            // Directional bevel shading facing candle
             stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(2.5f);
+            stroke.setColor(withAlpha(0xFFFFE0B0, isSel ? 180 : 100));
+            c.drawPath(path, stroke);
+
+            // Perimeter polished brass border
             stroke.setStrokeWidth(isSel ? 4.5f + 1.5f * pulse : 3.0f);
             stroke.setColor(isSel
-                    ? withAlpha(0xFFFFE0B0, (int) (225 + 30 * pulse))
-                    : 0x99D8B896);
+                    ? withAlpha(0xFFFFD54F, (int) (225 + 30 * pulse))
+                    : withAlpha(0xFFD4AF37, 180));
             c.drawPath(path, stroke);
             stroke.setStyle(Paint.Style.FILL);
 
-            // Center brass pivot rivet
-            fill.setColor(isSel ? 0xFFFFD880 : 0xFFB08D5B);
-            c.drawCircle(s.x, s.y, 7f, fill);
+            // Center brass astrolabe pivot rivet
+            fill.setColor(isSel ? 0xFFFFD880 : 0xFFC5A059);
+            c.drawCircle(s.x, s.y, 8f, fill);
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(1.6f);
-            stroke.setColor(0x88000000);
-            c.drawCircle(s.x, s.y, 7f, stroke);
+            stroke.setStrokeWidth(1.8f);
+            stroke.setColor(0x882A180C);
+            c.drawCircle(s.x, s.y, 8f, stroke);
+
+            // Engraved star glyph on pivot
+            stroke.setStrokeWidth(1.2f);
+            stroke.setColor(0xFF3E2723);
+            c.drawLine(s.x - 4f, s.y, s.x + 4f, s.y, stroke);
+            c.drawLine(s.x, s.y - 4f, s.x, s.y + 4f, stroke);
             stroke.setStyle(Paint.Style.FILL);
 
-            // 3. Mechanical Precision Rotation Dial
+            // 4. Mechanical Precision Rotation Dial
             if (isSel) {
                 float r = s.maxRadius();
-                float dialR = r + 24f;
+                float dialR = r + 26f;
 
                 // Circular dial track
                 stroke.setStyle(Paint.Style.STROKE);
-                stroke.setStrokeWidth(2.0f);
-                stroke.setColor(0x38FFE0A8);
+                stroke.setStrokeWidth(2.2f);
+                stroke.setColor(0x40FFE0A8);
                 c.drawCircle(s.x, s.y, dialR, stroke);
 
                 // Notches: 15° minor, 45° semi, 90° major ticks
@@ -533,13 +817,13 @@ final class GameRenderer {
                     float rad = (float) Math.toRadians(deg);
                     boolean isMajor = (deg % 90 == 0);
                     boolean isSemi = (deg % 45 == 0);
-                    float tickLen = isMajor ? 11f : (isSemi ? 7f : 4f);
+                    float tickLen = isMajor ? 12f : (isSemi ? 8f : 5f);
                     float t1 = dialR - tickLen * 0.5f;
                     float t2 = dialR + tickLen * 0.5f;
                     float cos = (float) Math.cos(rad);
                     float sin = (float) Math.sin(rad);
                     stroke.setStrokeWidth(isMajor ? 2.5f : 1.3f);
-                    stroke.setColor(isMajor ? 0x99FFE9C4 : (isSemi ? 0x66FFE9C4 : 0x33FFE9C4));
+                    stroke.setColor(isMajor ? 0xBBFFE9C4 : (isSemi ? 0x88FFE9C4 : 0x44FFE9C4));
                     c.drawLine(s.x + cos * t1, s.y + sin * t1, s.x + cos * t2, s.y + sin * t2, stroke);
                 }
 
@@ -550,26 +834,28 @@ final class GameRenderer {
                 float hrx = s.x + dialR * cosA;
                 float hry = s.y + dialR * sinA;
 
-                stroke.setStrokeWidth(2.2f);
-                stroke.setColor(0x66FFE0A8);
+                stroke.setStrokeWidth(2.5f);
+                stroke.setColor(0x88FFE0A8);
                 c.drawLine(s.x, s.y, hrx, hry, stroke);
                 stroke.setStyle(Paint.Style.FILL);
 
-                // Rotary knob with glowing core and brass bezel
-                fill.setColor(withAlpha(0xFFFFC46A, (int) (65 + 40 * pulse)));
-                c.drawCircle(hrx, hry, 16f + 2f * pulse, fill);
+                // Rotary knob with glowing amber core and brass bezel
+                fill.setColor(withAlpha(0xFFFFC46A, (int) (70 + 45 * pulse)));
+                c.drawCircle(hrx, hry, 18f + 2f * pulse, fill);
 
-                fill.setColor(0xFFECC27D);
-                c.drawCircle(hrx, hry, 11f, fill);
+                fill.setColor(0xFFE5C07B);
+                c.drawCircle(hrx, hry, 12f, fill);
                 stroke.setStyle(Paint.Style.STROKE);
-                stroke.setStrokeWidth(2f);
-                stroke.setColor(0xFF332010);
-                c.drawCircle(hrx, hry, 11f, stroke);
+                stroke.setStrokeWidth(2.2f);
+                stroke.setColor(0xFF2E1C0F);
+                c.drawCircle(hrx, hry, 12f, stroke);
                 stroke.setStyle(Paint.Style.FILL);
 
                 fill.setColor(0xFFFFFFFF);
-                c.drawCircle(hrx, hry, 4f, fill);
+                c.drawCircle(hrx, hry, 4.5f, fill);
             }
+
+            c.restoreToCount(saveShape);
         }
     }
 

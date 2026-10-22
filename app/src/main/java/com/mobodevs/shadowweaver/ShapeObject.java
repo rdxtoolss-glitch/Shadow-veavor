@@ -44,6 +44,60 @@ public class ShapeObject {
         return a;
     }
 
+    /** Smallest signed angle difference in [-180, 180) for shortest-arc rotation. */
+    public static float normalizeDeltaAngle(float diff) {
+        float a = diff % 360f;
+        if (a > 180f) a -= 360f;
+        if (a < -180f) a += 360f;
+        return a;
+    }
+
+    /**
+     * Compute minimum angular difference taking rotational symmetry into account.
+     */
+    public static float computeAngularDifference(Kind kind, float rotA, float rotB) {
+        if (kind == Kind.CIRCLE) {
+            return 0f;
+        }
+        float diff = Math.abs(normalizeDeltaAngle(rotA - rotB));
+        if (kind == Kind.SQUARE) {
+            diff = diff % 90f;
+            if (diff > 45f) diff = 90f - diff;
+        } else if (kind == Kind.RECT || kind == Kind.LINE) {
+            diff = diff % 180f;
+            if (diff > 90f) diff = 180f - diff;
+        }
+        return diff;
+    }
+
+    /**
+     * Find the closest symmetric target angle matching the solution rotation.
+     */
+    public static float closestSymmetricAngle(Kind kind, float currentRot, float solRot) {
+        if (kind == Kind.CIRCLE) return currentRot;
+        if (kind == Kind.SQUARE) {
+            float best = solRot;
+            float minDiff = 360f;
+            for (int k = 0; k < 4; k++) {
+                float cand = normalizeAngle(solRot + k * 90f);
+                float diff = Math.abs(normalizeDeltaAngle(currentRot - cand));
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    best = cand;
+                }
+            }
+            return best;
+        }
+        if (kind == Kind.RECT || kind == Kind.LINE) {
+            float cand0 = normalizeAngle(solRot);
+            float cand1 = normalizeAngle(solRot + 180f);
+            float diff0 = Math.abs(normalizeDeltaAngle(currentRot - cand0));
+            float diff1 = Math.abs(normalizeDeltaAngle(currentRot - cand1));
+            return diff0 <= diff1 ? cand0 : cand1;
+        }
+        return solRot;
+    }
+
     public Kind kind;
     /** Full width in scene units, measured on the shape's un-rotated x axis. */
     public float width;
@@ -55,15 +109,19 @@ public class ShapeObject {
     /** Clockwise rotation in degrees, around the shape centre. */
     public float rotation;
 
-    /**
-     * Tangential drag velocity, in scene units per second. Used only to give
-     * the shapes a gentle "floating" drift when they are released. Purely
-     * cosmetic - it never affects the match outcome.
-     */
+    /** Physical drag targets and velocities. */
+    public float targetX;
+    public float targetY;
+    public float targetRotation;
     public float vx;
     public float vy;
-    /** Rotational drift, degrees per second. Cosmetic only, same as above. */
+    public float angularVelocity;
     public float spin;
+    public float mass = 1.0f;
+
+    /** Dynamic physical tilt angles (in degrees) for subtle 3D perspective cues. */
+    public float tiltX;
+    public float tiltY;
 
     /**
      * Visual elevation factor (0.0 = resting on stage, 1.0 = lifted on touch).
@@ -72,11 +130,147 @@ public class ShapeObject {
     public float elevation;
     public float targetElevation;
     public boolean isDragging;
+    public boolean isRotating;
+    public boolean isSnapping;
+    public float proximityResonance;
     public int lastDetentIndex = -1;
 
     public void updateElevation(float dt) {
         float speed = 16f;
         elevation += (targetElevation - elevation) * Math.min(1.0f, dt * speed);
+    }
+
+    public void snapTo(float solX, float solY, float solRot) {
+        this.targetX = solX;
+        this.targetY = solY;
+        this.targetRotation = closestSymmetricAngle(this.kind, this.rotation, solRot);
+        this.isSnapping = true;
+        this.isDragging = false;
+        this.isRotating = false;
+    }
+
+    /**
+     * Step physical dynamics: spring-mass drag, viscous decay, boundary bounce, and rotation.
+     */
+    public void stepPhysics(float dt) {
+        if (dt <= 0f) return;
+        if (dt > 0.05f) dt = 0.05f; // cap physics dt to prevent tunnelling
+
+        if (isDragging || isSnapping) {
+            // Spring-mass-damper tracking to target
+            float dx = targetX - x;
+            float dy = targetY - y;
+            float k = isSnapping ? 260f : 180f;
+            float c = isSnapping ? 26f : 18f;
+            float fx = k * dx - c * vx;
+            float fy = k * dy - c * vy;
+            vx += (fx / mass) * dt;
+            vy += (fy / mass) * dt;
+            x += vx * dt;
+            y += vy * dt;
+
+            if (isSnapping && Math.abs(dx) < 0.2f && Math.abs(dy) < 0.2f && Math.abs(vx) < 0.5f && Math.abs(vy) < 0.5f) {
+                x = targetX;
+                y = targetY;
+                vx = 0f;
+                vy = 0f;
+            }
+
+            // Pseudo-3D tilt from velocity
+            float desiredTiltX = -vy * 0.04f;
+            float desiredTiltY = vx * 0.04f;
+            tiltX += (desiredTiltX - tiltX) * Math.min(1.0f, dt * 14f);
+            tiltY += (desiredTiltY - tiltY) * Math.min(1.0f, dt * 14f);
+        } else {
+            // Inertial glide with exponential surface friction
+            x += vx * dt;
+            y += vy * dt;
+            float friction = (float) Math.pow(0.08f, dt);
+            vx *= friction;
+            vy *= friction;
+            if (Math.abs(vx) < 0.4f) vx = 0f;
+            if (Math.abs(vy) < 0.4f) vy = 0f;
+
+            // Tilt relaxes to zero
+            tiltX *= (float) Math.pow(0.05f, dt);
+            tiltY *= (float) Math.pow(0.05f, dt);
+
+            if (spin != 0f) {
+                rotation = normalizeAngle(rotation + spin * dt);
+            }
+        }
+
+        // Boundary collision with soft restitution bounce
+        float minX = ShadowCalculator.STAGE_LEFT;
+        float maxX = ShadowCalculator.STAGE_RIGHT;
+        float minY = ShadowCalculator.STAGE_TOP;
+        float maxY = ShadowCalculator.STAGE_BOTTOM;
+        float restitution = 0.28f;
+
+        if (x < minX) {
+            x = minX;
+            vx = Math.abs(vx) * restitution;
+        } else if (x > maxX) {
+            x = maxX;
+            vx = -Math.abs(vx) * restitution;
+        }
+
+        if (y < minY) {
+            y = minY;
+            vy = Math.abs(vy) * restitution;
+        } else if (y > maxY) {
+            y = maxY;
+            vy = -Math.abs(vy) * restitution;
+        }
+
+        // Rotation physics
+        if (isRotating || isSnapping) {
+            float dRot = normalizeDeltaAngle(targetRotation - rotation);
+            float kRot = isSnapping ? 240f : 160f;
+            float cRot = isSnapping ? 24f : 18f;
+            float torque = kRot * dRot - cRot * angularVelocity;
+            angularVelocity += torque * dt;
+            rotation = normalizeAngle(rotation + angularVelocity * dt);
+            if (isSnapping && Math.abs(dRot) < 0.2f && Math.abs(angularVelocity) < 0.5f) {
+                rotation = targetRotation;
+                angularVelocity = 0f;
+                isSnapping = false;
+            }
+        } else if (angularVelocity != 0f) {
+            rotation = normalizeAngle(rotation + angularVelocity * dt);
+            angularVelocity *= (float) Math.pow(0.12f, dt);
+            if (Math.abs(angularVelocity) < 0.4f) angularVelocity = 0f;
+        }
+
+        updateElevation(dt);
+    }
+
+    /**
+     * Soft elastic repulsion between two tokens to prevent stacking.
+     */
+    public static void applySoftRepulsion(ShapeObject a, ShapeObject b, float dt) {
+        if (a == null || b == null) return;
+        float dx = b.x - a.x;
+        float dy = b.y - a.y;
+        float distSq = dx * dx + dy * dy;
+        float minDist = (a.baseRadius() + b.baseRadius()) * 0.65f;
+
+        if (distSq > 0.001f && distSq < minDist * minDist) {
+            float dist = (float) Math.sqrt(distSq);
+            float overlap = minDist - dist;
+            float nx = dx / dist;
+            float ny = dy / dist;
+            float repelForce = overlap * 48f;
+
+            if (!a.isDragging) {
+                a.vx -= nx * repelForce * dt;
+                a.vy -= ny * repelForce * dt;
+            }
+            if (!b.isDragging) {
+                b.vx += nx * repelForce * dt;
+                b.vy += ny * repelForce * dt;
+            }
+        }
     }
 
     public ShapeObject(Kind kind, float width, float height, float x, float y, float rotation) {
@@ -86,6 +280,9 @@ public class ShapeObject {
         this.x = x;
         this.y = y;
         this.rotation = rotation;
+        this.targetX = x;
+        this.targetY = y;
+        this.targetRotation = rotation;
     }
 
     /** Corner-to-corner radius of the un-rotated shape; handy for hit tests. */
