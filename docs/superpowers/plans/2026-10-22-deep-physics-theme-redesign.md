@@ -34,19 +34,19 @@
 - Modify: `app/src/main/java/com/mobodevs/shadowweaver/GameThread.java`
 - Create: `tools/PhysicsSimulationTest.java`
 
-- [ ] **Step 1:** Write `tools/PhysicsSimulationTest.java` to test spring-mass drag damping, inertial glide decay, boundary bounce restitution, and inter-token repulsion.
-- [ ] **Step 2:** Run `PhysicsSimulationTest` to verify it runs and catches missing physics parameters.
-- [ ] **Step 3:** Implement physical dynamics in `ShapeObject.java`:
+- [x] **Step 1:** Write `tools/PhysicsSimulationTest.java` to test spring-mass drag damping, inertial glide decay, boundary bounce restitution, and inter-token repulsion.
+- [x] **Step 2:** Run `PhysicsSimulationTest` to verify it runs and catches missing physics parameters.
+- [x] **Step 3:** Implement physical dynamics in `ShapeObject.java`:
   - Target tracking point `(targetX, targetY)`
   - Velocity `(vx, vy)` and acceleration `(ax, ay)`
   - Angular velocity `angularVelocity` and angular target
   - Mass, drag damping factor, and tilt angles `(tiltX, tiltY)`
-- [ ] **Step 4:** Implement physics update loop in `GameThread.java`:
+- [x] **Step 4:** Implement physics update loop in `GameThread.java`:
   - Symplectic Euler integration for spring drag
   - Boundary collision with restitution bounce
   - Exponential surface friction decay
   - Inter-token soft repulsion
-- [ ] **Step 5:** Run `PhysicsSimulationTest` and confirm all tests pass.
+- [x] **Step 5:** Run `PhysicsSimulationTest` and confirm all tests pass.
 
 ---
 
@@ -57,10 +57,10 @@
 - Modify: `app/src/main/java/com/mobodevs/shadowweaver/GameThread.java`
 - Create: `tools/SnapAssistTest.java`
 
-- [ ] **Step 1:** Write `tools/SnapAssistTest.java` testing proximity calculation to solution targets and snap locking.
-- [ ] **Step 2:** Implement per-shape solution tracking and alignment calculation in `GameThread.java`.
-- [ ] **Step 3:** Implement magnetic resonance zone and release-to-snap assist logic in `GameThread.java`.
-- [ ] **Step 4:** Run `SnapAssistTest` and confirm tests pass.
+- [x] **Step 1:** Write `tools/SnapAssistTest.java` testing proximity calculation to solution targets and snap locking.
+- [x] **Step 2:** Implement per-shape solution tracking and alignment calculation in `GameThread.java`.
+- [x] **Step 3:** Implement magnetic resonance zone and release-to-snap assist logic in `GameThread.java`.
+- [x] **Step 4:** Run `SnapAssistTest` and confirm tests pass.
 
 ---
 
@@ -69,11 +69,11 @@
 **Files:**
 - Modify: `app/src/main/java/com/mobodevs/shadowweaver/GameRenderer.java`
 
-- [ ] **Step 1:** Render the Astrolabe Workbench stage with inlaid concentric celestial coordinate rings, radiant compass rose, and degree markings.
-- [ ] **Step 2:** Render volumetric golden god rays radiating downward from the candle flame.
-- [ ] **Step 3:** Render the living candle flame with realistic multi-lobe teardrop (blue inner wick, white core, warm amber halo).
-- [ ] **Step 4:** Render 2.5D crafted obsidian and brass tokens with directional bevel shading, specular light reflections, and center astrolabe pivot rivets.
-- [ ] **Step 5:** Render magnetic resonance tethers, proximity halos, and glowing segmented silhouette illumination on puzzle solve.
+- [x] **Step 1:** Render the Astrolabe Workbench stage with inlaid concentric celestial coordinate rings, radiant compass rose, and degree markings.
+- [x] **Step 2:** Render volumetric golden god rays radiating downward from the candle flame.
+- [x] **Step 3:** Render the living candle flame with realistic multi-lobe teardrop (blue inner wick, white core, warm amber halo).
+- [x] **Step 4:** Render 2.5D crafted obsidian and brass tokens with directional bevel shading, specular light reflections, and center astrolabe pivot rivets.
+- [x] **Step 5:** Render magnetic resonance tethers, proximity halos, and glowing segmented silhouette illumination on puzzle solve.
 
 ---
 
@@ -82,9 +82,9 @@
 **Files:**
 - Modify: `app/src/main/java/com/mobodevs/shadowweaver/AudioManager.java`
 
-- [ ] **Step 1:** Add procedural magnetic snap "thunk" sound effect.
-- [ ] **Step 2:** Add proximity resonance tone feedback.
-- [ ] **Step 3:** Verify audio buffer synthesis against `android.jar`.
+- [x] **Step 1:** Add procedural magnetic snap "thunk" sound effect.
+- [x] **Step 2:** Add proximity resonance tone feedback.
+- [x] **Step 3:** Verify audio buffer synthesis against `android.jar`.
 
 ---
 
@@ -93,6 +93,6 @@
 **Files:**
 - Verify: All files and test suites
 
-- [ ] **Step 1:** Run all JVM test suites (`LevelDesignTest`, `LevelRetuneTest`, `ParticleSystemTest`, `LevelProgressTest`, `PhysicsSimulationTest`, `SnapAssistTest`).
-- [ ] **Step 2:** Assemble debug APK with `./gradlew.bat assembleDebug` and update root `ShadowWeaver.apk`.
-- [ ] **Step 3:** Commit all changes with a comprehensive descriptive commit message and push to GitHub `origin/main`.
+- [x] **Step 1:** Run all JVM test suites (`LevelDesignTest`, `LevelRetuneTest`, `ParticleSystemTest`, `LevelProgressTest`, `PhysicsSimulationTest`, `SnapAssistTest`).
+- [x] **Step 2:** Assemble debug APK with `./gradlew.bat assembleDebug` and update root `ShadowWeaver.apk`.
+- [x] **Step 3:** Commit all changes with a comprehensive descriptive commit message and push to GitHub `origin/main`.
