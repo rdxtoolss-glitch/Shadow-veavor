@@ -4,205 +4,315 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 
 /**
  * Shadow Weaver - LevelSelectOverlay
  * ==================================
- * Modern chapter grid with star ratings, lock states, and instant navigation.
+ * 3-Chapter navigation interface with chapter tabs, star ratings,
+ * best times, lock states, and tactile press responsiveness.
  */
-final class LevelSelectOverlay {
+public final class LevelSelectOverlay {
 
-    enum Action {
+    public enum Action {
         NONE, PICKED, CLOSE
     }
 
-    private static final int COLUMNS = 5;
-    private static final int ROWS = 3;
+    public static final int CHAPTERS = 3;
+    public static final int LEVELS_PER_CHAPTER = 5;
 
-    private static final RectF rect = new RectF();
-    private static final Path starPath = new Path();
+    private static int activeChapter = 0;
+    private static int lastPickedLevel = -1;
+
     private static final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private static final Path starPath = new Path();
+    private static final RectF rect = new RectF();
 
-    private static final float[] CELL_L = new float[COLUMNS * ROWS];
-    private static final float[] CELL_T = new float[COLUMNS * ROWS];
-    private static final float[] CELL_R = new float[COLUMNS * ROWS];
-    private static final float[] CELL_B = new float[COLUMNS * ROWS];
+    // Chapter Tabs
+    private static final float[] TAB_L = new float[CHAPTERS];
+    private static final float[] TAB_T = new float[CHAPTERS];
+    private static final float[] TAB_R = new float[CHAPTERS];
+    private static final float[] TAB_B = new float[CHAPTERS];
 
-    private static float closeL, closeT, closeR, closeB;
+    // 5 Level Cards in current chapter
+    private static final float[] CARD_L = new float[LEVELS_PER_CHAPTER];
+    private static final float[] CARD_T = new float[LEVELS_PER_CHAPTER];
+    private static final float[] CARD_R = new float[LEVELS_PER_CHAPTER];
+    private static final float[] CARD_B = new float[LEVELS_PER_CHAPTER];
+
+    private static final UiButton btnBack = new UiButton();
+    private static boolean layoutReady;
 
     private static void layout() {
-        float padX = 56f;
-        float top = 310f;
-        float gap = 18f;
-        float cellW = (ShadowCalculator.SCENE_W - padX * 2 - gap * (COLUMNS - 1)) / COLUMNS;
-        float cellH = 158f;
-        float gapY = 20f;
+        if (layoutReady) return;
 
-        for (int i = 0; i < COLUMNS * ROWS; i++) {
-            int col = i % COLUMNS;
-            int row = i / COLUMNS;
-            float l = padX + col * (cellW + gap);
-            float t = top + row * (cellH + gapY);
-            CELL_L[i] = l;
-            CELL_T[i] = t;
-            CELL_R[i] = l + cellW;
-            CELL_B[i] = t + cellH;
+        float cx = ShadowCalculator.SCENE_W * 0.5f;
+        float padX = 60f;
+
+        // Chapter Tabs
+        float tabTop = 220f;
+        float tabH = 68f;
+        float tabGap = 16f;
+        float tabW = (ShadowCalculator.SCENE_W - padX * 2 - tabGap * (CHAPTERS - 1)) / CHAPTERS;
+
+        for (int i = 0; i < CHAPTERS; i++) {
+            float l = padX + i * (tabW + tabGap);
+            TAB_L[i] = l;
+            TAB_T[i] = tabTop;
+            TAB_R[i] = l + tabW;
+            TAB_B[i] = tabTop + tabH;
         }
 
-        float cw = 220f;
-        closeL = (ShadowCalculator.SCENE_W - cw) * 0.5f;
-        closeR = closeL + cw;
-        closeT = top + ROWS * (cellH + gapY) + 32f;
-        closeB = closeT + 58f;
+        // 5 Level Cards (arranged as 3 top, 2 bottom centered)
+        float cardTop = 330f;
+        float cardW = 260f;
+        float cardH = 210f;
+        float gapX = 30f;
+        float gapY = 24f;
+
+        // Row 1 (Levels 1, 2, 3 in chapter)
+        float row1W = cardW * 3 + gapX * 2;
+        float row1L = cx - row1W * 0.5f;
+        for (int i = 0; i < 3; i++) {
+            float l = row1L + i * (cardW + gapX);
+            CARD_L[i] = l;
+            CARD_T[i] = cardTop;
+            CARD_R[i] = l + cardW;
+            CARD_B[i] = cardTop + cardH;
+        }
+
+        // Row 2 (Levels 4, 5 in chapter)
+        float row2W = cardW * 2 + gapX;
+        float row2L = cx - row2W * 0.5f;
+        float row2T = cardTop + cardH + gapY;
+        for (int i = 3; i < 5; i++) {
+            float l = row2L + (i - 3) * (cardW + gapX);
+            CARD_L[i] = l;
+            CARD_T[i] = row2T;
+            CARD_R[i] = l + cardW;
+            CARD_B[i] = row2T + cardH;
+        }
+
+        // Back Button
+        float btnW = 320f;
+        float btnH = 68f;
+        float btnY = row2T + cardH + 48f;
+        btnBack.setBounds(cx - btnW * 0.5f, btnY, cx + btnW * 0.5f, btnY + btnH);
+        btnBack.cornerRadius = 16f;
+
+        layoutReady = true;
     }
 
-    static Action hitTest(float sceneX, float sceneY, int unlocked) {
-        return hitTestResult(pickedLevel(sceneX, sceneY, unlocked), sceneX, sceneY);
+    public static int getPickedLevel() {
+        return lastPickedLevel;
     }
 
-    static int pickedLevel(float sceneX, float sceneY, int unlocked) {
+    public static int getActiveChapter() {
+        return activeChapter;
+    }
+
+    public static void setActiveChapterForLevel(int levelIndex) {
+        if (levelIndex >= 0 && levelIndex < LevelLoader.count()) {
+            activeChapter = levelIndex / LEVELS_PER_CHAPTER;
+        }
+    }
+
+    public static Action onTouchDown(float sx, float sy, int unlocked) {
         layout();
-        for (int i = 0; i < COLUMNS * ROWS; i++) {
-            if (i > unlocked) continue;
-            if (sceneX >= CELL_L[i] && sceneX <= CELL_R[i]
-                    && sceneY >= CELL_T[i] && sceneY <= CELL_B[i]) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private static Action hitTestResult(int picked, float sceneX, float sceneY) {
-        if (picked >= 0) return Action.PICKED;
-        if (sceneX >= closeL && sceneX <= closeR
-                && sceneY >= closeT && sceneY <= closeB) {
-            return Action.CLOSE;
-        }
+        btnBack.isPressed = btnBack.hitTest(sx, sy);
         return Action.NONE;
     }
 
-    static void draw(Canvas c, LevelProgress progress, int current) {
-        int unlocked = progress != null ? progress.getHighestUnlocked() : current;
-        drawInternal(c, progress, unlocked, current);
-    }
-
-    static void draw(Canvas c, int unlocked, int current) {
-        drawInternal(c, null, unlocked, current);
-    }
-
-    private static void drawInternal(Canvas c, LevelProgress progress, int unlocked, int current) {
+    public static Action onTouchUp(float sx, float sy, int unlocked) {
         layout();
 
-        // Dark modal backdrop
-        fill.setColor(0xF0100703);
-        c.drawRect(0, 0, ShadowCalculator.SCENE_W, ShadowCalculator.SCENE_H, fill);
+        // 1. Back button
+        if (btnBack.isPressed && btnBack.hitTest(sx, sy)) {
+            btnBack.isPressed = false;
+            return Action.CLOSE;
+        }
+        btnBack.isPressed = false;
 
-        float cx = ShadowCalculator.SCENE_W * 0.5f;
+        // 2. Chapter tabs
+        for (int i = 0; i < CHAPTERS; i++) {
+            if (sx >= TAB_L[i] && sx <= TAB_R[i] && sy >= TAB_T[i] && sy <= TAB_B[i]) {
+                activeChapter = i;
+                return Action.NONE;
+            }
+        }
 
-        // Title
+        // 3. Level Cards
+        for (int i = 0; i < LEVELS_PER_CHAPTER; i++) {
+            int globalLevel = activeChapter * LEVELS_PER_CHAPTER + i;
+            if (globalLevel > unlocked) continue;
+
+            if (sx >= CARD_L[i] && sx <= CARD_R[i] && sy >= CARD_T[i] && sy <= CARD_B[i]) {
+                lastPickedLevel = globalLevel;
+                return Action.PICKED;
+            }
+        }
+
+        return Action.NONE;
+    }
+
+    public static void cancelPress() {
+        btnBack.isPressed = false;
+    }
+
+    public static void draw(Canvas c, LevelProgress progress, int currentLevel) {
+        layout();
+
+        int unlocked = (progress != null) ? progress.getHighestUnlocked() : currentLevel;
+        float sw = ShadowCalculator.SCENE_W;
+        float sh = ShadowCalculator.SCENE_H;
+        float cx = sw * 0.5f;
+
+        // 1. Modal Scrim Backdrop
+        fill.setColor(0xF6100905);
+        c.drawRect(0, 0, sw, sh, fill);
+
+        // 2. Header
         text.setTextAlign(Paint.Align.CENTER);
+        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTextSize(44f);
         text.setColor(0xFFFFE9C4);
-        text.setTextSize(46f);
-        text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        c.drawText("SHADOW WEAVER", cx, 140f, text);
+        c.drawText("CHAPTER MAP", cx, 110f, text);
 
-        text.setColor(0xBBF0DFC6);
-        text.setTextSize(22f);
-        text.setTypeface(android.graphics.Typeface.DEFAULT);
-        int totalStars = progress != null ? progress.getTotalStars() : 0;
-        c.drawText("CHAPTER I  *  " + totalStars + " / 45 STARS", cx, 186f, text);
-
-        // Subtitle instructions
-        text.setColor(0x88F0DFC6);
         text.setTextSize(20f);
-        c.drawText("Select a constellation to shape its shadow", cx, 230f, text);
+        text.setTypeface(Typeface.DEFAULT);
+        text.setColor(0x99FFE0B0);
 
-        // 15 Level Cells
-        for (int i = 0; i < COLUMNS * ROWS; i++) {
-            int stars = progress != null ? progress.getStars(i) : (i < unlocked ? 1 : 0);
-            drawCell(c, i, unlocked, current, stars);
-        }
+        String[] chapterNames = {
+                "CHAPTER I: THE APPRENTICE'S STUDY",
+                "CHAPTER II: THE ALCHEMIST'S CHAMBER",
+                "CHAPTER III: THE CELESTIAL OBSERVATORY"
+        };
+        c.drawText(chapterNames[activeChapter], cx, 150f, text);
 
-        // Back / Close button
-        rect.set(closeL, closeT, closeR, closeB);
-        fill.setColor(0x33FFC98A);
-        c.drawRoundRect(rect, 14f, 14f, fill);
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2f);
-        stroke.setColor(0x88FFE0A8);
-        c.drawRoundRect(rect, 14f, 14f, stroke);
-        stroke.setStyle(Paint.Style.FILL);
+        // 3. Chapter Tabs
+        String[] roman = {"CHAPTER I", "CHAPTER II", "CHAPTER III"};
+        for (int i = 0; i < CHAPTERS; i++) {
+            boolean isSel = (i == activeChapter);
+            boolean isUnlocked = (progress == null || progress.isChapterUnlocked(i));
+            rect.set(TAB_L[i], TAB_T[i], TAB_R[i], TAB_B[i]);
 
-        text.setColor(0xFFFFFFFF);
-        text.setTextSize(26f);
-        text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        c.drawText("RESUME", cx, closeT + 38f, text);
+            fill.setColor(isSel ? 0xFFC5943C : (isUnlocked ? 0x991E140C : 0x44140C07));
+            c.drawRoundRect(rect, 14f, 14f, fill);
 
-        text.setTextAlign(Paint.Align.LEFT);
-    }
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(isSel ? 2.2f : 1.2f);
+            stroke.setColor(isSel ? 0xFFFFE0A8 : (isUnlocked ? 0x66C5A059 : 0x22665544));
+            c.drawRoundRect(rect, 14f, 14f, stroke);
+            stroke.setStyle(Paint.Style.FILL);
 
-    private static void drawCell(Canvas c, int i, int unlocked, int current, int stars) {
-        boolean locked = i > unlocked;
-        boolean isCurrent = i == current;
-        LevelData d = LevelLoader.get(i);
+            float tabCx = (TAB_L[i] + TAB_R[i]) * 0.5f;
+            float tabCy = (TAB_T[i] + TAB_B[i]) * 0.5f;
 
-        rect.set(CELL_L[i], CELL_T[i], CELL_R[i], CELL_B[i]);
-        if (locked) {
-            fill.setColor(0x1A20150D);
-        } else if (isCurrent) {
-            fill.setColor(0x55B37834);
-        } else {
-            fill.setColor(0x332A1C12);
-        }
-        c.drawRoundRect(rect, 16f, 16f, fill);
-
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(isCurrent ? 2.6f : 1.5f);
-        stroke.setColor(isCurrent ? 0xFFFFE0A8 : (locked ? 0x22FFFFFF : 0x55FFE0A8));
-        c.drawRoundRect(rect, 16f, 16f, stroke);
-        stroke.setStyle(Paint.Style.FILL);
-
-        float cx = (CELL_L[i] + CELL_R[i]) * 0.5f;
-
-        // Level Number
-        text.setTextAlign(Paint.Align.CENTER);
-        text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        text.setTextSize(42f);
-
-        if (locked) {
-            text.setColor(0x33F0DFC6);
-            c.drawText(String.valueOf(i + 1), cx, CELL_T[i] + 58f, text);
-            drawPadlock(c, cx, CELL_T[i] + 96f, 0x44F0DFC6);
-        } else {
-            text.setColor(0xFFF0DFC6);
-            c.drawText(String.valueOf(i + 1), cx, CELL_T[i] + 54f, text);
-
-            // Title
-            text.setColor(0xAAF0DFC6);
             text.setTextSize(18f);
-            text.setTypeface(android.graphics.Typeface.DEFAULT);
-            c.drawText(fit(d.title, (CELL_R[i] - CELL_L[i]) * 0.88f, 18f),
-                    cx, CELL_T[i] + 86f, text);
+            text.setTypeface(Typeface.DEFAULT_BOLD);
+            text.setColor(isSel ? 0xFF1E1005 : (isUnlocked ? 0xFFF0DFC6 : 0x44FFE0A8));
+            c.drawText(roman[i], tabCx, tabCy - 4f, text);
 
-            // Star rating row
-            drawStars(c, cx, CELL_T[i] + 124f, stars);
+            int chapterStars = (progress != null) ? progress.getChapterStars(i) : 0;
+            text.setTextSize(14f);
+            text.setTypeface(Typeface.DEFAULT);
+            text.setColor(isSel ? 0xCC351C08 : (isUnlocked ? 0x99D5C4A8 : 0x33FFE0A8));
+            c.drawText("⭐ " + chapterStars + "/15", tabCx, tabCy + 18f, text);
         }
 
+        // 4. 5 Level Cards for Active Chapter
+        for (int i = 0; i < LEVELS_PER_CHAPTER; i++) {
+            int globalLevel = activeChapter * LEVELS_PER_CHAPTER + i;
+            boolean isUnlocked = (globalLevel <= unlocked);
+            boolean isCurrent = (globalLevel == currentLevel);
+            int stars = (progress != null) ? progress.getStars(globalLevel) : 0;
+            boolean isSolved = (stars > 0);
+
+            float l = CARD_L[i];
+            float t = CARD_T[i];
+            float r = CARD_R[i];
+            float b = CARD_B[i];
+            float cardCx = (l + r) * 0.5f;
+            rect.set(l, t, r, b);
+
+            // Card background
+            if (isCurrent) {
+                fill.setColor(0xDD3A2516);
+            } else if (isSolved) {
+                fill.setColor(0xCC26180E);
+            } else if (isUnlocked) {
+                fill.setColor(0xAA1C120A);
+            } else {
+                fill.setColor(0x55120B06);
+            }
+            c.drawRoundRect(rect, 18f, 18f, fill);
+
+            // Card border
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(isCurrent ? 3.0f : (isSolved ? 2.0f : 1.2f));
+            stroke.setColor(isCurrent ? 0xFFFFD54F : (isSolved ? 0xAAC5A059 : (isUnlocked ? 0x55C5A059 : 0x22665544)));
+            c.drawRoundRect(rect, 18f, 18f, stroke);
+            stroke.setStyle(Paint.Style.FILL);
+
+            LevelData data = LevelLoader.get(globalLevel);
+            String title = (data != null) ? data.title : ("Trial " + (globalLevel + 1));
+
+            // Level number
+            text.setTextSize(22f);
+            text.setTypeface(Typeface.DEFAULT_BOLD);
+            text.setColor(isUnlocked ? 0xFFFFD54F : 0x44FFE0B0);
+            c.drawText(String.valueOf(globalLevel + 1), cardCx, t + 36f, text);
+
+            if (isUnlocked) {
+                // Title
+                text.setTextSize(24f);
+                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setColor(0xFFF0DFC6);
+                c.drawText(title, cardCx, t + 80f, text);
+
+                // Stars row
+                drawStarsRow(c, cardCx, t + 125f, stars);
+
+                // Best time
+                long best = (progress != null) ? progress.getBestTime(globalLevel) : 0L;
+                text.setTextSize(17f);
+                text.setTypeface(Typeface.DEFAULT);
+                text.setColor(0x99D5C4A8);
+                if (best > 0L) {
+                    c.drawText("Best: " + (best / 1000L) + "s", cardCx, t + 172f, text);
+                } else {
+                    c.drawText(isCurrent ? "Current" : "Open", cardCx, t + 172f, text);
+                }
+            } else {
+                // Locked Padlock
+                drawPadlock(c, cardCx, t + 90f);
+
+                text.setTextSize(18f);
+                text.setTypeface(Typeface.DEFAULT);
+                text.setColor(0x44FFE0B0);
+                c.drawText("Locked", cardCx, t + 150f, text);
+            }
+        }
+
+        // 5. Back Button
+        btnBack.label = "MAIN MENU";
+        btnBack.draw(c, fill, stroke, text, 1.0f);
         text.setTextAlign(Paint.Align.LEFT);
     }
 
-    private static void drawStars(Canvas c, float cx, float cy, int stars) {
-        float spacing = 26f;
-        float r = 9f;
+    private static void drawStarsRow(Canvas c, float cx, float cy, int stars) {
+        float spacing = 32f;
         for (int i = 0; i < 3; i++) {
             float sx = cx + (i - 1) * spacing;
-            drawStar(c, sx, cy, r, i < stars);
+            boolean filled = (i < stars);
+            fill.setColor(filled ? 0xFFFFD54F : 0x33FFE0A8);
+            drawStarPath(c, sx, cy, 11f);
         }
     }
 
-    private static void drawStar(Canvas c, float cx, float cy, float r, boolean filled) {
+    private static void drawStarPath(Canvas c, float cx, float cy, float r) {
         starPath.reset();
         for (int i = 0; i < 10; i++) {
             float rad = (float) Math.toRadians(i * 36 - 90);
@@ -213,42 +323,19 @@ final class LevelSelectOverlay {
             else starPath.lineTo(px, py);
         }
         starPath.close();
-
-        if (filled) {
-            fill.setColor(0xFFFFD54F);
-            c.drawPath(starPath, fill);
-        } else {
-            stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(1.2f);
-            stroke.setColor(0x33FFE0A8);
-            c.drawPath(starPath, stroke);
-            stroke.setStyle(Paint.Style.FILL);
-        }
+        c.drawPath(starPath, fill);
     }
 
-    private static void drawPadlock(Canvas c, float cx, float cy, int color) {
+    private static void drawPadlock(Canvas c, float cx, float cy) {
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.2f);
-        stroke.setColor(color);
-        rect.set(cx - 5.5f, cy - 5f, cx + 5.5f, cy + 1.5f);
-        c.drawArc(rect, 180f, 180f, false, stroke);
+        stroke.setStrokeWidth(2.5f);
+        stroke.setColor(0x44A09080);
+        rect.set(cx - 12f, cy - 20f, cx + 12f, cy - 2f);
+        c.drawArc(rect, 180, 180, false, stroke);
 
-        fill.setColor(color);
-        rect.set(cx - 9f, cy - 1f, cx + 9f, cy + 11f);
-        c.drawRoundRect(rect, 2.5f, 2.5f, fill);
+        fill.setColor(0x44A09080);
+        rect.set(cx - 15f, cy - 4f, cx + 15f, cy + 18f);
+        c.drawRoundRect(rect, 4f, 4f, fill);
         stroke.setStyle(Paint.Style.FILL);
-    }
-
-    private static final String ELLIPSIS = "\u2026";
-
-    private static String fit(String s, float maxWidth, float textSize) {
-        if (s == null) return "";
-        text.setTextSize(textSize);
-        if (text.measureText(s) <= maxWidth) return s;
-        String out = s;
-        while (out.length() > 1 && text.measureText(out + ELLIPSIS) > maxWidth) {
-            out = out.substring(0, out.length() - 1);
-        }
-        return out + ELLIPSIS;
     }
 }

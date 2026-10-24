@@ -105,6 +105,14 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onBackPressed() {
+        if (gameView != null && gameView.handleBackPress()) {
+            return;
+        }
+        super.onBackPressed();
+    }
+
+    @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {

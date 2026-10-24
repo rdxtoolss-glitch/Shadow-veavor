@@ -101,6 +101,49 @@ public class LevelProgress {
         return sum;
     }
 
+    public static final int TOTAL_MAX_STARS = LevelLoader.count() * 3;
+
+    public String getPlayerRank() {
+        int total = getTotalStars();
+        if (total >= 45) return "Grand Alchemist of the Cosmos";
+        if (total >= 30) return "Master Shadow Weaver";
+        if (total >= 15) return "Adept of the Astral Loom";
+        return "Apprentice of Shadows";
+    }
+
+    public String getPlayerRankDescription() {
+        int total = getTotalStars();
+        if (total >= 45) return "Supreme mastery over light, perspective, and astral geometry.";
+        if (total >= 30) return "Skilled at bending shadows and solving celestial mysteries.";
+        if (total >= 15) return "Growing familiarity with the antique astrolabe and shadow manipulation.";
+        return "Beginning your journey into the study of shadows and candlelight.";
+    }
+
+    public int getChapterStars(int chapter) {
+        int start = chapter * 5;
+        int end = Math.min(start + 5, stars.length);
+        int sum = 0;
+        for (int i = start; i < end; i++) {
+            sum += stars[i];
+        }
+        return sum;
+    }
+
+    public boolean isChapterUnlocked(int chapter) {
+        if (chapter == 0) return true;
+        int startLevel = chapter * 5;
+        return highestUnlocked >= startLevel;
+    }
+
+    public void resetAllProgress(Context context) {
+        highestUnlocked = 0;
+        for (int i = 0; i < stars.length; i++) {
+            stars[i] = 0;
+            bestTimes[i] = 0L;
+        }
+        save(context);
+    }
+
     // ---- Persistence -------------------------------------------------------
 
     public void load(Context context) {

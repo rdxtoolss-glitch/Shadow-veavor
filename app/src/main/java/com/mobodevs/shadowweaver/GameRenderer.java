@@ -128,31 +128,89 @@ final class GameRenderer {
         // both behave, and so a glow near an edge cannot bleed into the margin.
         canvas.clipRect(0, 0, ShadowCalculator.SCENE_W, ShadowCalculator.SCENE_H);
 
-        drawBackdrop(canvas, g.candleFlicker());
-        drawStageWorkbench(canvas, g.candleFlicker());
-        drawVolumetricLightRays(canvas, g.candleFlicker(), g.timeSeconds());
-        drawCandle(canvas, g.candleFlicker());
-        g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
-        drawWall(canvas, g.candleFlicker());
-        drawTargetGhost(canvas, g);
-        drawMagneticTethers(canvas, g);
-        drawLightRays(canvas, g);
-        // scale is handed to the shadow pass because the offscreen shadow
-        // buffer is sized in real pixels, not scene units.
-        drawShadows(canvas, g, scale);
-        drawShapes(canvas, g);
-        g.particles().drawSparks(canvas, fill);
-        drawHud(canvas, g);
+        ScreenState state = g.getScreenState();
 
-        if (g.showingLevelSelect()) {
+        if (state == ScreenState.TITLE) {
+            TitleScreen.draw(canvas, g.progress(), g.timeSeconds(), g.candleFlicker());
+            g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
+        } else if (state == ScreenState.HOW_TO_PLAY) {
+            TutorialScreen.draw(canvas, g.timeSeconds());
+            g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
+        } else if (state == ScreenState.CODEX) {
+            CodexScreen.draw(canvas, g.progress(), g.timeSeconds());
+            g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
+        } else if (state == ScreenState.LEVEL_SELECT) {
             LevelSelectOverlay.draw(canvas, g.progress(), g.levelIndex());
-        } else if (g.showingPause()) {
-            PauseOverlay.draw(canvas, g, g.isSoundEnabled(), g.isHapticsEnabled());
-        } else if (g.celebration()) {
-            LevelCompleteOverlay.draw(canvas, g);
+            g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
+        } else if (state == ScreenState.SETTINGS && g.getPreviousScreenState() == ScreenState.TITLE) {
+            TitleScreen.draw(canvas, g.progress(), g.timeSeconds(), g.candleFlicker());
+            g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
+            SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics());
+        } else {
+            // In-Game Puzzle Stage (PLAY, PAUSE, LEVEL_COMPLETE, or in-game SETTINGS)
+            drawBackdrop(canvas, g.candleFlicker());
+            drawStageWorkbench(canvas, g.candleFlicker());
+            drawVolumetricLightRays(canvas, g.candleFlicker(), g.timeSeconds());
+            drawCandle(canvas, g.candleFlicker());
+            g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
+            drawWall(canvas, g.candleFlicker());
+            drawTargetGhost(canvas, g);
+            drawMagneticTethers(canvas, g);
+            drawLightRays(canvas, g);
+            // scale is handed to the shadow pass because the offscreen shadow
+            // buffer is sized in real pixels, not scene units.
+            drawShadows(canvas, g, scale);
+            drawShapes(canvas, g);
+            g.particles().drawSparks(canvas, fill);
+            drawHud(canvas, g);
+
+            // Floating Level Introduction Banner
+            float bannerAlpha = g.levelBannerAlpha();
+            if (bannerAlpha > 0f) {
+                drawLevelBanner(canvas, g, bannerAlpha);
+            }
+
+            if (state == ScreenState.PAUSE) {
+                PauseOverlay.draw(canvas, g);
+            } else if (state == ScreenState.LEVEL_COMPLETE) {
+                LevelCompleteOverlay.draw(canvas, g, g.celebrationReveal());
+            } else if (state == ScreenState.SETTINGS) {
+                SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics());
+            }
         }
 
         canvas.restoreToCount(save);
+    }
+
+    private static void drawLevelBanner(Canvas c, GameThread g, float alpha) {
+        if (alpha <= 0f) return;
+        float cx = ShadowCalculator.SCENE_W * 0.5f;
+        float y = 520f;
+        float bw = 520f;
+        float bh = 84f;
+        rect.set(cx - bw * 0.5f, y - bh * 0.5f, cx + bw * 0.5f, y + bh * 0.5f);
+
+        int a = (int) (230 * alpha);
+        fill.setColor(withAlpha(0xF0180F08, a));
+        c.drawRoundRect(rect, 18f, 18f, fill);
+
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2.0f);
+        stroke.setColor(withAlpha(0xFFFFD54F, (int) (200 * alpha)));
+        c.drawRoundRect(rect, 18f, 18f, stroke);
+        stroke.setStyle(Paint.Style.FILL);
+
+        text.setTextAlign(Paint.Align.CENTER);
+        text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        text.setTextSize(28f);
+        text.setColor(withAlpha(0xFFFFE9C4, (int) (255 * alpha)));
+        c.drawText(g.levelTitle(), cx, y - 6f, text);
+
+        text.setTextSize(18f);
+        text.setTypeface(android.graphics.Typeface.DEFAULT);
+        text.setColor(withAlpha(0xBBFFE0B0, (int) (240 * alpha)));
+        c.drawText("Chapter " + ((g.levelIndex() / 5) + 1) + " • Level " + (g.levelIndex() + 1), cx, y + 22f, text);
+        text.setTextAlign(Paint.Align.LEFT);
     }
 
     // ======================================================================

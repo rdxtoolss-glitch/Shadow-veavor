@@ -288,6 +288,8 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
                     rawIoU = 0f;
                     solved = false;
                     showCelebration = false;
+                    celebrationReveal = 0f;
+                    levelBannerTimer = 1.8f;
                     dragging = false;
                     pinching = false;
                     pendingCount = 0;
@@ -530,8 +532,7 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
     }
 
     // ======================================================================
-    // SCREEN MODE  (the level-select grid is drawn by the same loop, so the
-    // mode lives here rather than in the view; one owner, one source of truth)
+    // SCREEN STATE & NAVIGATION
     // ======================================================================
 
     public static final int MODE_PLAY = 0;
@@ -539,7 +540,66 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
     public static final int MODE_PAUSE = 2;
 
     private int mode = MODE_PLAY;
+    private ScreenState screenState = ScreenState.TITLE;
+    private ScreenState previousScreenState = ScreenState.TITLE;
     private int unlocked;
+
+    private float celebrationReveal = 0f;
+    private float levelBannerTimer = 0f;
+
+    public ScreenState getScreenState() {
+        synchronized (stateLock) {
+            return screenState;
+        }
+    }
+
+    public void setScreenState(ScreenState state) {
+        synchronized (stateLock) {
+            if (this.screenState != state) {
+                this.previousScreenState = this.screenState;
+            }
+            this.screenState = state;
+            if (state == ScreenState.PAUSE) {
+                mode = MODE_PAUSE;
+            } else if (state == ScreenState.LEVEL_SELECT) {
+                mode = MODE_SELECT;
+            } else if (state == ScreenState.PLAY) {
+                mode = MODE_PLAY;
+            }
+        }
+    }
+
+    public ScreenState getPreviousScreenState() {
+        synchronized (stateLock) {
+            return previousScreenState;
+        }
+    }
+
+    public float celebrationReveal() {
+        synchronized (stateLock) {
+            return celebrationReveal;
+        }
+    }
+
+    public float levelBannerAlpha() {
+        synchronized (stateLock) {
+            if (levelBannerTimer <= 0f) return 0f;
+            if (levelBannerTimer > 1.3f) {
+                return Math.max(0f, Math.min(1f, (1.8f - levelBannerTimer) / 0.5f));
+            } else if (levelBannerTimer < 0.5f) {
+                return Math.max(0f, Math.min(1f, levelBannerTimer / 0.5f));
+            }
+            return 1.0f;
+        }
+    }
+
+    public AudioManager audio() {
+        return chimeSink;
+    }
+
+    public HapticManager haptics() {
+        return hapticSink;
+    }
 
     public void setUnlocked(int level) {
         synchronized (stateLock) {
@@ -553,28 +613,36 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         }
     }
 
+    public void showTitle() {
+        setScreenState(ScreenState.TITLE);
+    }
+
     public void showLevelSelect() {
-        synchronized (stateLock) {
-            mode = MODE_SELECT;
-        }
+        setScreenState(ScreenState.LEVEL_SELECT);
     }
 
     public void showPause() {
-        synchronized (stateLock) {
-            mode = MODE_PAUSE;
-        }
+        setScreenState(ScreenState.PAUSE);
     }
 
     public void resumePlay() {
-        synchronized (stateLock) {
-            mode = MODE_PLAY;
-        }
+        setScreenState(ScreenState.PLAY);
     }
 
     public void showPlay() {
-        synchronized (stateLock) {
-            mode = MODE_PLAY;
-        }
+        setScreenState(ScreenState.PLAY);
+    }
+
+    public void showTutorial() {
+        setScreenState(ScreenState.HOW_TO_PLAY);
+    }
+
+    public void showCodex() {
+        setScreenState(ScreenState.CODEX);
+    }
+
+    public void showSettings() {
+        setScreenState(ScreenState.SETTINGS);
     }
 
     public int mode() {
@@ -584,17 +652,17 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
     }
 
     public boolean showingLevelSelect() {
-        return mode() == MODE_SELECT;
+        return getScreenState() == ScreenState.LEVEL_SELECT;
     }
 
     public boolean showingPause() {
-        return mode() == MODE_PAUSE;
+        return getScreenState() == ScreenState.PAUSE;
     }
 
     /** Select a level from the grid and return to play. */
     public void pickLevel(int index) {
-        mode = MODE_PLAY;
         loadLevel(index);
+        setScreenState(ScreenState.PLAY);
     }
 
     // ======================================================================
@@ -661,11 +729,26 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
 
     private void update(float dt) {
         drainInput();
-        stepIdleDrift(dt);
-        stepCandle(dt);
-        stepSelection(dt);
-        updateResonance(dt);
-        evaluateMatch();
+        ScreenState state = getScreenState();
+        if (state == ScreenState.PLAY || state == ScreenState.PAUSE || state == ScreenState.LEVEL_COMPLETE) {
+            stepIdleDrift(dt);
+            stepCandle(dt);
+            stepSelection(dt);
+            updateResonance(dt);
+            evaluateMatch();
+        } else {
+            stepCandle(dt);
+            particles.update(dt, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, candleFlicker);
+        }
+
+        synchronized (stateLock) {
+            if (screenState == ScreenState.LEVEL_COMPLETE) {
+                celebrationReveal = Math.min(1.0f, celebrationReveal + dt * 1.4f);
+            }
+            if (levelBannerTimer > 0f) {
+                levelBannerTimer = Math.max(0f, levelBannerTimer - dt);
+            }
+        }
     }
 
     /** Apply queued touches. */
@@ -940,6 +1023,8 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
                 levelElapsedMillis = (System.nanoTime() - levelStartNanos) / 1_000_000L;
                 showCelebration = true;
                 celebrateNow = true;
+                celebrationReveal = 0f;
+                screenState = ScreenState.LEVEL_COMPLETE;
                 // Unlock the next level immediately rather than waiting for the
                 // player to press Next: if they close the app on the win
                 // screen, the progress should still be kept.
