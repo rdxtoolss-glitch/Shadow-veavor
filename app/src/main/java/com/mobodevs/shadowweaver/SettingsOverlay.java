@@ -10,6 +10,8 @@ import android.graphics.Typeface;
  * ===============================
  * Dedicated settings screen with audio, haptics, physics preferences,
  * and safety-guarded progress reset.
+ *
+ * Fully responsive: centers dynamically on any aspect ratio.
  */
 public final class SettingsOverlay {
 
@@ -31,31 +33,36 @@ public final class SettingsOverlay {
     private static final UiButton btnReset = new UiButton();
     private static final UiButton btnClose = new UiButton();
 
-    // Reset confirmation sub-state
-    private static boolean confirmingReset;
+    private static boolean confirmingReset = false;
     private static final UiButton btnConfirmYes = new UiButton();
     private static final UiButton btnConfirmNo = new UiButton();
 
     private static boolean layoutReady;
+    private static float lastSceneH = 0f;
 
-    private static void layout() {
-        if (layoutReady) return;
+    public static void layout() {
+        layout(ShadowCalculator.SCENE_H);
+    }
+
+    public static void layout(float sceneH) {
+        if (layoutReady && Math.abs(lastSceneH - sceneH) < 1f) return;
+        lastSceneH = sceneH;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
         float cardW = 720f;
         float cardH = 760f;
         cardL = cx - cardW * 0.5f;
-        cardT = (ShadowCalculator.SCENE_H - cardH) * 0.5f;
+        cardT = (sceneH - cardH) * 0.5f;
         cardR = cardL + cardW;
         cardB = cardT + cardH;
 
         float btnW = 580f;
-        float btnH = 74f;
-        float startY = cardT + 170f;
-        float gap = 24f;
-
+        float btnH = 88f;
         float btnL = cx - btnW * 0.5f;
         float btnR = cx + btnW * 0.5f;
+
+        float startY = cardT + 160f;
+        float gap = 24f;
 
         btnSound.setBounds(btnL, startY, btnR, startY + btnH);
         btnSound.cornerRadius = 18f;
@@ -85,7 +92,11 @@ public final class SettingsOverlay {
     }
 
     public static Action onTouchDown(float sx, float sy) {
-        layout();
+        return onTouchDown(sx, sy, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchDown(float sx, float sy, float sceneH) {
+        layout(sceneH);
         if (confirmingReset) {
             btnConfirmYes.isPressed = btnConfirmYes.hitTest(sx, sy);
             btnConfirmNo.isPressed = btnConfirmNo.hitTest(sx, sy);
@@ -99,7 +110,11 @@ public final class SettingsOverlay {
     }
 
     public static Action onTouchUp(float sx, float sy, Context context, LevelProgress progress, AudioManager audio, HapticManager haptic) {
-        layout();
+        return onTouchUp(sx, sy, context, progress, audio, haptic, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchUp(float sx, float sy, Context context, LevelProgress progress, AudioManager audio, HapticManager haptic, float sceneH) {
+        layout(sceneH);
         Action act = Action.NONE;
 
         if (confirmingReset) {
@@ -112,41 +127,36 @@ public final class SettingsOverlay {
             } else if (btnConfirmNo.isPressed && btnConfirmNo.hitTest(sx, sy)) {
                 confirmingReset = false;
             }
-            btnConfirmYes.isPressed = false;
-            btnConfirmNo.isPressed = false;
-            return act;
-        }
-
-        if (btnSound.isPressed && btnSound.hitTest(sx, sy)) {
-            if (audio != null) {
-                boolean muted = audio.toggleMute();
+        } else {
+            if (btnSound.isPressed && btnSound.hitTest(sx, sy)) {
+                boolean muted = (progress != null) ? !progress.isSoundMuted() : false;
                 if (progress != null) {
                     progress.setSoundMuted(muted);
-                    progress.save(context);
+                    if (context != null) progress.save(context);
                 }
-            }
-            act = Action.TOGGLE_SOUND;
-        } else if (btnHaptics.isPressed && btnHaptics.hitTest(sx, sy)) {
-            if (haptic != null) {
-                boolean next = !haptic.isEnabled();
-                haptic.setEnabled(next);
+                if (audio != null) audio.setMuted(muted);
+                act = Action.TOGGLE_SOUND;
+            } else if (btnHaptics.isPressed && btnHaptics.hitTest(sx, sy)) {
+                boolean enabled = (progress != null) ? !progress.isHapticsEnabled() : true;
                 if (progress != null) {
-                    progress.setHapticsEnabled(next);
-                    progress.save(context);
+                    progress.setHapticsEnabled(enabled);
+                    if (context != null) progress.save(context);
                 }
+                if (haptic != null) haptic.setEnabled(enabled);
+                act = Action.TOGGLE_HAPTICS;
+            } else if (btnReset.isPressed && btnReset.hitTest(sx, sy)) {
+                confirmingReset = true;
+            } else if (btnClose.isPressed && btnClose.hitTest(sx, sy)) {
+                act = Action.CLOSE;
             }
-            act = Action.TOGGLE_HAPTICS;
-        } else if (btnReset.isPressed && btnReset.hitTest(sx, sy)) {
-            confirmingReset = true;
-        } else if (btnClose.isPressed && btnClose.hitTest(sx, sy)) {
-            confirmingReset = false;
-            act = Action.CLOSE;
         }
 
         btnSound.isPressed = false;
         btnHaptics.isPressed = false;
         btnReset.isPressed = false;
         btnClose.isPressed = false;
+        btnConfirmYes.isPressed = false;
+        btnConfirmNo.isPressed = false;
 
         return act;
     }
@@ -161,27 +171,31 @@ public final class SettingsOverlay {
     }
 
     public static void draw(Canvas c, LevelProgress progress, AudioManager audio, HapticManager haptic) {
-        layout();
+        draw(c, progress, audio, haptic, ShadowCalculator.SCENE_H);
+    }
+
+    public static void draw(Canvas c, LevelProgress progress, AudioManager audio, HapticManager haptic, float sceneH) {
+        layout(sceneH);
 
         float sw = ShadowCalculator.SCENE_W;
-        float sh = ShadowCalculator.SCENE_H;
+        float sh = sceneH;
         float cx = sw * 0.5f;
 
         // 1. Dark Modal Scrim
         fill.setColor(0xCC0E121E);
         c.drawRect(0, 0, sw, sh, fill);
 
-        // 2. Card Body (Luminous Frosted Obsidian-Slate)
+        // 2. Card Panel (Obsidian Alchemical Slate)
         fill.setColor(0xFA1A2234);
         c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, fill);
 
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.8f);
+        stroke.setStrokeWidth(2.6f);
         stroke.setColor(0xFFD4AF37);
         c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, stroke);
 
-        // Top specular highlight
-        stroke.setStrokeWidth(1.2f);
+        // Specular highlight line
+        stroke.setStrokeWidth(1.4f);
         stroke.setColor(0x66FFFFFF);
         c.drawLine(cardL + 24f, cardT + 1.5f, cardR - 24f, cardT + 1.5f, stroke);
         stroke.setStyle(Paint.Style.FILL);
@@ -189,54 +203,61 @@ public final class SettingsOverlay {
         // 3. Header
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(Typeface.DEFAULT_BOLD);
-        text.setTextSize(42f);
+        text.setTextSize(40f);
         text.setColor(0xDD000000);
-        c.drawText("PREFERENCES", cx, cardT + 71.5f, text);
+        c.drawText("ALCHEMICAL SETTINGS", cx, cardT + 66.5f, text);
         text.setColor(0xFFFFFDF8);
-        c.drawText("PREFERENCES", cx, cardT + 70f, text);
+        c.drawText("ALCHEMICAL SETTINGS", cx, cardT + 65f, text);
 
-        text.setTextSize(20f);
+        text.setTextSize(18f);
         text.setTypeface(Typeface.DEFAULT);
         text.setColor(0xCC000000);
-        c.drawText("AUDIO, HAPTICS & PROGRESSION", cx, cardT + 111f, text);
+        c.drawText("Acoustic Chimes, Haptic Resonance & Progress", cx, cardT + 106.5f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText("AUDIO, HAPTICS & PROGRESSION", cx, cardT + 110f, text);
+        c.drawText("Acoustic Chimes, Haptic Resonance & Progress", cx, cardT + 105f, text);
+
+        // Divider
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(1.8f);
+        stroke.setColor(0x44D4AF37);
+        c.drawLine(cardL + 40f, cardT + 125f, cardR - 40f, cardT + 125f, stroke);
+        stroke.setStyle(Paint.Style.FILL);
 
         // 4. Update Button Labels
-        boolean soundMuted = (audio != null && audio.isMuted()) || (progress != null && progress.isSoundMuted());
-        btnSound.label = soundMuted ? "SOUND: MUTED" : "SOUND: ACTIVE";
-        btnSound.subLabel = soundMuted ? "Procedural drone and chime audio muted" : "Harmonic procedural drone and chimes active";
+        boolean soundMuted = (progress != null && progress.isSoundMuted());
+        btnSound.label = soundMuted ? "ACOUSTIC CHIMES: MUTED" : "ACOUSTIC CHIMES: ENABLED";
+        btnSound.subLabel = soundMuted ? "Pure silence for dark contemplative play" : "Harmonic Tibetan singing bowls on rotation & snaps";
 
-        boolean hapticOn = (haptic != null && haptic.isEnabled()) && (progress == null || progress.isHapticsEnabled());
-        btnHaptics.label = hapticOn ? "HAPTIC FEEDBACK: ON" : "HAPTIC FEEDBACK: OFF";
-        btnHaptics.subLabel = hapticOn ? "Tactile rotary detents and magnetic snap pulses" : "Device vibrations disabled";
+        boolean hapticsOn = (progress == null || progress.isHapticsEnabled());
+        btnHaptics.label = hapticsOn ? "HAPTIC RESONANCE: ACTIVE" : "HAPTIC RESONANCE: OFF";
+        btnHaptics.subLabel = hapticsOn ? "Tactile detent ticks and magnetic snap impulses" : "Vibration feedback disabled";
 
         if (confirmingReset) {
-            btnConfirmYes.label = "YES, RESET";
-            btnConfirmYes.subLabel = "Clear all stars & progress";
+            text.setTextSize(18f);
+            text.setTypeface(Typeface.DEFAULT_BOLD);
+            text.setColor(0xFFFF8A80);
+            c.drawText("ARE YOU SURE? RESET ALL 15 STARS & PROGRESS?", cx, cardT + 340f, text);
+
+            btnConfirmYes.label = "CONFIRM RESET";
+            btnConfirmYes.subLabel = "Irreversible";
+            btnConfirmYes.isPrimary = true;
             btnConfirmYes.draw(c, fill, stroke, text, 1.0f);
 
             btnConfirmNo.label = "CANCEL";
-            btnConfirmNo.subLabel = "Keep my collected stars";
+            btnConfirmNo.subLabel = "Keep Progress";
             btnConfirmNo.draw(c, fill, stroke, text, 1.0f);
         } else {
-            btnReset.label = "RESET ALL PROGRESS";
-            btnReset.subLabel = "Clear saved constellation stars and return to Level 1";
+            btnReset.label = "RESET ASTRAL JOURNEY";
+            btnReset.subLabel = "Clear all unlocked stars, times, and relics";
             btnReset.draw(c, fill, stroke, text, 1.0f);
         }
 
         btnSound.draw(c, fill, stroke, text, 1.0f);
         btnHaptics.draw(c, fill, stroke, text, 1.0f);
 
-        // 5. Close Button
-        btnClose.label = "DONE";
+        btnClose.label = "CLOSE";
         btnClose.draw(c, fill, stroke, text, 1.0f);
 
-        // 6. Footer Credits
-        text.setTextSize(16f);
-        text.setTypeface(Typeface.DEFAULT);
-        text.setColor(0x88D4AF37);
-        c.drawText("Shadow Weaver • Handcrafted Alchemical Puzzle Engine", cx, cardB - 24f, text);
         text.setTextAlign(Paint.Align.LEFT);
     }
 }

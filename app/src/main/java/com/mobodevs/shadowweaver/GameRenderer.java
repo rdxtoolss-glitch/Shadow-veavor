@@ -62,30 +62,63 @@ final class GameRenderer {
     private static final RectF rect = new RectF();
 
     // ======================================================================
-    // TRANSFORM
+    // TRANSFORM & RESPONSIVE PROJECTION
     // ======================================================================
+
+    public static final float HUD_TOP_Y = 118f;
+    public static final float HUD_PAUSE_X = 68f;
+    public static final float HUD_MATCH_X = 932f;
+
+    public static float getPauseX() {
+        return HUD_PAUSE_X;
+    }
+
+    public static float getPauseY() {
+        return HUD_TOP_Y;
+    }
+
+    public static float getHintX() {
+        return 120f;
+    }
+
+    public static float getHintY(float sceneH) {
+        if (sceneH > 1750f) {
+            return Math.min(sceneH - 110f, 1750f);
+        } else if (sceneH > 1620f) {
+            return sceneH - 85f;
+        } else {
+            return 1565f;
+        }
+    }
+
+    public static float getResetX() {
+        return 880f;
+    }
+
+    public static float getResetY(float sceneH) {
+        return getHintY(sceneH);
+    }
 
     /**
      * The fitted scene transform for a surface of the given size.
      *
-     * Portrait letterboxes (the unused margin simply shows the backdrop).
-     * Landscape scales to fill the width and crops the height, top-anchored,
-     * so the stage, the wall and the candle are never pushed off screen. The
-     * caption area below the scene is drawn in the cropped region.
+     * In portrait (surfaceH >= surfaceW), maps the full scene width (1000 units)
+     * edge-to-edge across the screen, allowing sceneHeight to dynamically expand
+     * to eliminate black letterbox bars on modern tall devices (16:9, 19.5:9, 21:9).
      */
     static float fitScale(int surfaceW, int surfaceH) {
         if (surfaceW <= 0 || surfaceH <= 0) return 1f;
         float sw = ShadowCalculator.SCENE_W;
-        float sh = ShadowCalculator.SCENE_H;
-        float byWidth = surfaceW / sw;
-        float byHeight = surfaceH / sh;
-        // In landscape, prefer the width fit (which crops); in portrait,
-        // prefer the height fit (which letterboxes).
-        return surfaceH >= surfaceW ? Math.min(byWidth, byHeight) : byWidth;
+        return surfaceH >= surfaceW ? (surfaceW / sw) : (surfaceH / ShadowCalculator.SCENE_H);
+    }
+
+    static float sceneHeight(int surfaceW, int surfaceH) {
+        float scale = fitScale(surfaceW, surfaceH);
+        return (scale > 0f) ? (surfaceH / scale) : ShadowCalculator.SCENE_H;
     }
 
     private static float originX(int surfaceW, float scale) {
-        return (surfaceW - ShadowCalculator.SCENE_W * scale) * 0.5f;
+        return Math.max(0f, (surfaceW - ShadowCalculator.SCENE_W * scale) * 0.5f);
     }
 
     private static float originY(int surfaceH, float scale) {
@@ -118,37 +151,40 @@ final class GameRenderer {
     static void drawScene(Canvas canvas, int w, int h, GameThread g, boolean portrait) {
         float flicker = warmth(g.candleFlicker());
         float scale = fitScale(w, h);
+        float sceneH = sceneHeight(w, h);
         float ox = originX(w, scale);
         float oy = originY(h, scale);
+
+        // Update ambient particle bounds to span the entire screen
+        g.particles().updateDimensions(ShadowCalculator.SCENE_W, sceneH);
 
         int save = canvas.save();
         canvas.translate(ox, oy);
         canvas.scale(scale, scale);
-        // Clip to the scene so the landscape crop and the portrait letterbox
-        // both behave, and so a glow near an edge cannot bleed into the margin.
-        canvas.clipRect(0, 0, ShadowCalculator.SCENE_W, ShadowCalculator.SCENE_H);
+        // Clip to the true visible scene height (no bottom letterboxing)
+        canvas.clipRect(0, 0, ShadowCalculator.SCENE_W, sceneH);
 
         ScreenState state = g.getScreenState();
 
         if (state == ScreenState.TITLE) {
-            TitleScreen.draw(canvas, g.progress(), g.timeSeconds(), g.candleFlicker());
+            TitleScreen.draw(canvas, g.progress(), g.timeSeconds(), g.candleFlicker(), sceneH);
             g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
         } else if (state == ScreenState.HOW_TO_PLAY) {
-            TutorialScreen.draw(canvas, g.timeSeconds());
+            TutorialScreen.draw(canvas, g.timeSeconds(), sceneH);
             g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
         } else if (state == ScreenState.CODEX) {
-            CodexScreen.draw(canvas, g.progress(), g.timeSeconds());
+            CodexScreen.draw(canvas, g.progress(), g.timeSeconds(), sceneH);
             g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
         } else if (state == ScreenState.LEVEL_SELECT) {
-            LevelSelectOverlay.draw(canvas, g.progress(), g.levelIndex());
+            LevelSelectOverlay.draw(canvas, g.progress(), g.levelIndex(), sceneH);
             g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
         } else if (state == ScreenState.SETTINGS && g.getPreviousScreenState() == ScreenState.TITLE) {
-            TitleScreen.draw(canvas, g.progress(), g.timeSeconds(), g.candleFlicker());
+            TitleScreen.draw(canvas, g.progress(), g.timeSeconds(), g.candleFlicker(), sceneH);
             g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
-            SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics());
+            SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics(), sceneH);
         } else {
             // In-Game Puzzle Stage (PLAY, PAUSE, LEVEL_COMPLETE, or in-game SETTINGS)
-            drawBackdrop(canvas, g.candleFlicker());
+            drawBackdrop(canvas, g.candleFlicker(), sceneH);
             drawStageWorkbench(canvas, g.candleFlicker());
             drawVolumetricLightRays(canvas, g.candleFlicker(), g.timeSeconds());
             drawCandle(canvas, g.candleFlicker());
@@ -162,7 +198,7 @@ final class GameRenderer {
             drawShadows(canvas, g, scale);
             drawShapes(canvas, g);
             g.particles().drawSparks(canvas, fill);
-            drawHud(canvas, g);
+            drawHud(canvas, g, sceneH);
 
             // Floating Level Introduction Banner
             float bannerAlpha = g.levelBannerAlpha();
@@ -171,11 +207,11 @@ final class GameRenderer {
             }
 
             if (state == ScreenState.PAUSE) {
-                PauseOverlay.draw(canvas, g);
+                PauseOverlay.draw(canvas, g, sceneH);
             } else if (state == ScreenState.LEVEL_COMPLETE) {
-                LevelCompleteOverlay.draw(canvas, g, g.celebrationReveal());
+                LevelCompleteOverlay.draw(canvas, g, g.celebrationReveal(), sceneH);
             } else if (state == ScreenState.SETTINGS) {
-                SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics());
+                SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics(), sceneH);
             }
         }
 
@@ -218,9 +254,13 @@ final class GameRenderer {
     // ======================================================================
 
     private static void drawBackdrop(Canvas c, float flicker) {
+        drawBackdrop(c, flicker, ShadowCalculator.SCENE_H);
+    }
+
+    private static void drawBackdrop(Canvas c, float flicker, float sceneH) {
         // Rich celestial chamber gradient: incandescent golden candlelight halo at top,
         // descending into deep celestial midnight sapphire and dark obsidian vignette.
-        haze.setShader(new LinearGradient(0, 0, 0, ShadowCalculator.SCENE_H,
+        haze.setShader(new LinearGradient(0, 0, 0, sceneH,
                 new int[]{
                         mix(0xFF56341C, 0xFF6E4224, flicker), // Luminous amber warmth near candle
                         0xFF1B2032,                           // Deep celestial midnight indigo chamber
@@ -228,7 +268,7 @@ final class GameRenderer {
                 },
                 new float[]{0f, 0.40f, 1f},
                 Shader.TileMode.CLAMP));
-        c.drawRect(0, 0, ShadowCalculator.SCENE_W, ShadowCalculator.SCENE_H, haze);
+        c.drawRect(0, 0, ShadowCalculator.SCENE_W, sceneH, haze);
         haze.setShader(null);
     }
 
@@ -371,7 +411,7 @@ final class GameRenderer {
 
     private static void drawCandle(Canvas c, float flicker) {
         float lx = ShadowCalculator.LIGHT_X;
-        float ly = ShadowCalculator.LIGHT_Y;
+        float ly = 165f;
 
         // Broad ambient pool of light behind everything
         float rOuter = 650f * (0.94f + 0.06f * flicker);
@@ -388,12 +428,12 @@ final class GameRenderer {
 
         // Candle ivory tallow pillar
         fill.setColor(0xFFDFD4C4);
-        rect.set(lx - 10f, ly + 14f, lx + 10f, ly + 95f);
+        rect.set(lx - 10f, ly + 14f, lx + 10f, ly + 105f);
         c.drawRoundRect(rect, 4f, 4f, fill);
 
         // Shaded side of pillar
         fill.setColor(0x332A180C);
-        rect.set(lx + 2f, ly + 14f, lx + 10f, ly + 95f);
+        rect.set(lx + 2f, ly + 14f, lx + 10f, ly + 105f);
         c.drawRoundRect(rect, 4f, 4f, fill);
 
         // Melted wax drips
@@ -402,10 +442,10 @@ final class GameRenderer {
         c.drawCircle(lx + 7f, ly + 46f, 3.5f, fill);
         c.drawCircle(lx - 6f, ly + 58f, 3f, fill);
 
-        // Brass candleholder dish rim
-        rect.set(lx - 26f, ly + 88f, lx + 26f, ly + 98f);
+        // Brass candleholder dish rim resting directly on stage workbench
+        rect.set(lx - 28f, ly + 100f, lx + 28f, ly + 112f);
         fill.setColor(0xFFC5A059);
-        c.drawRoundRect(rect, 3f, 3f, fill);
+        c.drawRoundRect(rect, 4f, 4f, fill);
 
         // Wick
         stroke.setStyle(Paint.Style.STROKE);
@@ -939,69 +979,141 @@ final class GameRenderer {
     // ======================================================================
 
     private static void drawHud(Canvas c, GameThread g) {
+        drawHud(c, g, ShadowCalculator.SCENE_H);
+    }
+
+    private static void drawHud(Canvas c, GameThread g, float sceneH) {
         String title = g.levelTitle();
         String hint = g.levelHint();
         float match = g.matchPercent();
+        float cx = ShadowCalculator.SCENE_W * 0.5f;
 
-        // 1. Top-Left: Pause button
-        float pauseX = 64f;
-        float pauseY = 82f;
-        float pauseR = 30f;
+        // 1. Top-Left: Pause button (ample safe margin below status bar/notch)
+        float pauseX = getPauseX();
+        float pauseY = getPauseY();
+        float pauseR = 32f;
         GameIcons.drawPause(c, pauseX, pauseY, pauseR, fill, stroke, false);
 
         // 2. Top-Center: Level Title and Chapter
-        float cx = ShadowCalculator.SCENE_W * 0.5f;
         text.setTextAlign(Paint.Align.CENTER);
         text.setTextSize(32f);
         text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
 
         // Drop shadow for title
         text.setColor(0xCC000000);
-        c.drawText(title, cx, 81.5f, text);
+        c.drawText(title, cx, 101.5f, text);
         text.setColor(0xFFFFFDF8);
-        c.drawText(title, cx, 80f, text);
+        c.drawText(title, cx, 100f, text);
 
         int ch = (g.levelIndex() / 5) + 1;
         String chRoman = (ch == 1 ? "I" : (ch == 2 ? "II" : "III"));
         text.setTextSize(20f);
         text.setTypeface(android.graphics.Typeface.DEFAULT);
         text.setColor(0xCC000000);
-        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, 115.5f, text);
+        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, 137.5f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, 114f, text);
+        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, 136f, text);
 
         // 3. Top-Right: Precision Circular Match Meter
         drawMatchMeter(c, g, match);
 
-        // 4. Bottom-Left: Hint Button
-        float hintX = 96f;
-        float hintY = ShadowCalculator.SCENE_H - 72f;
-        float btnR = 34f;
+        // 4. Bottom Alchemist Control Shelf (Strictly BELOW the Wall at WALL_BOTTOM = 1530f)
+        float shelfY = 1545f;
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2.0f);
+        stroke.setColor(0x55D4AF37);
+        c.drawLine(100f, shelfY, ShadowCalculator.SCENE_W - 100f, shelfY, stroke);
+        fill.setColor(0xFFFFE082);
+        c.drawCircle(cx, shelfY, 4.5f, fill);
+        stroke.setStyle(Paint.Style.FILL);
+
+        boolean tall = (sceneH > 1650f);
+        float ctrlY = getHintY(sceneH);
+        float btnR = 38f;
         boolean hintOn = g.isHintActive();
-        GameIcons.drawHint(c, hintX, hintY, btnR, fill, stroke, hintOn);
 
-        // 5. Bottom-Right: Reset Level Button
-        float rstX = ShadowCalculator.SCENE_W - 96f;
-        float rstY = ShadowCalculator.SCENE_H - 72f;
-        GameIcons.drawReset(c, rstX, rstY, btnR, fill, stroke);
-
-        // 6. Hint text (fades when progress is high, or shown when hint toggle is on)
+        // Hint Banner (placed above the buttons in the shelf, NEVER overlapping the shadow wall)
         if (hintOn || match < 55f) {
-            float a = hintOn ? 1.0f : (1f - match / 55f);
-            text.setTextSize(24f);
+            float bannerY = tall ? 1605f : (ctrlY - 50f);
+            float bannerW = 760f;
+            float bannerH = 60f;
+            float bL = cx - bannerW * 0.5f;
+            float bR = cx + bannerW * 0.5f;
+            float bT = bannerY - bannerH * 0.5f;
+            float bB = bannerY + bannerH * 0.5f;
+
+            fill.setColor(hintOn ? 0xF0221A2C : 0xDD181E2C);
+            c.drawRoundRect(bL, bT, bR, bB, 16f, 16f, fill);
+
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(1.8f);
+            stroke.setColor(hintOn ? 0xFFFFD54F : 0x88D4AF37);
+            c.drawRoundRect(bL, bT, bR, bB, 16f, 16f, stroke);
+            stroke.setStyle(Paint.Style.FILL);
+
             text.setTextAlign(Paint.Align.CENTER);
-            text.setColor(withAlpha(0xCC000000, (int) (255 * a * 0.95f)));
-            c.drawText(hint, cx, ShadowCalculator.SCENE_H - 68.5f, text);
-            text.setColor(withAlpha(0xFFFFFDF8, (int) (255 * a * 0.95f)));
-            c.drawText(hint, cx, ShadowCalculator.SCENE_H - 70f, text);
+            text.setTextSize(21f);
+            text.setTypeface(android.graphics.Typeface.DEFAULT);
+            text.setColor(0xCC000000);
+            c.drawText(hint, cx, bannerY + 7.5f, text);
+            text.setColor(hintOn ? 0xFFFFFDF8 : 0xFFFFE0A8);
+            c.drawText(hint, cx, bannerY + 6f, text);
         }
+
+        // Hint Button
+        float hintX = getHintX();
+        GameIcons.drawHint(c, hintX, ctrlY, btnR, fill, stroke, hintOn);
+        text.setTextAlign(Paint.Align.CENTER);
+        text.setTextSize(15f);
+        text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        text.setColor(hintOn ? 0xFFFFD54F : 0xCCFFE0A8);
+        c.drawText("HINT", hintX, ctrlY + btnR + 22f, text);
+
+        // Reset Button
+        float rstX = getResetX();
+        GameIcons.drawReset(c, rstX, ctrlY, btnR, fill, stroke);
+        text.setColor(0xCCFFE0A8);
+        c.drawText("RESET", rstX, ctrlY + btnR + 22f, text);
+
+        // Tactical Efficiency Badge (Centered between Hint & Reset)
+        if (tall) {
+            float cardW = 460f;
+            float cardH = 76f;
+            float cL = cx - cardW * 0.5f;
+            float cR = cx + cardW * 0.5f;
+            float cT = ctrlY - cardH * 0.5f;
+            float cB = ctrlY + cardH * 0.5f;
+
+            fill.setColor(0xEE1A2234);
+            c.drawRoundRect(cL, cT, cR, cB, 16f, 16f, fill);
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(1.8f);
+            stroke.setColor(0x66D4AF37);
+            c.drawRoundRect(cL, cT, cR, cB, 16f, 16f, stroke);
+            stroke.setStyle(Paint.Style.FILL);
+
+            long elapsed = g.elapsedMillis();
+            long parTime = LevelProgress.getParTimeMillis(g.levelIndex());
+            int parMoves = LevelProgress.getParMoves(g.levelIndex());
+
+            text.setTextSize(14f);
+            text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+            text.setColor(0xAAFFE0A8);
+            c.drawText("TRIAL PERFORMANCE", cx, cT + 26f, text);
+
+            text.setTextSize(19f);
+            text.setTypeface(android.graphics.Typeface.DEFAULT);
+            text.setColor(0xFFFFFDF8);
+            c.drawText("Moves: " + g.moveCount() + " (Par " + parMoves + ")  •  Time: " + (elapsed / 1000L) + "s", cx, cT + 56f, text);
+        }
+
         text.setTextAlign(Paint.Align.LEFT);
     }
 
     private static void drawMatchMeter(Canvas c, GameThread g, float match) {
-        float cx = ShadowCalculator.SCENE_W - 96f;
-        float cy = 92f;
-        float r = 40f;
+        float cx = HUD_MATCH_X;
+        float cy = HUD_TOP_Y;
+        float r = 36f;
 
         // Frosted obsidian background plate with brass rim
         fill.setColor(0xEE1A2234);

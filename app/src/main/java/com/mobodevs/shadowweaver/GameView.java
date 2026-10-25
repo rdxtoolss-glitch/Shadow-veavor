@@ -148,6 +148,7 @@ public class GameView extends SurfaceView implements GameThread.Looper {
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         float scale = GameRenderer.fitScale(getWidth(), getHeight());
+        float sceneH = GameRenderer.sceneHeight(getWidth(), getHeight());
         float ox = (getWidth() - ShadowCalculator.SCENE_W * scale) * 0.5f;
         float oy = 0f;
         final float sx = GameRenderer.sceneX(e.getX(), scale, ox);
@@ -157,50 +158,50 @@ public class GameView extends SurfaceView implements GameThread.Looper {
 
         // 1. Title Screen Routing
         if (state == ScreenState.TITLE) {
-            return handleTitleTouch(e.getActionMasked(), sx, sy);
+            return handleTitleTouch(e.getActionMasked(), sx, sy, sceneH);
         }
 
         // 2. How to Play Routing
         if (state == ScreenState.HOW_TO_PLAY) {
-            return handleTutorialTouch(e.getActionMasked(), sx, sy);
+            return handleTutorialTouch(e.getActionMasked(), sx, sy, sceneH);
         }
 
         // 3. Codex Gallery Routing
         if (state == ScreenState.CODEX) {
-            return handleCodexTouch(e.getActionMasked(), sx, sy);
+            return handleCodexTouch(e.getActionMasked(), sx, sy, sceneH);
         }
 
         // 4. Chapter / Level Select Routing
         if (state == ScreenState.LEVEL_SELECT) {
-            return handleLevelSelectTouch(e.getActionMasked(), sx, sy);
+            return handleLevelSelectTouch(e.getActionMasked(), sx, sy, sceneH);
         }
 
         // 5. Settings Modal Routing
         if (state == ScreenState.SETTINGS) {
-            return handleSettingsTouch(e.getActionMasked(), sx, sy);
+            return handleSettingsTouch(e.getActionMasked(), sx, sy, sceneH);
         }
 
         // 6. Pause Modal Routing
         if (state == ScreenState.PAUSE) {
-            return handlePauseTouch(e.getActionMasked(), sx, sy);
+            return handlePauseTouch(e.getActionMasked(), sx, sy, sceneH);
         }
 
         // 7. Victory Modal Routing
         if (state == ScreenState.LEVEL_COMPLETE) {
-            return handleVictoryTouch(e.getActionMasked(), sx, sy);
+            return handleVictoryTouch(e.getActionMasked(), sx, sy, sceneH);
         }
 
         // 8. In-Game Stage Routing
-        return handlePlayTouch(e, sx, sy);
+        return handlePlayTouch(e, sx, sy, sceneH);
     }
 
-    private boolean handleTitleTouch(int action, float sx, float sy) {
+    private boolean handleTitleTouch(int action, float sx, float sy, float sceneH) {
         if (action == MotionEvent.ACTION_DOWN) {
-            TitleScreen.onTouchDown(sx, sy);
+            TitleScreen.onTouchDown(sx, sy, sceneH);
             if (haptic != null) haptic.detent();
             return true;
         } else if (action == MotionEvent.ACTION_UP) {
-            TitleScreen.Action act = TitleScreen.onTouchUp(sx, sy);
+            TitleScreen.Action act = TitleScreen.onTouchUp(sx, sy, sceneH);
             if (act == TitleScreen.Action.CONTINUE) {
                 int lvl = (progress != null) ? progress.getHighestUnlocked() : 0;
                 thread.pickLevel(lvl);
@@ -227,13 +228,13 @@ public class GameView extends SurfaceView implements GameThread.Looper {
         return true;
     }
 
-    private boolean handleTutorialTouch(int action, float sx, float sy) {
+    private boolean handleTutorialTouch(int action, float sx, float sy, float sceneH) {
         if (action == MotionEvent.ACTION_DOWN) {
-            TutorialScreen.onTouchDown(sx, sy);
+            TutorialScreen.onTouchDown(sx, sy, sceneH);
             if (haptic != null) haptic.detent();
             return true;
         } else if (action == MotionEvent.ACTION_UP) {
-            TutorialScreen.Action act = TutorialScreen.onTouchUp(sx, sy);
+            TutorialScreen.Action act = TutorialScreen.onTouchUp(sx, sy, sceneH);
             if (act == TutorialScreen.Action.BACK) {
                 thread.showTitle();
                 if (haptic != null) haptic.tap();
@@ -250,13 +251,13 @@ public class GameView extends SurfaceView implements GameThread.Looper {
         return true;
     }
 
-    private boolean handleCodexTouch(int action, float sx, float sy) {
+    private boolean handleCodexTouch(int action, float sx, float sy, float sceneH) {
         if (action == MotionEvent.ACTION_DOWN) {
-            CodexScreen.onTouchDown(sx, sy);
+            CodexScreen.onTouchDown(sx, sy, sceneH);
             if (haptic != null) haptic.detent();
             return true;
         } else if (action == MotionEvent.ACTION_UP) {
-            CodexScreen.Action act = CodexScreen.onTouchUp(sx, sy);
+            CodexScreen.Action act = CodexScreen.onTouchUp(sx, sy, sceneH);
             if (act == CodexScreen.Action.BACK) {
                 thread.showTitle();
                 if (haptic != null) haptic.tap();
@@ -269,14 +270,14 @@ public class GameView extends SurfaceView implements GameThread.Looper {
         return true;
     }
 
-    private boolean handleLevelSelectTouch(int action, float sx, float sy) {
+    private boolean handleLevelSelectTouch(int action, float sx, float sy, float sceneH) {
         int unlocked = (progress != null) ? progress.getHighestUnlocked() : thread.unlockedLevel();
         if (action == MotionEvent.ACTION_DOWN) {
-            LevelSelectOverlay.onTouchDown(sx, sy, unlocked);
+            LevelSelectOverlay.onTouchDown(sx, sy, unlocked, sceneH);
             if (haptic != null) haptic.detent();
             return true;
         } else if (action == MotionEvent.ACTION_UP) {
-            LevelSelectOverlay.Action act = LevelSelectOverlay.onTouchUp(sx, sy, unlocked);
+            LevelSelectOverlay.Action act = LevelSelectOverlay.onTouchUp(sx, sy, unlocked, sceneH);
             if (act == LevelSelectOverlay.Action.PICKED) {
                 thread.pickLevel(LevelSelectOverlay.getPickedLevel());
                 if (haptic != null) haptic.tap();
@@ -292,13 +293,13 @@ public class GameView extends SurfaceView implements GameThread.Looper {
         return true;
     }
 
-    private boolean handleSettingsTouch(int action, float sx, float sy) {
+    private boolean handleSettingsTouch(int action, float sx, float sy, float sceneH) {
         if (action == MotionEvent.ACTION_DOWN) {
-            SettingsOverlay.onTouchDown(sx, sy);
+            SettingsOverlay.onTouchDown(sx, sy, sceneH);
             if (haptic != null) haptic.detent();
             return true;
         } else if (action == MotionEvent.ACTION_UP) {
-            SettingsOverlay.Action act = SettingsOverlay.onTouchUp(sx, sy, getContext(), progress, audio, haptic);
+            SettingsOverlay.Action act = SettingsOverlay.onTouchUp(sx, sy, getContext(), progress, audio, haptic, sceneH);
             if (act == SettingsOverlay.Action.CLOSE) {
                 thread.setScreenState(thread.getPreviousScreenState());
                 if (haptic != null) haptic.tap();
@@ -316,13 +317,13 @@ public class GameView extends SurfaceView implements GameThread.Looper {
         return true;
     }
 
-    private boolean handlePauseTouch(int action, float sx, float sy) {
+    private boolean handlePauseTouch(int action, float sx, float sy, float sceneH) {
         if (action == MotionEvent.ACTION_DOWN) {
-            PauseOverlay.onTouchDown(sx, sy);
+            PauseOverlay.onTouchDown(sx, sy, sceneH);
             if (haptic != null) haptic.detent();
             return true;
         } else if (action == MotionEvent.ACTION_UP) {
-            PauseOverlay.Action act = PauseOverlay.onTouchUp(sx, sy);
+            PauseOverlay.Action act = PauseOverlay.onTouchUp(sx, sy, sceneH);
             if (act == PauseOverlay.Action.RESUME) {
                 thread.resumePlay();
                 if (haptic != null) haptic.tap();
@@ -349,13 +350,13 @@ public class GameView extends SurfaceView implements GameThread.Looper {
         return true;
     }
 
-    private boolean handleVictoryTouch(int action, float sx, float sy) {
+    private boolean handleVictoryTouch(int action, float sx, float sy, float sceneH) {
         if (action == MotionEvent.ACTION_DOWN) {
-            LevelCompleteOverlay.onTouchDown(sx, sy);
+            LevelCompleteOverlay.onTouchDown(sx, sy, sceneH);
             if (haptic != null) haptic.detent();
             return true;
         } else if (action == MotionEvent.ACTION_UP) {
-            LevelCompleteOverlay.Action act = LevelCompleteOverlay.onTouchUp(sx, sy);
+            LevelCompleteOverlay.Action act = LevelCompleteOverlay.onTouchUp(sx, sy, sceneH);
             if (act == LevelCompleteOverlay.Action.NEXT) {
                 thread.advance();
                 thread.resumePlay();
@@ -377,31 +378,37 @@ public class GameView extends SurfaceView implements GameThread.Looper {
         return true;
     }
 
-    private boolean handlePlayTouch(MotionEvent e, float sx, float sy) {
+    private boolean handlePlayTouch(MotionEvent e, float sx, float sy, float sceneH) {
         switch (e.getActionMasked()) {
             case MotionEvent.ACTION_DOWN: {
-                // 1. Check HUD Pause button (cx = 64f, cy = 82f)
-                float pdx = sx - 64f;
-                float pdy = sy - 82f;
-                if (pdx * pdx + pdy * pdy <= 42f * 42f) {
+                // 1. Check HUD Pause button (safe radius 48f)
+                float px = GameRenderer.getPauseX();
+                float py = GameRenderer.getPauseY();
+                float pdx = sx - px;
+                float pdy = sy - py;
+                if (pdx * pdx + pdy * pdy <= 48f * 48f) {
                     thread.showPause();
                     if (haptic != null) haptic.tap();
                     return true;
                 }
 
-                // 2. Check HUD Hint button (cx = 96f, cy = SCENE_H - 72f)
-                float hdx = sx - 96f;
-                float hdy = sy - (ShadowCalculator.SCENE_H - 72f);
-                if (hdx * hdx + hdy * hdy <= 44f * 44f) {
+                // 2. Check HUD Hint button (safe radius 52f)
+                float hx = GameRenderer.getHintX();
+                float hy = GameRenderer.getHintY(sceneH);
+                float hdx = sx - hx;
+                float hdy = sy - hy;
+                if (hdx * hdx + hdy * hdy <= 52f * 52f) {
                     thread.toggleHint();
                     if (haptic != null) haptic.tap();
                     return true;
                 }
 
-                // 3. Check HUD Reset button (cx = SCENE_W - 96f, cy = SCENE_H - 72f)
-                float rdx = sx - (ShadowCalculator.SCENE_W - 96f);
-                float rdy = sy - (ShadowCalculator.SCENE_H - 72f);
-                if (rdx * rdx + rdy * rdy <= 44f * 44f) {
+                // 3. Check HUD Reset button (safe radius 52f)
+                float rx = GameRenderer.getResetX();
+                float ry = GameRenderer.getResetY(sceneH);
+                float rdx = sx - rx;
+                float rdy = sy - ry;
+                if (rdx * rdx + rdy * rdy <= 52f * 52f) {
                     thread.restart();
                     if (haptic != null) haptic.tap();
                     return true;

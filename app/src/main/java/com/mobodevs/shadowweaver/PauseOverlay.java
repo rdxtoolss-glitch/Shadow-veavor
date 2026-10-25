@@ -31,15 +31,21 @@ public final class PauseOverlay {
     private static final UiButton btnMainMenu = new UiButton();
 
     private static boolean layoutReady;
+    private static float lastSceneH = 0f;
 
-    private static void layout() {
-        if (layoutReady) return;
+    public static void layout() {
+        layout(ShadowCalculator.SCENE_H);
+    }
+
+    public static void layout(float sceneH) {
+        if (layoutReady && Math.abs(lastSceneH - sceneH) < 1f) return;
+        lastSceneH = sceneH;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
         float cardW = 680f;
         float cardH = 720f;
         cardL = cx - cardW * 0.5f;
-        cardT = (ShadowCalculator.SCENE_H - cardH) * 0.5f;
+        cardT = (sceneH - cardH) * 0.5f;
         cardR = cardL + cardW;
         cardB = cardT + cardH;
 
@@ -75,7 +81,11 @@ public final class PauseOverlay {
     }
 
     public static Action onTouchDown(float sx, float sy) {
-        layout();
+        return onTouchDown(sx, sy, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchDown(float sx, float sy, float sceneH) {
+        layout(sceneH);
         btnResume.isPressed = btnResume.hitTest(sx, sy);
         btnRestart.isPressed = btnRestart.hitTest(sx, sy);
         btnChapters.isPressed = btnChapters.hitTest(sx, sy);
@@ -85,7 +95,11 @@ public final class PauseOverlay {
     }
 
     public static Action onTouchUp(float sx, float sy) {
-        layout();
+        return onTouchUp(sx, sy, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchUp(float sx, float sy, float sceneH) {
+        layout(sceneH);
         Action act = Action.NONE;
 
         if (btnResume.isPressed && btnResume.hitTest(sx, sy)) act = Action.RESUME;
@@ -112,10 +126,14 @@ public final class PauseOverlay {
     }
 
     public static void draw(Canvas c, GameThread g) {
-        layout();
+        draw(c, g, ShadowCalculator.SCENE_H);
+    }
+
+    public static void draw(Canvas c, GameThread g, float sceneH) {
+        layout(sceneH);
 
         float sw = ShadowCalculator.SCENE_W;
-        float sh = ShadowCalculator.SCENE_H;
+        float sh = sceneH;
         float cx = sw * 0.5f;
 
         // 1. Dark Modal Scrim

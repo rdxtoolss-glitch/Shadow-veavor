@@ -10,8 +10,11 @@ import android.graphics.Typeface;
 /**
  * Shadow Weaver - LevelSelectOverlay
  * ==================================
- * 3-Chapter navigation interface with chapter tabs, star ratings,
- * best times, lock states, and tactile press responsiveness.
+ * Interactive chapter selection and level grid modal.
+ * Supports 3 chapters of 5 levels each, chapter progression tabs,
+ * 3-star completion indicators, best completion times, and locked trial padlocks.
+ *
+ * Fully responsive: expands seamlessly across tall phone aspect ratios with zero black bars.
  */
 public final class LevelSelectOverlay {
 
@@ -19,24 +22,23 @@ public final class LevelSelectOverlay {
         NONE, PICKED, CLOSE
     }
 
-    public static final int CHAPTERS = 3;
-    public static final int LEVELS_PER_CHAPTER = 5;
-
-    private static int activeChapter = 0;
-    private static int lastPickedLevel = -1;
+    private static final int CHAPTERS = 3;
+    private static final int LEVELS_PER_CHAPTER = 5;
 
     private static final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Path starPath = new Path();
 
-    // Chapter Tabs
+    private static int activeChapter = 0;
+    private static int lastPickedLevel = -1;
+
+    // Layout Bounds
     private static final float[] TAB_L = new float[CHAPTERS];
     private static final float[] TAB_T = new float[CHAPTERS];
     private static final float[] TAB_R = new float[CHAPTERS];
     private static final float[] TAB_B = new float[CHAPTERS];
 
-    // 5 Level Cards in current chapter
     private static final float[] CARD_L = new float[LEVELS_PER_CHAPTER];
     private static final float[] CARD_T = new float[LEVELS_PER_CHAPTER];
     private static final float[] CARD_R = new float[LEVELS_PER_CHAPTER];
@@ -44,9 +46,15 @@ public final class LevelSelectOverlay {
 
     private static final UiButton btnBack = new UiButton();
     private static boolean layoutReady;
+    private static float lastSceneH = 0f;
 
-    private static void layout() {
-        if (layoutReady) return;
+    public static void layout() {
+        layout(ShadowCalculator.SCENE_H);
+    }
+
+    public static void layout(float sceneH) {
+        if (layoutReady && Math.abs(lastSceneH - sceneH) < 1f) return;
+        lastSceneH = sceneH;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
         float padX = 54f;
@@ -108,7 +116,7 @@ public final class LevelSelectOverlay {
         // Back Button
         float btnW = 440f;
         float btnH = 76f;
-        float btnY = 1320f;
+        float btnY = (sceneH > 1750f) ? 1340f : 1310f;
         btnBack.setBounds(cx - btnW * 0.5f, btnY, cx + btnW * 0.5f, btnY + btnH);
         btnBack.cornerRadius = 18f;
 
@@ -130,22 +138,28 @@ public final class LevelSelectOverlay {
     }
 
     public static Action onTouchDown(float sx, float sy, int unlocked) {
-        layout();
+        return onTouchDown(sx, sy, unlocked, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchDown(float sx, float sy, int unlocked, float sceneH) {
+        layout(sceneH);
         btnBack.isPressed = btnBack.hitTest(sx, sy);
         return Action.NONE;
     }
 
     public static Action onTouchUp(float sx, float sy, int unlocked) {
-        layout();
+        return onTouchUp(sx, sy, unlocked, ShadowCalculator.SCENE_H);
+    }
 
-        // 1. Back button
+    public static Action onTouchUp(float sx, float sy, int unlocked, float sceneH) {
+        layout(sceneH);
         if (btnBack.isPressed && btnBack.hitTest(sx, sy)) {
             btnBack.isPressed = false;
             return Action.CLOSE;
         }
         btnBack.isPressed = false;
 
-        // 2. Chapter tabs
+        // Check Chapter Tab selection
         for (int i = 0; i < CHAPTERS; i++) {
             if (sx >= TAB_L[i] && sx <= TAB_R[i] && sy >= TAB_T[i] && sy <= TAB_B[i]) {
                 activeChapter = i;
@@ -153,7 +167,7 @@ public final class LevelSelectOverlay {
             }
         }
 
-        // 3. Level Cards
+        // Check Level Card selection
         for (int i = 0; i < LEVELS_PER_CHAPTER; i++) {
             int globalLevel = activeChapter * LEVELS_PER_CHAPTER + i;
             if (globalLevel > unlocked) continue;
@@ -172,14 +186,18 @@ public final class LevelSelectOverlay {
     }
 
     public static void draw(Canvas c, LevelProgress progress, int currentLevel) {
-        layout();
+        draw(c, progress, currentLevel, ShadowCalculator.SCENE_H);
+    }
+
+    public static void draw(Canvas c, LevelProgress progress, int currentLevel, float sceneH) {
+        layout(sceneH);
 
         int unlocked = (progress != null) ? progress.getHighestUnlocked() : currentLevel;
         float sw = ShadowCalculator.SCENE_W;
-        float sh = ShadowCalculator.SCENE_H;
+        float sh = sceneH;
         float cx = sw * 0.5f;
 
-        // 1. Modal Scrim Backdrop with Celestial Twilight Gradient
+        // 1. Modal Scrim Backdrop with Celestial Twilight Gradient (Fills 100% of screen)
         fill.setShader(new LinearGradient(0, 0, 0, sh,
                 new int[]{0xFF24160E, 0xFF1B2032, 0xFF101320},
                 new float[]{0f, 0.40f, 1f},
@@ -330,7 +348,7 @@ public final class LevelSelectOverlay {
             }
         }
 
-        // 5. Chapter Mastery Summary Card (fills vertical canvas beautifully)
+        // 5. Chapter Mastery Summary Card
         float sumL = cx - 360f;
         float sumR = cx + 360f;
         float sumT = 1045f;
@@ -389,7 +407,7 @@ public final class LevelSelectOverlay {
         text.setTextSize(16f);
         text.setTypeface(Typeface.DEFAULT);
         text.setColor(0x77D4AF37);
-        c.drawText("Select any unlocked trial to begin weaving", cx, sh - 45f, text);
+        c.drawText("Select any unlocked trial to begin weaving", cx, sh - 46f, text);
         text.setTextAlign(Paint.Align.LEFT);
     }
 

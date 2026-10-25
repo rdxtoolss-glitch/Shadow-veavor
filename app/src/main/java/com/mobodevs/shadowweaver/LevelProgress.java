@@ -135,6 +135,14 @@ public class LevelProgress {
         return highestUnlocked >= startLevel;
     }
 
+    public void resetAll() {
+        highestUnlocked = 0;
+        for (int i = 0; i < stars.length; i++) {
+            stars[i] = 0;
+            bestTimes[i] = 0L;
+        }
+    }
+
     public void resetAllProgress(Context context) {
         highestUnlocked = 0;
         for (int i = 0; i < stars.length; i++) {

@@ -40,15 +40,21 @@ public final class TutorialScreen {
     private static final UiButton btnBack = new UiButton();
 
     private static boolean layoutReady;
+    private static float lastSceneH = 0f;
 
-    private static void layout() {
-        if (layoutReady) return;
+    public static void layout() {
+        layout(ShadowCalculator.SCENE_H);
+    }
+
+    public static void layout(float sceneH) {
+        if (layoutReady && Math.abs(lastSceneH - sceneH) < 1f) return;
+        lastSceneH = sceneH;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
         float cardW = 820f;
         float cardH = 1040f;
         cardL = cx - cardW * 0.5f;
-        cardT = 200f;
+        cardT = Math.max(120f, (sceneH - (cardH + 110f)) * 0.5f);
         cardR = cardL + cardW;
         cardB = cardT + cardH;
 
@@ -77,7 +83,11 @@ public final class TutorialScreen {
     }
 
     public static Action onTouchDown(float sx, float sy) {
-        layout();
+        return onTouchDown(sx, sy, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchDown(float sx, float sy, float sceneH) {
+        layout(sceneH);
         btnPrev.isPressed = btnPrev.hitTest(sx, sy);
         btnNext.isPressed = btnNext.hitTest(sx, sy);
         btnBack.isPressed = btnBack.hitTest(sx, sy);
@@ -85,7 +95,11 @@ public final class TutorialScreen {
     }
 
     public static Action onTouchUp(float sx, float sy) {
-        layout();
+        return onTouchUp(sx, sy, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchUp(float sx, float sy, float sceneH) {
+        layout(sceneH);
         Action act = Action.NONE;
 
         if (btnPrev.isPressed && btnPrev.hitTest(sx, sy)) {
@@ -114,13 +128,17 @@ public final class TutorialScreen {
     }
 
     public static void draw(Canvas c, float time) {
-        layout();
+        draw(c, time, ShadowCalculator.SCENE_H);
+    }
+
+    public static void draw(Canvas c, float time, float sceneH) {
+        layout(sceneH);
 
         float sw = ShadowCalculator.SCENE_W;
-        float sh = ShadowCalculator.SCENE_H;
+        float sh = sceneH;
         float cx = sw * 0.5f;
 
-        // 1. Celestial Twilight Backdrop Gradient
+        // 1. Celestial Twilight Backdrop Gradient (Fills 100% of the screen)
         fill.setShader(new LinearGradient(0, 0, 0, sh,
                 new int[]{0xFF24160E, 0xFF1B2032, 0xFF101320},
                 new float[]{0f, 0.40f, 1f},

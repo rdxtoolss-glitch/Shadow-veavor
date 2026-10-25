@@ -9,10 +9,12 @@ import android.graphics.Typeface;
 
 /**
  * Shadow Weaver - CodexScreen
- * ===========================
- * Astronomy Journal & Shadow Relics Gallery.
- * Displays all 15 collectible shadow constellations, player alchemist rank,
- * star mastery progress, personal best times, and inspectable relic lore.
+ * ============================
+ * Astronomy Journal & Treasury of Collected Celestial Relics.
+ * Displays all 15 collectible astral shadow artifacts, inspection lore,
+ * and completion statistics.
+ *
+ * Fully responsive: expands seamlessly across tall phone aspect ratios with zero black bars.
  */
 public final class CodexScreen {
 
@@ -20,11 +22,9 @@ public final class CodexScreen {
         NONE, BACK
     }
 
+    private static final int TOTAL_ITEMS = 15;
     private static final int COLS = 5;
     private static final int ROWS = 3;
-    private static final int TOTAL_ITEMS = 15;
-
-    private static int selectedRelic = 0;
 
     private static final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -37,46 +37,53 @@ public final class CodexScreen {
     private static final float[] ITEM_B = new float[TOTAL_ITEMS];
 
     private static final UiButton btnBack = new UiButton();
+    private static int selectedRelic = 0;
     private static boolean layoutReady;
+    private static float lastSceneH = 0f;
 
     private static final String[] RELIC_TITLES = {
             "The Apprentice's Domicile",
-            "The Arbor of Wisdom",
-            "The Astral Star",
-            "The Vector Arrow",
-            "The Golden Carp",
-            "The Celestial Galleon",
-            "The Sacred Feline",
-            "The Phoenix Falcon",
-            "The Psyche Butterfly",
-            "The Alchemical Blossom",
-            "The Eternal Flame",
-            "The Skeleton Key",
-            "The Shadow Weaver",
-            "The Obsidian Peaks",
-            "The Astrolabe Compass"
+            "The Arbor of Ancient Wisdom",
+            "The Radiant Astral Beacon",
+            "The Vector of Illumination",
+            "The Sacred Golden Carp",
+            "The Celestial Astrolabe Galleon",
+            "The Feline Guardian of Shadows",
+            "The Soaring Solar Phoenix",
+            "The Psyche Chrysalis Butterfly",
+            "The Blossom of Philosophers",
+            "The Eternal Vesper Candle",
+            "The Key of Celestial Gates",
+            "The Master Shadow Weaver",
+            "The Obsidian Astral Peaks",
+            "The Great Nautical Chronometer"
     };
 
     private static final String[] RELIC_LORE = {
-            "The foundational sanctuary where light, perspective, and shadow manipulation are first mastered.",
-            "An ancient cedar tree whose cast shadows whisper the secrets of rotational symmetry and branch angles.",
-            "A celestial quintuple constellation guiding apprentices across the cosmic sphere.",
-            "The alchemical pointer directing the seeker toward the luminous astral horizon.",
-            "An ethereal carp that swims effortlessly through light rays and shadow currents.",
-            "A mystical vessel designed to sail upon the boundless sea of midnight twilight.",
-            "Guardian of the twilight hearth, shifting fluidly between physical form and silhouetted grace.",
-            "A bird of radiant flame whose majestic silhouette stretches across the highest firmament.",
-            "A creature of cosmic metamorphosis, unfolding delicate wings of dual-fold symmetry.",
-            "A sacred blossom blooming exclusively under the focused incandescent glow of candlelight.",
-            "The primordial candle tallow that yields illumination, casting truth upon darkness.",
-            "An antique brass artifact forged to unlock the grand vault of the Celestial Observatory.",
-            "The seeker of mysteries who binds geometry, distance, and illumination into living form.",
-            "Twin granite summits marking the solemn threshold to the outer astral spheres.",
-            "The supreme masterwork astrolabe charting navigation across all fifteen celestial realms."
+            "The humble timber dwelling where the alchemical study of light and shade first commenced.",
+            "Deep in the ancient groves, branches filter celestial rays to cast geometric shadow tapestries upon the moss.",
+            "An octagonal star forged from celestial bronze, aligning midnight horizons with cardinal rays.",
+            "The true trajectory of illumination, demonstrating that every ray cast into darkness must find its origin in flame.",
+            "Swims through currents of pure starlight, guiding lost alchemists across the ethereal celestial sea.",
+            "Carries celestial voyagers across the boundary between candlelight and obsidian night.",
+            "Worshiped in ancient temples for its keen sight through darkest umbra and deepest midnight.",
+            "Born from eternal solar embers, ascending with outstretched wings of pure golden silhouette.",
+            "Emblem of transformative illumination, folding delicate wings of umbra into radiant daylight.",
+            "Unfolds concentric petals of golden brass only when touched by the exact focal convergence of light.",
+            "The prime luminary of the alchemist's sanctum, whose living flame casts every trial into existence.",
+            "Unlocks the hidden vaults beneath the Observatory, where the primordial tablets of optics remain preserved.",
+            "The sacred silhouette of the practitioner who has mastered the delicate art of weaving light into form.",
+            "High pinnacles of obsidian where the twin moons cast double penumbras across the celestial horizon.",
+            "The ultimate navigational relic of the ancients, combining azimuth rings, sundial rays, and magnetic star finials."
     };
 
-    private static void layout() {
-        if (layoutReady) return;
+    public static void layout() {
+        layout(ShadowCalculator.SCENE_H);
+    }
+
+    public static void layout(float sceneH) {
+        if (layoutReady && Math.abs(lastSceneH - sceneH) < 1f) return;
+        lastSceneH = sceneH;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
         float padX = 50f;
@@ -99,7 +106,7 @@ public final class CodexScreen {
 
         float btnW = 440f;
         float btnH = 76f;
-        float btnY = 1330f;
+        float btnY = (sceneH > 1750f) ? 1360f : 1330f;
         btnBack.setBounds(cx - btnW * 0.5f, btnY, cx + btnW * 0.5f, btnY + btnH);
         btnBack.cornerRadius = 18f;
 
@@ -107,13 +114,21 @@ public final class CodexScreen {
     }
 
     public static Action onTouchDown(float sx, float sy) {
-        layout();
+        return onTouchDown(sx, sy, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchDown(float sx, float sy, float sceneH) {
+        layout(sceneH);
         btnBack.isPressed = btnBack.hitTest(sx, sy);
         return Action.NONE;
     }
 
     public static Action onTouchUp(float sx, float sy) {
-        layout();
+        return onTouchUp(sx, sy, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchUp(float sx, float sy, float sceneH) {
+        layout(sceneH);
 
         if (btnBack.isPressed && btnBack.hitTest(sx, sy)) {
             btnBack.isPressed = false;
@@ -137,13 +152,17 @@ public final class CodexScreen {
     }
 
     public static void draw(Canvas c, LevelProgress progress, float time) {
-        layout();
+        draw(c, progress, time, ShadowCalculator.SCENE_H);
+    }
+
+    public static void draw(Canvas c, LevelProgress progress, float time, float sceneH) {
+        layout(sceneH);
 
         float sw = ShadowCalculator.SCENE_W;
-        float sh = ShadowCalculator.SCENE_H;
+        float sh = sceneH;
         float cx = sw * 0.5f;
 
-        // 1. Celestial Twilight Background Gradient
+        // 1. Celestial Twilight Background Gradient (Fills 100% of the screen)
         fill.setShader(new LinearGradient(0, 0, 0, sh,
                 new int[]{0xFF24160E, 0xFF1B2032, 0xFF101320},
                 new float[]{0f, 0.40f, 1f},
@@ -213,7 +232,7 @@ public final class CodexScreen {
             c.drawRoundRect(barL, barT, barL + barW * fillRatio, barT + barH, 7f, 7f, fill);
         }
 
-        // 4. 15 Relic Cards Grid
+        // 4. Grid of 15 Collectible Relic Cards
         int highestUnlocked = (progress != null) ? progress.getHighestUnlocked() : 0;
 
         for (int i = 0; i < TOTAL_ITEMS; i++) {
@@ -301,11 +320,11 @@ public final class CodexScreen {
             }
         }
 
-        // 5. Selected Relic Detailed Lore Inspection Plaque (fills vertical canvas)
+        // 5. Selected Relic Detailed Lore Inspection Plaque
         float specL = 50f;
         float specR = sw - 50f;
         float specT = 905f;
-        float specB = 1290f;
+        float specB = (sh > 1750f) ? 1310f : 1290f;
 
         fill.setColor(0xEE1E2434);
         c.drawRoundRect(specL, specT, specR, specB, 22f, 22f, fill);
@@ -404,7 +423,7 @@ public final class CodexScreen {
         text.setTextSize(16f);
         text.setTypeface(Typeface.DEFAULT);
         text.setColor(0x77D4AF37);
-        c.drawText("Tap any relic card above to inspect its ancient lore", cx, sh - 45f, text);
+        c.drawText("Tap any relic card above to inspect its ancient lore", cx, sh - 46f, text);
         text.setTextAlign(Paint.Align.LEFT);
     }
 

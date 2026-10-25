@@ -37,8 +37,8 @@ public class ParticleSystem {
     private final float[] sparkDecay = new float[MAX_SPARKS];
     private final int[] sparkColor = new int[MAX_SPARKS];
 
-    private final float sceneW;
-    private final float sceneH;
+    private float sceneW;
+    private float sceneH;
     private float globalTime;
 
     public ParticleSystem(float sceneW, float sceneH) {
@@ -67,6 +67,11 @@ public class ParticleSystem {
         for (int i = 0; i < MAX_SPARKS; i++) {
             sparkLife[i] = 0f;
         }
+    }
+
+    public void updateDimensions(float sceneW, float sceneH) {
+        if (sceneW > 0f) this.sceneW = sceneW;
+        if (sceneH > 0f) this.sceneH = sceneH;
     }
 
     /**

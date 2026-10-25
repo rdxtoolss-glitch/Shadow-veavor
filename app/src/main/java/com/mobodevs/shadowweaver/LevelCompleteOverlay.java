@@ -10,6 +10,7 @@ import android.graphics.Typeface;
  * =====================================
  * Victory celebration modal with sequential 3-star reveal,
  * par time and move efficiency breakdown, and tactile buttons.
+ * Fully responsive across all aspect ratios using dynamic sceneH.
  */
 public final class LevelCompleteOverlay {
 
@@ -32,15 +33,21 @@ public final class LevelCompleteOverlay {
     private static final UiButton btnSelect = new UiButton();
 
     private static boolean layoutReady;
+    private static float lastSceneH = 0f;
 
-    private static void layout() {
-        if (layoutReady) return;
+    public static void layout() {
+        layout(ShadowCalculator.SCENE_H);
+    }
+
+    public static void layout(float sceneH) {
+        if (layoutReady && Math.abs(lastSceneH - sceneH) < 1f) return;
+        lastSceneH = sceneH;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
         float cardW = 740f;
         float cardH = 740f;
         cardL = cx - cardW * 0.5f;
-        cardT = (ShadowCalculator.SCENE_H - cardH) * 0.5f;
+        cardT = (sceneH - cardH) * 0.5f;
         cardR = cardL + cardW;
         cardB = cardT + cardH;
 
@@ -66,7 +73,11 @@ public final class LevelCompleteOverlay {
     }
 
     public static Action onTouchDown(float sx, float sy) {
-        layout();
+        return onTouchDown(sx, sy, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchDown(float sx, float sy, float sceneH) {
+        layout(sceneH);
         btnNext.isPressed = btnNext.hitTest(sx, sy);
         btnRetry.isPressed = btnRetry.hitTest(sx, sy);
         btnSelect.isPressed = btnSelect.hitTest(sx, sy);
@@ -74,7 +85,11 @@ public final class LevelCompleteOverlay {
     }
 
     public static Action onTouchUp(float sx, float sy) {
-        layout();
+        return onTouchUp(sx, sy, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchUp(float sx, float sy, float sceneH) {
+        layout(sceneH);
         Action act = Action.NONE;
 
         if (btnNext.isPressed && btnNext.hitTest(sx, sy)) act = Action.NEXT;
@@ -95,19 +110,23 @@ public final class LevelCompleteOverlay {
     }
 
     public static void draw(Canvas c, GameThread g) {
-        draw(c, g, 1.0f);
+        draw(c, g, 1.0f, ShadowCalculator.SCENE_H);
     }
 
     public static void draw(Canvas c, GameThread g, float reveal) {
-        layout();
+        draw(c, g, reveal, ShadowCalculator.SCENE_H);
+    }
+
+    public static void draw(Canvas c, GameThread g, float reveal, float sceneH) {
+        layout(sceneH);
         if (reveal <= 0f) return;
         if (reveal > 1f) reveal = 1f;
 
         float sw = ShadowCalculator.SCENE_W;
-        float sh = ShadowCalculator.SCENE_H;
+        float sh = sceneH;
         float cx = sw * 0.5f;
 
-        // 1. Dark Modal Scrim
+        // 1. Dark Modal Scrim covering entire viewport
         fill.setColor(withAlpha(0xFF0E121E, (int) (225 * reveal)));
         c.drawRect(0, 0, sw, sh, fill);
 
