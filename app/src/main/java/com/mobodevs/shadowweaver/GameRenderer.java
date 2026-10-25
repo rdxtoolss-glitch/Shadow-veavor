@@ -218,14 +218,15 @@ final class GameRenderer {
     // ======================================================================
 
     private static void drawBackdrop(Canvas c, float flicker) {
-        // A warm vertical gradient. This single fill is most of the mood.
+        // Rich celestial chamber gradient: incandescent golden candlelight halo at top,
+        // descending into deep celestial midnight sapphire and dark obsidian vignette.
         haze.setShader(new LinearGradient(0, 0, 0, ShadowCalculator.SCENE_H,
                 new int[]{
-                        mix(0xFF3A2210, 0xFF4A2C13, flicker),
-                        mix(0xFF26170D, 0xFF2C1A0E, flicker),
-                        0xFF140D08
+                        mix(0xFF56341C, 0xFF6E4224, flicker), // Luminous amber warmth near candle
+                        0xFF1B2032,                           // Deep celestial midnight indigo chamber
+                        0xFF101320                            // Rich obsidian vignette
                 },
-                new float[]{0f, 0.45f, 1f},
+                new float[]{0f, 0.40f, 1f},
                 Shader.TileMode.CLAMP));
         c.drawRect(0, 0, ShadowCalculator.SCENE_W, ShadowCalculator.SCENE_H, haze);
         haze.setShader(null);
@@ -241,19 +242,22 @@ final class GameRenderer {
         float t = ShadowCalculator.STAGE_TOP;
         float b = ShadowCalculator.STAGE_BOTTOM;
 
-        // Inlaid dark walnut stage surface
+        // Inlaid dark mahogany & walnut stage surface with warm radial sheen
         rect.set(l, t, r, b);
-        fill.setColor(0xFF1B120A);
-        c.drawRoundRect(rect, 14f, 14f, fill);
+        haze.setShader(new LinearGradient(l, t, r, b,
+                new int[]{0xFF2D1D14, 0xFF38241A, 0xFF22160E},
+                null, Shader.TileMode.CLAMP));
+        c.drawRoundRect(rect, 16f, 16f, haze);
+        haze.setShader(null);
 
-        // Stage border inlay (antique brass)
+        // Stage border inlay (radiant antique brass)
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.5f);
-        stroke.setColor(withAlpha(0xFFC5A059, (int) (110 * flicker)));
-        c.drawRoundRect(rect, 14f, 14f, stroke);
+        stroke.setStrokeWidth(3.0f);
+        stroke.setColor(withAlpha(0xFFD4AF37, (int) (180 * flicker)));
+        c.drawRoundRect(rect, 16f, 16f, stroke);
 
         // Corner bracket flourishes
-        float cw = 28f;
+        float cw = 32f;
         drawCornerBracket(c, l, t, cw, 0f);
         drawCornerBracket(c, r, t, cw, 90f);
         drawCornerBracket(c, r, b, cw, 180f);
@@ -263,30 +267,30 @@ final class GameRenderer {
         float cx = (l + r) * 0.5f;
         float cy = (t + b) * 0.5f;
 
-        stroke.setStrokeWidth(1.4f);
-        stroke.setColor(withAlpha(0xFFFFE0B0, 32));
+        stroke.setStrokeWidth(1.6f);
+        stroke.setColor(withAlpha(0xFFFFE0B0, 65));
         c.drawCircle(cx, cy, 120f, stroke);
         c.drawCircle(cx, cy, 240f, stroke);
         c.drawCircle(cx, cy, 360f, stroke);
 
         // Outer ring with fine degree ticks
-        stroke.setColor(withAlpha(0xFFFFD54F, (int) (55 * flicker)));
+        stroke.setColor(withAlpha(0xFFFFD54F, (int) (120 * flicker)));
         c.drawCircle(cx, cy, 460f, stroke);
 
         for (int deg = 0; deg < 360; deg += 10) {
             float rad = (float) Math.toRadians(deg);
             boolean major = (deg % 30 == 0);
-            float len = major ? 12f : 6f;
+            float len = major ? 14f : 8f;
             float cos = (float) Math.cos(rad);
             float sin = (float) Math.sin(rad);
-            stroke.setStrokeWidth(major ? 1.8f : 1.0f);
-            stroke.setColor(major ? withAlpha(0xFFFFD54F, 70) : withAlpha(0xFFFFE0B0, 30));
+            stroke.setStrokeWidth(major ? 2.2f : 1.2f);
+            stroke.setColor(major ? withAlpha(0xFFFFD54F, 180) : withAlpha(0xFFFFE0B0, 80));
             c.drawLine(cx + cos * (460f - len), cy + sin * (460f - len), cx + cos * 460f, cy + sin * 460f, stroke);
         }
 
         // Cardinal and diagonal compass azimuth rays
-        stroke.setStrokeWidth(1.2f);
-        stroke.setColor(withAlpha(0xFFFFE0B0, 20));
+        stroke.setStrokeWidth(1.4f);
+        stroke.setColor(withAlpha(0xFFFFE0B0, 50));
         for (int deg = 0; deg < 180; deg += 45) {
             float rad = (float) Math.toRadians(deg);
             float cos = (float) Math.cos(rad);
@@ -451,7 +455,7 @@ final class GameRenderer {
     }
 
     // ======================================================================
-    // WALL
+    // WALL (PROJECTION CANVAS)
     // ======================================================================
 
     private static void drawWall(Canvas c, float flicker) {
@@ -460,32 +464,40 @@ final class GameRenderer {
         float r = ShadowCalculator.WALL_RIGHT;
         float b = ShadowCalculator.WALL_BOTTOM;
 
-        // Wall body, lit a little more near the top where the candle reaches.
+        // Luminous warm parchment & limestone projection screen.
+        // Provides the critical high-contrast backdrop that allows cast shadows
+        // to appear rich, deep, and razor-sharp like authentic shadow puppetry.
         haze.setShader(new LinearGradient(0, t, 0, b,
                 new int[]{
-                        mix(0xFF50361E, 0xFF5E4023, flicker),
-                        0xFF3B2717,
-                        0xFF2A1B10
+                        mix(0xFFF7ECDA, 0xFFFFF6E6, flicker), // Luminous candlelit ivory top
+                        0xFFE8D6BC,                           // Warm fine parchment middle
+                        0xFFCEB89A                            // Softly shaded lower stucco
                 },
-                new float[]{0f, 0.5f, 1f},
+                new float[]{0f, 0.45f, 1f},
                 Shader.TileMode.CLAMP));
         rect.set(l, t, r, b);
-        c.drawRect(rect, haze);
+        c.drawRoundRect(rect, 14f, 14f, haze);
         haze.setShader(null);
 
-        // A single warm top edge, so the wall reads as a separate surface
-        // catching the light rather than as a rectangle painted on.
-        stroke.setStrokeWidth(3f);
-        stroke.setColor(withAlpha(0xFF6B4A2A, (int) (200 * flicker)));
-        c.drawLine(l, t, r, t, stroke);
+        // Ornate antique brass framing border around projection canvas
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(3.0f);
+        stroke.setColor(withAlpha(0xFFC5A059, (int) (220 * flicker)));
+        c.drawRoundRect(rect, 14f, 14f, stroke);
 
-        // Base shadow, grounding the wall.
-        haze.setShader(new LinearGradient(0, b - 40f, 0, b,
-                new int[]{0x00000000, 0x661A1009},
+        // Top specular golden highlight line
+        stroke.setStrokeWidth(2.0f);
+        stroke.setColor(withAlpha(0xFFFFE8B8, (int) (240 * flicker)));
+        c.drawLine(l + 14f, t + 1.5f, r - 14f, t + 1.5f, stroke);
+
+        // Grounding base drop shadow
+        haze.setShader(new LinearGradient(0, b - 32f, 0, b,
+                new int[]{0x00000000, 0x442A1608},
                 null, Shader.TileMode.CLAMP));
-        rect.set(l, b - 40f, r, b);
-        c.drawRect(rect, haze);
+        rect.set(l, b - 32f, r, b);
+        c.drawRoundRect(rect, 14f, 14f, haze);
         haze.setShader(null);
+        stroke.setStyle(Paint.Style.FILL);
     }
 
     // ======================================================================
@@ -493,13 +505,9 @@ final class GameRenderer {
     // ======================================================================
 
     /**
-     * The faint silhouette the player is aiming for.
-     *
-     * This is drawn very low alpha, and - importantly - it fades out as the
-     * player's own shadow approaches the target. A hint that dims as you get
-     * it right rewards progress and stops the puzzle feeling like a paint-by-
-     * numbers tracing exercise. It never reaches zero: total darkness here
-     * would remove the challenge entirely.
+     * The delicate celestial blueprint the player is weaving.
+     * Drawn as an authentic alchemist's sepia blueprint that illuminates
+     * with radiant golden sunlight as the player's shadow aligns.
      */
     private static void drawTargetGhost(Canvas c, GameThread g) {
         float[][] target = g.targetPolygons();
@@ -531,9 +539,9 @@ final class GameRenderer {
                     float vx = poly[i];
                     float vy = poly[i + 1];
                     fill.setColor(0xFFFFFFFF);
-                    c.drawCircle(vx, vy, 4.0f, fill);
-                    c.drawLine(vx - 7f, vy, vx + 7f, vy, stroke);
-                    c.drawLine(vx, vy - 7f, vx, vy + 7f, stroke);
+                    c.drawCircle(vx, vy, 4.5f, fill);
+                    c.drawLine(vx - 8f, vy, vx + 8f, vy, stroke);
+                    c.drawLine(vx, vy - 8f, vx, vy + 8f, stroke);
                 }
             }
             stroke.setStyle(Paint.Style.FILL);
@@ -541,17 +549,27 @@ final class GameRenderer {
         }
 
         float match = g.matchPercent() / 100f;
-        float baseAlpha = 0.16f * (1f - 0.50f * match);
+        float baseAlpha = 0.22f * (1f - 0.40f * match);
         if (g.isHintActive()) {
-            baseAlpha = 0.38f;
+            baseAlpha = 0.48f;
         }
 
-        // Base target ghost
-        fill.setColor(withAlpha(0xFFFFE0B0, (int) (255 * baseAlpha)));
+        // Luminous drafting guide on parchment
+        fill.setColor(withAlpha(0xFF8D5E32, (int) (255 * baseAlpha)));
         for (float[] poly : target) {
             buildPath(poly);
             c.drawPath(path, fill);
         }
+
+        // Blueprint outline
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(1.8f);
+        stroke.setColor(withAlpha(0xFF9E6E28, (int) (255 * (baseAlpha + 0.15f))));
+        for (float[] poly : target) {
+            buildPath(poly);
+            c.drawPath(path, stroke);
+        }
+        stroke.setStyle(Paint.Style.FILL);
 
         // Segmented Silhouette Illumination: individual aligned shapes light up!
         if (shapes != null) {
@@ -559,13 +577,13 @@ final class GameRenderer {
                 ShapeObject s = shapes[i];
                 if (s.proximityResonance > 0.35f) {
                     float t = (s.proximityResonance - 0.35f) / 0.65f;
-                    fill.setColor(withAlpha(0xFFFFCA28, (int) (130 * t)));
+                    fill.setColor(withAlpha(0xFFFFB300, (int) (140 * t)));
                     buildPath(target[i]);
                     c.drawPath(path, fill);
 
                     stroke.setStyle(Paint.Style.STROKE);
-                    stroke.setStrokeWidth(2.5f + 1.5f * t);
-                    stroke.setColor(withAlpha(0xFFFFE082, (int) (190 * t)));
+                    stroke.setStrokeWidth(2.8f + 1.2f * t);
+                    stroke.setColor(withAlpha(0xFFFFD54F, (int) (220 * t)));
                     c.drawPath(path, stroke);
                     stroke.setStyle(Paint.Style.FILL);
                 }
@@ -575,7 +593,7 @@ final class GameRenderer {
         if (g.isHintActive()) {
             stroke.setStyle(Paint.Style.STROKE);
             stroke.setStrokeWidth(2.5f);
-            stroke.setColor(0x88FFD54F);
+            stroke.setColor(0xCCFFB300);
             for (float[] poly : target) {
                 buildPath(poly);
                 c.drawPath(path, stroke);
@@ -824,50 +842,49 @@ final class GameRenderer {
                 stroke.setStyle(Paint.Style.FILL);
             }
 
-            // 3. 2.5D Crafted Obsidian Body
-            int fillA = isSel ? 0xF6 : 0xDD;
-            int bodyColor = isSel ? 0xFF3D2A18 : 0xFF2A1C12;
+            // 3. 2.5D Crafted Obsidian & Polished Bronze Body
+            int fillA = isSel ? 0xFF : 0xF2;
+            int bodyColor = isSel ? 0xFF583A20 : 0xFF3F2A18;
             fill.setColor(withAlpha(bodyColor, fillA));
             c.drawPath(path, fill);
 
-            // Directional bevel shading facing candle
+            // Directional bevel shading facing candle (light top-left)
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(2.5f);
-            stroke.setColor(withAlpha(0xFFFFE0B0, isSel ? 180 : 100));
+            stroke.setStrokeWidth(2.8f);
+            stroke.setColor(withAlpha(0xFFFFF4D0, isSel ? 240 : 160));
             c.drawPath(path, stroke);
 
             // Perimeter polished brass border
-            stroke.setStrokeWidth(isSel ? 4.5f + 1.5f * pulse : 3.0f);
+            stroke.setStrokeWidth(isSel ? 5.0f + 1.5f * pulse : 3.5f);
             stroke.setColor(isSel
-                    ? withAlpha(0xFFFFD54F, (int) (225 + 30 * pulse))
-                    : withAlpha(0xFFD4AF37, 180));
+                    ? withAlpha(0xFFFFD54F, (int) (240 + 15 * pulse))
+                    : withAlpha(0xFFE5B048, 220));
             c.drawPath(path, stroke);
             stroke.setStyle(Paint.Style.FILL);
 
             // Center brass astrolabe pivot rivet
-            fill.setColor(isSel ? 0xFFFFD880 : 0xFFC5A059);
-            c.drawCircle(s.x, s.y, 8f, fill);
+            fill.setColor(isSel ? 0xFFFFE082 : 0xFFD4AF37);
+            c.drawCircle(s.x, s.y, 9f, fill);
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(1.8f);
-            stroke.setColor(0x882A180C);
-            c.drawCircle(s.x, s.y, 8f, stroke);
+            stroke.setStrokeWidth(2.0f);
+            stroke.setColor(0xFF1B0E05);
+            c.drawCircle(s.x, s.y, 9f, stroke);
 
             // Engraved star glyph on pivot
-            stroke.setStrokeWidth(1.2f);
-            stroke.setColor(0xFF3E2723);
-            c.drawLine(s.x - 4f, s.y, s.x + 4f, s.y, stroke);
-            c.drawLine(s.x, s.y - 4f, s.x, s.y + 4f, stroke);
+            stroke.setStrokeWidth(1.4f);
+            stroke.setColor(0xFFFFFFFF);
+            c.drawCircle(s.x, s.y, 3.5f, stroke);
             stroke.setStyle(Paint.Style.FILL);
 
             // 4. Mechanical Precision Rotation Dial
             if (isSel) {
                 float r = s.maxRadius();
-                float dialR = r + 26f;
+                float dialR = r + 28f;
 
                 // Circular dial track
                 stroke.setStyle(Paint.Style.STROKE);
-                stroke.setStrokeWidth(2.2f);
-                stroke.setColor(0x40FFE0A8);
+                stroke.setStrokeWidth(2.4f);
+                stroke.setColor(0x99FFE0A8);
                 c.drawCircle(s.x, s.y, dialR, stroke);
 
                 // Notches: 15° minor, 45° semi, 90° major ticks
@@ -875,13 +892,13 @@ final class GameRenderer {
                     float rad = (float) Math.toRadians(deg);
                     boolean isMajor = (deg % 90 == 0);
                     boolean isSemi = (deg % 45 == 0);
-                    float tickLen = isMajor ? 12f : (isSemi ? 8f : 5f);
+                    float tickLen = isMajor ? 14f : (isSemi ? 9f : 6f);
                     float t1 = dialR - tickLen * 0.5f;
                     float t2 = dialR + tickLen * 0.5f;
                     float cos = (float) Math.cos(rad);
                     float sin = (float) Math.sin(rad);
-                    stroke.setStrokeWidth(isMajor ? 2.5f : 1.3f);
-                    stroke.setColor(isMajor ? 0xBBFFE9C4 : (isSemi ? 0x88FFE9C4 : 0x44FFE9C4));
+                    stroke.setStrokeWidth(isMajor ? 3.0f : 1.6f);
+                    stroke.setColor(isMajor ? 0xFFFFF8E1 : (isSemi ? 0xEEFFE082 : 0xAAFFE082));
                     c.drawLine(s.x + cos * t1, s.y + sin * t1, s.x + cos * t2, s.y + sin * t2, stroke);
                 }
 
@@ -892,25 +909,25 @@ final class GameRenderer {
                 float hrx = s.x + dialR * cosA;
                 float hry = s.y + dialR * sinA;
 
-                stroke.setStrokeWidth(2.5f);
-                stroke.setColor(0x88FFE0A8);
+                stroke.setStrokeWidth(2.8f);
+                stroke.setColor(0xDDFFE0A8);
                 c.drawLine(s.x, s.y, hrx, hry, stroke);
                 stroke.setStyle(Paint.Style.FILL);
 
                 // Rotary knob with glowing amber core and brass bezel
-                fill.setColor(withAlpha(0xFFFFC46A, (int) (70 + 45 * pulse)));
-                c.drawCircle(hrx, hry, 18f + 2f * pulse, fill);
+                fill.setColor(withAlpha(0xFFFFC46A, (int) (90 + 55 * pulse)));
+                c.drawCircle(hrx, hry, 20f + 2f * pulse, fill);
 
-                fill.setColor(0xFFE5C07B);
-                c.drawCircle(hrx, hry, 12f, fill);
+                fill.setColor(0xFFE5B048);
+                c.drawCircle(hrx, hry, 13f, fill);
                 stroke.setStyle(Paint.Style.STROKE);
-                stroke.setStrokeWidth(2.2f);
-                stroke.setColor(0xFF2E1C0F);
-                c.drawCircle(hrx, hry, 12f, stroke);
+                stroke.setStrokeWidth(2.4f);
+                stroke.setColor(0xFF1B0E05);
+                c.drawCircle(hrx, hry, 13f, stroke);
                 stroke.setStyle(Paint.Style.FILL);
 
                 fill.setColor(0xFFFFFFFF);
-                c.drawCircle(hrx, hry, 4.5f, fill);
+                c.drawCircle(hrx, hry, 5.0f, fill);
             }
 
             c.restoreToCount(saveShape);
@@ -930,15 +947,15 @@ final class GameRenderer {
         float pauseX = 64f;
         float pauseY = 82f;
         float pauseR = 30f;
-        fill.setColor(0x33F0DFC6);
+        fill.setColor(0xEE1A2234);
         c.drawCircle(pauseX, pauseY, pauseR, fill);
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(1.8f);
-        stroke.setColor(0x66FFE0A8);
+        stroke.setStrokeWidth(2.2f);
+        stroke.setColor(0xFFD4AF37);
         c.drawCircle(pauseX, pauseY, pauseR, stroke);
 
         // Pause icon (two vertical bars)
-        fill.setColor(0xFFF0DFC6);
+        fill.setColor(0xFFFFFDF8);
         stroke.setStyle(Paint.Style.FILL);
         rect.set(pauseX - 8f, pauseY - 11f, pauseX - 3f, pauseY + 11f);
         c.drawRoundRect(rect, 2f, 2f, fill);
@@ -948,15 +965,23 @@ final class GameRenderer {
         // 2. Top-Center: Level Title and Chapter
         float cx = ShadowCalculator.SCENE_W * 0.5f;
         text.setTextAlign(Paint.Align.CENTER);
-        text.setColor(0xFFF0DFC6);
         text.setTextSize(32f);
         text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+
+        // Drop shadow for title
+        text.setColor(0xCC000000);
+        c.drawText(title, cx, 81.5f, text);
+        text.setColor(0xFFFFFDF8);
         c.drawText(title, cx, 80f, text);
 
-        text.setColor(0x8AF0DFC6);
-        text.setTextSize(22f);
+        int ch = (g.levelIndex() / 5) + 1;
+        String chRoman = (ch == 1 ? "I" : (ch == 2 ? "II" : "III"));
+        text.setTextSize(20f);
         text.setTypeface(android.graphics.Typeface.DEFAULT);
-        c.drawText("Chapter I  *  Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, 114f, text);
+        text.setColor(0xCC000000);
+        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, 115.5f, text);
+        text.setColor(0xFFFFE0A8);
+        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, 114f, text);
 
         // 3. Top-Right: Precision Circular Match Meter
         drawMatchMeter(c, g, match);
@@ -967,16 +992,16 @@ final class GameRenderer {
         float btnR = 34f;
         boolean hintOn = g.isHintActive();
 
-        fill.setColor(hintOn ? 0xCCB37834 : 0x33F0DFC6);
+        fill.setColor(hintOn ? 0xFFE5A836 : 0xEE1A2234);
         c.drawCircle(hintX, hintY, btnR, fill);
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(1.8f);
-        stroke.setColor(hintOn ? 0xFFFFE0A8 : 0x55FFE0A8);
+        stroke.setStrokeWidth(2.2f);
+        stroke.setColor(hintOn ? 0xFFFFF4D0 : 0xFFD4AF37);
         c.drawCircle(hintX, hintY, btnR, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
         // Lightbulb glyph
-        fill.setColor(hintOn ? 0xFFFFFFFF : 0xFFF0DFC6);
+        fill.setColor(hintOn ? 0xFF140802 : 0xFFFFFDF8);
         c.drawCircle(hintX, hintY - 4f, 10f, fill);
         rect.set(hintX - 5f, hintY + 6f, hintX + 5f, hintY + 12f);
         c.drawRoundRect(rect, 1.5f, 1.5f, fill);
@@ -984,20 +1009,20 @@ final class GameRenderer {
         // 5. Bottom-Right: Reset Level Button
         float rstX = ShadowCalculator.SCENE_W - 96f;
         float rstY = ShadowCalculator.SCENE_H - 72f;
-        fill.setColor(0x33F0DFC6);
+        fill.setColor(0xEE1A2234);
         c.drawCircle(rstX, rstY, btnR, fill);
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(1.8f);
-        stroke.setColor(0x55FFE0A8);
+        stroke.setStrokeWidth(2.2f);
+        stroke.setColor(0xFFD4AF37);
         c.drawCircle(rstX, rstY, btnR, stroke);
 
         // Curved reload arrow glyph
-        stroke.setStrokeWidth(2.6f);
-        stroke.setColor(0xFFF0DFC6);
+        stroke.setStrokeWidth(2.8f);
+        stroke.setColor(0xFFFFFDF8);
         rect.set(rstX - 11f, rstY - 11f, rstX + 11f, rstY + 11f);
         c.drawArc(rect, 45f, 270f, false, stroke);
         stroke.setStyle(Paint.Style.FILL);
-        fill.setColor(0xFFF0DFC6);
+        fill.setColor(0xFFFFFDF8);
         path.reset();
         path.moveTo(rstX + 10f, rstY - 13f);
         path.lineTo(rstX + 16f, rstY - 4f);
@@ -1008,9 +1033,11 @@ final class GameRenderer {
         // 6. Hint text (fades when progress is high, or shown when hint toggle is on)
         if (hintOn || match < 55f) {
             float a = hintOn ? 1.0f : (1f - match / 55f);
-            text.setColor(withAlpha(0xAAF0DFC6, (int) (255 * a * 0.95f)));
             text.setTextSize(24f);
             text.setTextAlign(Paint.Align.CENTER);
+            text.setColor(withAlpha(0xCC000000, (int) (255 * a * 0.95f)));
+            c.drawText(hint, cx, ShadowCalculator.SCENE_H - 68.5f, text);
+            text.setColor(withAlpha(0xFFFFFDF8, (int) (255 * a * 0.95f)));
             c.drawText(hint, cx, ShadowCalculator.SCENE_H - 70f, text);
         }
         text.setTextAlign(Paint.Align.LEFT);
@@ -1019,21 +1046,28 @@ final class GameRenderer {
     private static void drawMatchMeter(Canvas c, GameThread g, float match) {
         float cx = ShadowCalculator.SCENE_W - 96f;
         float cy = 92f;
-        float r = 42f;
+        float r = 40f;
 
-        // Track
+        // Frosted obsidian background plate with brass rim
+        fill.setColor(0xEE1A2234);
+        c.drawCircle(cx, cy, r + 10f, fill);
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(9f);
+        stroke.setStrokeWidth(2.2f);
+        stroke.setColor(0xFFD4AF37);
+        c.drawCircle(cx, cy, r + 10f, stroke);
+
+        // Meter Track
+        stroke.setStrokeWidth(8f);
         stroke.setStrokeCap(Paint.Cap.ROUND);
-        stroke.setColor(0x33F0DFC6);
+        stroke.setColor(0x44605030);
         rect.set(cx - r, cy - r, cx + r, cy + r);
         c.drawArc(rect, 0, 360, false, stroke);
 
         // Fill arc
         float clamped = match < 0f ? 0f : (match > 100f ? 100f : match);
         if (clamped > 0.5f) {
-            stroke.setStrokeWidth(9f);
-            stroke.setColor(mix(0xFFFFC46A, 0xFFFFE9C4, clamped / 100f));
+            stroke.setStrokeWidth(8f);
+            stroke.setColor(mix(0xFFFFB300, 0xFFFFE082, clamped / 100f));
             rect.set(cx - r, cy - r, cx + r, cy + r);
             c.drawArc(rect, -90f, 360f * clamped / 100f, false, stroke);
 
@@ -1047,11 +1081,14 @@ final class GameRenderer {
         }
         stroke.setStrokeCap(Paint.Cap.BUTT);
 
+        // High contrast percentage text
         text.setTextAlign(Paint.Align.CENTER);
-        text.setColor(0xD9F0DFC6);
-        text.setTextSize(30f);
+        text.setTextSize(26f);
         text.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        c.drawText(Math.round(clamped) + "%", cx, cy + 10f, text);
+        text.setColor(0xCC000000);
+        c.drawText(Math.round(clamped) + "%", cx, cy + 9.5f, text);
+        text.setColor(0xFFFFFDF8);
+        c.drawText(Math.round(clamped) + "%", cx, cy + 8f, text);
         text.setTextAlign(Paint.Align.LEFT);
     }
 

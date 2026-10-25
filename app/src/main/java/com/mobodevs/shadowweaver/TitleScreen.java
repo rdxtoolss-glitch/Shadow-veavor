@@ -1,9 +1,10 @@
 package com.mobodevs.shadowweaver;
 
 import android.graphics.Canvas;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.Typeface;
 
 /**
@@ -37,38 +38,38 @@ public final class TitleScreen {
         if (layoutReady) return;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
-        float btnW = 540f;
+        float btnW = 560f;
         float l = cx - btnW * 0.5f;
         float r = cx + btnW * 0.5f;
 
-        float startY = 640f;
-        float heroH = 92f;
-        float subH = 72f;
-        float gap = 20f;
+        float startY = 660f;
+        float heroH = 100f;
+        float subH = 82f;
+        float gap = 22f;
 
         // Hero CTA
         btnContinue.setBounds(l, startY, r, startY + heroH);
         btnContinue.isPrimary = true;
-        btnContinue.cornerRadius = 20f;
+        btnContinue.cornerRadius = 22f;
 
         // Chapters
-        float y2 = startY + heroH + gap + 8f;
+        float y2 = startY + heroH + gap;
         btnChapters.setBounds(l, y2, r, y2 + subH);
-        btnChapters.cornerRadius = 16f;
+        btnChapters.cornerRadius = 18f;
 
-        // How to Play & Codex (side-by-side or stacked)
+        // How to Play & Codex (side-by-side)
         float halfW = (btnW - gap) * 0.5f;
         float y3 = y2 + subH + gap;
         btnTutorial.setBounds(l, y3, l + halfW, y3 + subH);
-        btnTutorial.cornerRadius = 16f;
+        btnTutorial.cornerRadius = 18f;
 
         btnCodex.setBounds(l + halfW + gap, y3, r, y3 + subH);
-        btnCodex.cornerRadius = 16f;
+        btnCodex.cornerRadius = 18f;
 
         // Settings
         float y4 = y3 + subH + gap;
         btnSettings.setBounds(l, y4, r, y4 + subH);
-        btnSettings.cornerRadius = 16f;
+        btnSettings.cornerRadius = 18f;
 
         layoutReady = true;
     }
@@ -117,9 +118,17 @@ public final class TitleScreen {
         float sw = ShadowCalculator.SCENE_W;
         float sh = ShadowCalculator.SCENE_H;
 
-        // 1. Deep Midnight Umber Vignette
-        fill.setColor(0xFF140B06);
+        // 1. Rich Celestial Twilight & Warm Radiance Gradient
+        fill.setShader(new LinearGradient(0, 0, 0, sh,
+                new int[]{
+                        GameRenderer.mix(0xFF56341C, 0xFF6E4224, flicker), // Luminous amber warmth near candle
+                        0xFF1B2032,                                       // Deep celestial midnight indigo
+                        0xFF101320                                        // Dark obsidian base vignette
+                },
+                new float[]{0f, 0.38f, 1f},
+                Shader.TileMode.CLAMP));
         c.drawRect(0, 0, sw, sh, fill);
+        fill.setShader(null);
 
         // 2. Slow Rotating Celestial Astrolabe Ring in Background
         int saveRing = c.save();
@@ -128,8 +137,8 @@ public final class TitleScreen {
         c.rotate(time * 3.5f);
 
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(1.5f);
-        stroke.setColor(0x18FFE0A8);
+        stroke.setStrokeWidth(2.0f);
+        stroke.setColor(0x44D4AF37);
         c.drawCircle(0, 0, 260f, stroke);
         c.drawCircle(0, 0, 340f, stroke);
 
@@ -138,7 +147,10 @@ public final class TitleScreen {
             float rad = (float) Math.toRadians(i);
             float cos = (float) Math.cos(rad);
             float sin = (float) Math.sin(rad);
-            c.drawLine(cos * 250f, sin * 250f, cos * 270f, sin * 270f, stroke);
+            boolean major = (i % 30 == 0);
+            stroke.setStrokeWidth(major ? 2.5f : 1.2f);
+            stroke.setColor(major ? 0x99FFD54F : 0x44FFE0A8);
+            c.drawLine(cos * 248f, sin * 248f, cos * 272f, sin * 272f, stroke);
         }
         c.restoreToCount(saveRing);
 
@@ -152,26 +164,32 @@ public final class TitleScreen {
         text.setTypeface(Typeface.DEFAULT_BOLD);
         text.setTextSize(64f);
 
-        // Glow drop-shadow under title
-        text.setColor(0x66FFC46A);
-        c.drawText("SHADOW WEAVER", cx, 372f, text);
+        // Deep drop-shadow for title
+        text.setColor(0xEE000000);
+        c.drawText("SHADOW WEAVER", cx, 373.5f, text);
 
-        // Main gold title
-        text.setColor(0xFFFFF0C4);
+        // Warm gold foil bevel
+        text.setColor(0xFFC5943C);
+        c.drawText("SHADOW WEAVER", cx, 371.5f, text);
+
+        // Main luminous gold title
+        text.setColor(0xFFFFFDF8);
         c.drawText("SHADOW WEAVER", cx, 370f, text);
 
-        // Subtitle banner
+        // Subtitle banner with drop shadow
         text.setTextSize(20f);
         text.setTypeface(Typeface.DEFAULT);
-        text.setColor(0xBBFFE0A8);
+        text.setColor(0xDD000000);
+        c.drawText("*  THE ALCHEMIST'S THEATER OF SHADOWS  *", cx, 417.5f, text);
+        text.setColor(0xFFFFE0A8);
         c.drawText("*  THE ALCHEMIST'S THEATER OF SHADOWS  *", cx, 416f, text);
 
         // Decorative brass dividing flourish
-        stroke.setStrokeWidth(1.8f);
-        stroke.setColor(0x44C5A059);
-        c.drawLine(cx - 180f, 440f, cx + 180f, 440f, stroke);
-        fill.setColor(0x88C5A059);
-        c.drawCircle(cx, 440f, 4.5f, fill);
+        stroke.setStrokeWidth(2.2f);
+        stroke.setColor(0xFFD4AF37);
+        c.drawLine(cx - 200f, 440f, cx + 200f, 440f, stroke);
+        fill.setColor(0xFFFFE082);
+        c.drawCircle(cx, 440f, 5.5f, fill);
 
         // 5. Update Dynamic Button Labels
         int currentUnlocked = (progress != null) ? progress.getHighestUnlocked() : 0;
@@ -191,13 +209,13 @@ public final class TitleScreen {
         btnChapters.subLabel = "⭐ " + totalStars + " / " + LevelProgress.TOTAL_MAX_STARS + " Stars Collected";
 
         btnTutorial.label = "HOW TO PLAY";
-        btnTutorial.subLabel = "The Rules of Light";
+        btnTutorial.subLabel = "Rules of Light";
 
         btnCodex.label = "JOURNAL";
-        btnCodex.subLabel = "Relics & Ranks";
+        btnCodex.subLabel = "Relics & Lore";
 
         btnSettings.label = "SETTINGS";
-        btnSettings.subLabel = "Audio & Preferences";
+        btnSettings.subLabel = "Audio & Haptics";
 
         // 6. Draw Buttons
         btnContinue.draw(c, fill, stroke, text, 1.0f);
@@ -206,18 +224,65 @@ public final class TitleScreen {
         btnCodex.draw(c, fill, stroke, text, 1.0f);
         btnSettings.draw(c, fill, stroke, text, 1.0f);
 
-        // 7. Footer Version
+        // 7. Astral Mastery Status Card (fills vertical canvas with rich polish)
+        float cardL = cx - 280f;
+        float cardR = cx + 280f;
+        float cardT = 1170f;
+        float cardB = 1350f;
+
+        fill.setColor(0xEE1A2234);
+        c.drawRoundRect(cardL, cardT, cardR, cardB, 18f, 18f, fill);
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2.2f);
+        stroke.setColor(0xFFD4AF37);
+        c.drawRoundRect(cardL, cardT, cardR, cardB, 18f, 18f, stroke);
+
+        // Specular highlight line
+        stroke.setStrokeWidth(1.2f);
+        stroke.setColor(0x66FFFFFF);
+        c.drawLine(cardL + 18f, cardT + 1f, cardR - 18f, cardT + 1f, stroke);
+        stroke.setStyle(Paint.Style.FILL);
+
+        String rank = (progress != null) ? progress.getPlayerRank() : "Apprentice of Shadows";
         text.setTextSize(16f);
-        text.setColor(0x55C5A059);
-        c.drawText("v2.0 • Pure Native Android Engine", cx, sh - 40f, text);
+        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setColor(0xCCFFE0A8);
+        c.drawText("CURRENT PLAYER ALCHEMIST RANK", cx, cardT + 40f, text);
+
+        text.setTextSize(26f);
+        text.setColor(0xFFFFFDF8);
+        c.drawText(rank, cx, cardT + 76f, text);
+
+        // Star constellation progress bar
+        float barW = 460f;
+        float barH = 14f;
+        float barL = cx - barW * 0.5f;
+        float barT = cardT + 104f;
+        fill.setColor(0x550E131E);
+        c.drawRoundRect(barL, barT, barL + barW, barT + barH, 7f, 7f, fill);
+
+        float pct = Math.min(1.0f, totalStars / (float) LevelProgress.TOTAL_MAX_STARS);
+        if (pct > 0.01f) {
+            fill.setColor(0xFFFFB300);
+            c.drawRoundRect(barL, barT, barL + barW * pct, barT + barH, 7f, 7f, fill);
+        }
+
+        text.setTextSize(16f);
+        text.setTypeface(Typeface.DEFAULT);
+        text.setColor(0xDDFFE0A8);
+        c.drawText("Constellation Mastery: " + Math.round(pct * 100f) + "% (" + totalStars + " / " + LevelProgress.TOTAL_MAX_STARS + " Stars)", cx, cardT + 144f, text);
+
+        // 8. Footer Version
+        text.setTextSize(16f);
+        text.setColor(0x88D4AF37);
+        c.drawText("v2.0 • Pure Native Android Engine • 60-120 FPS", cx, sh - 45f, text);
         text.setTextAlign(Paint.Align.LEFT);
     }
 
     private static void drawCandleGlow(Canvas c, float lx, float ly, float flicker) {
         // Multi-lobe flame
         fill.setColor(0xFFDFD4C4);
-        RectF candlePillar = new RectF(lx - 8f, ly + 14f, lx + 8f, ly + 65f);
-        c.drawRoundRect(candlePillar, 4f, 4f, fill);
+        c.drawRoundRect(lx - 8f, ly + 14f, lx + 8f, ly + 65f, 4f, 4f, fill);
 
         float flameH = 36f * (0.88f + 0.12f * flicker);
         float flameW = 13f * (0.92f + 0.08f * flicker);

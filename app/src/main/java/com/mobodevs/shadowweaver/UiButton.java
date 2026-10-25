@@ -79,30 +79,44 @@ public class UiButton {
 
         // 1. Button Background
         if (!enabled) {
-            fill.setColor(withAlpha(0x331C130B, a));
+            fill.setColor(withAlpha(0x332A3245, a));
             c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, fill);
-        } else if (isPrimary) {
-            // Luminous golden alchemical brass
-            int baseColor = isPressed ? 0xFF9E6E28 : 0xFFC5943C;
-            fill.setColor(withAlpha(baseColor, a));
-            c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, fill);
-
-            // Inner subtle warm highlight
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(1.8f);
-            stroke.setColor(withAlpha(0xFFFFE8B8, (int) (180 * alpha)));
+            stroke.setStrokeWidth(1.5f);
+            stroke.setColor(withAlpha(0x446A758A, a));
             c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, stroke);
-        } else {
-            // Frosted translucent obsidian plate
-            int baseColor = isPressed ? 0xDD2A1C12 : 0xBB1E140C;
+        } else if (isPrimary) {
+            // Luminous golden alchemical brass with radiant sheen
+            int baseColor = isPressed ? 0xFFC68824 : 0xFFE5A836;
             fill.setColor(withAlpha(baseColor, a));
             c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, fill);
 
-            // Antique brass perimeter filigree
+            // Inner bevel highlight on top edge
             stroke.setStyle(Paint.Style.STROKE);
             stroke.setStrokeWidth(2.0f);
-            stroke.setColor(withAlpha(0x88C5A059, (int) (200 * alpha)));
+            stroke.setColor(withAlpha(0xFFFFF4D0, (int) (220 * alpha)));
             c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, stroke);
+
+            // Subtle outer glow
+            stroke.setStrokeWidth(1.0f);
+            stroke.setColor(withAlpha(0xFFFFE082, (int) (140 * alpha)));
+            c.drawRoundRect(left - 1f, top - 1f, right + 1f, bottom + 1f, cornerRadius + 1f, cornerRadius + 1f, stroke);
+        } else {
+            // Luminous celestial obsidian-slate plate (high contrast, non-muddy)
+            int baseColor = isPressed ? 0xFA141A28 : 0xEE1C2234;
+            fill.setColor(withAlpha(baseColor, a));
+            c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, fill);
+
+            // Polished antique brass frame
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(2.2f);
+            stroke.setColor(withAlpha(0xFFD4AF37, (int) (230 * alpha)));
+            c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, stroke);
+
+            // Top specular highlight
+            stroke.setStrokeWidth(1.2f);
+            stroke.setColor(withAlpha(0x55FFFFFF, (int) (180 * alpha)));
+            c.drawLine(left + cornerRadius, top + 1f, right - cornerRadius, top + 1f, stroke);
         }
         stroke.setStyle(Paint.Style.FILL);
 
@@ -117,34 +131,45 @@ public class UiButton {
             // Single line centered
             text.setTextSize(Math.min(28f, height() * 0.44f));
             if (!enabled) {
-                text.setColor(withAlpha(0x55E0D0C0, a));
+                text.setColor(withAlpha(0x6690A0B8, a));
+                float textOffset = (text.descent() + text.ascent()) * 0.5f;
+                c.drawText(label, cx, cy - textOffset, text);
             } else if (isPrimary) {
-                text.setColor(withAlpha(0xFF1E1005, a)); // Deep umber on gold
+                text.setColor(withAlpha(0xFF140802, a)); // Deepest umber on gold for maximum contrast
+                float textOffset = (text.descent() + text.ascent()) * 0.5f;
+                c.drawText(label, cx, cy - textOffset, text);
             } else {
-                text.setColor(withAlpha(0xFFF0DFC6, a)); // Parchment ivory on dark
+                // Secondary button: drop shadow for sharp readability
+                float textOffset = (text.descent() + text.ascent()) * 0.5f;
+                text.setColor(withAlpha(0xFF000000, (int) (180 * alpha)));
+                c.drawText(label, cx, cy - textOffset + 1.8f, text);
+                text.setColor(withAlpha(0xFFFFFDF8, a)); // Radiant ivory
+                c.drawText(label, cx, cy - textOffset, text);
             }
-            float textOffset = (text.descent() + text.ascent()) * 0.5f;
-            c.drawText(label, cx, cy - textOffset, text);
         } else {
             // Main label + Sub label
             text.setTextSize(Math.min(24f, height() * 0.36f));
             if (!enabled) {
-                text.setColor(withAlpha(0x55E0D0C0, a));
+                text.setColor(withAlpha(0x6690A0B8, a));
+                c.drawText(label, cx, cy - 6f, text);
             } else if (isPrimary) {
-                text.setColor(withAlpha(0xFF1E1005, a));
+                text.setColor(withAlpha(0xFF140802, a));
+                c.drawText(label, cx, cy - 6f, text);
             } else {
-                text.setColor(withAlpha(0xFFF0DFC6, a));
+                text.setColor(withAlpha(0xFF000000, (int) (180 * alpha)));
+                c.drawText(label, cx, cy - 4.2f, text);
+                text.setColor(withAlpha(0xFFFFFDF8, a));
+                c.drawText(label, cx, cy - 6f, text);
             }
-            c.drawText(label, cx, cy - 6f, text);
 
             text.setTextSize(Math.min(18f, height() * 0.26f));
             text.setTypeface(Typeface.DEFAULT);
             if (!enabled) {
-                text.setColor(withAlpha(0x33E0D0C0, a));
+                text.setColor(withAlpha(0x4490A0B8, a));
             } else if (isPrimary) {
-                text.setColor(withAlpha(0xCC351C08, a));
+                text.setColor(withAlpha(0xDD2A1404, a));
             } else {
-                text.setColor(withAlpha(0x99D5C4A8, a));
+                text.setColor(withAlpha(0xFFE2D4BA, a));
             }
             c.drawText(subLabel, cx, cy + 20f, text);
         }

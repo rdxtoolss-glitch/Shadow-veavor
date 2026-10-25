@@ -3,7 +3,6 @@ package com.mobodevs.shadowweaver;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.RectF;
 import android.graphics.Typeface;
 
 /**
@@ -22,7 +21,11 @@ public final class LevelCompleteOverlay {
     private static final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Path starPath = new Path();
-    private static final RectF cardRect = new RectF();
+
+    private static float cardL;
+    private static float cardT;
+    private static float cardR;
+    private static float cardB;
 
     private static final UiButton btnNext = new UiButton();
     private static final UiButton btnRetry = new UiButton();
@@ -34,16 +37,17 @@ public final class LevelCompleteOverlay {
         if (layoutReady) return;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
-        float cardW = 720f;
-        float cardH = 680f;
-        float cardL = cx - cardW * 0.5f;
-        float cardT = (ShadowCalculator.SCENE_H - cardH) * 0.5f;
-        cardRect.set(cardL, cardT, cardL + cardW, cardT + cardH);
+        float cardW = 740f;
+        float cardH = 740f;
+        cardL = cx - cardW * 0.5f;
+        cardT = (ShadowCalculator.SCENE_H - cardH) * 0.5f;
+        cardR = cardL + cardW;
+        cardB = cardT + cardH;
 
         float pad = 24f;
-        float btnY = cardT + 470f;
-        float btnH = 74f;
-        float btnW = 300f;
+        float btnY = cardT + 510f;
+        float btnH = 76f;
+        float btnW = 310f;
 
         btnNext.setBounds(cx - btnW - pad * 0.5f, btnY, cx - pad * 0.5f, btnY + btnH);
         btnNext.isPrimary = true;
@@ -52,11 +56,11 @@ public final class LevelCompleteOverlay {
         btnRetry.setBounds(cx + pad * 0.5f, btnY, cx + pad * 0.5f + btnW, btnY + btnH);
         btnRetry.cornerRadius = 18f;
 
-        float selectW = 420f;
-        float selectH = 60f;
-        float selectY = btnY + btnH + 20f;
+        float selectW = 460f;
+        float selectH = 68f;
+        float selectY = btnY + btnH + 22f;
         btnSelect.setBounds(cx - selectW * 0.5f, selectY, cx + selectW * 0.5f, selectY + selectH);
-        btnSelect.cornerRadius = 16f;
+        btnSelect.cornerRadius = 18f;
 
         layoutReady = true;
     }
@@ -104,7 +108,7 @@ public final class LevelCompleteOverlay {
         float cx = sw * 0.5f;
 
         // 1. Dark Modal Scrim
-        fill.setColor(withAlpha(0xFF0E0A06, (int) (220 * reveal)));
+        fill.setColor(withAlpha(0xFF0E121E, (int) (225 * reveal)));
         c.drawRect(0, 0, sw, sh, fill);
 
         int save = c.save();
@@ -112,27 +116,36 @@ public final class LevelCompleteOverlay {
         float slideY = (1f - reveal) * 60f;
         c.translate(0, slideY);
 
-        // 2. Card Body (Frosted Obsidian Plate)
-        fill.setColor(withAlpha(0xFF22160E, (int) (250 * reveal)));
-        c.drawRoundRect(cardRect, 28f, 28f, fill);
+        // 2. Card Body (Luminous Frosted Obsidian-Slate Plate)
+        fill.setColor(withAlpha(0xFF1A2234, (int) (252 * reveal)));
+        c.drawRoundRect(cardL, cardT, cardR, cardB, 28f, 28f, fill);
 
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.8f);
-        stroke.setColor(withAlpha(0xFFFFE0A8, (int) (230 * reveal)));
-        c.drawRoundRect(cardRect, 28f, 28f, stroke);
+        stroke.setStrokeWidth(3.0f);
+        stroke.setColor(withAlpha(0xFFD4AF37, (int) (240 * reveal)));
+        c.drawRoundRect(cardL, cardT, cardR, cardB, 28f, 28f, stroke);
+
+        // Specular top highlight
+        stroke.setStrokeWidth(1.4f);
+        stroke.setColor(withAlpha(0x66FFFFFF, (int) (200 * reveal)));
+        c.drawLine(cardL + 28f, cardT + 1.5f, cardR - 28f, cardT + 1.5f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
         // 3. Victory Header
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(Typeface.DEFAULT_BOLD);
-        text.setTextSize(46f);
-        text.setColor(withAlpha(0xFFFFE9C4, (int) (255 * reveal)));
-        c.drawText("SHADOW WOVEN", cx, cardRect.top + 75f, text);
+        text.setTextSize(48f);
+        text.setColor(withAlpha(0xEE000000, (int) (255 * reveal)));
+        c.drawText("SHADOW WOVEN", cx, cardT + 76.5f, text);
+        text.setColor(withAlpha(0xFFFFFDF8, (int) (255 * reveal)));
+        c.drawText("SHADOW WOVEN", cx, cardT + 75f, text);
 
         text.setTextSize(26f);
         text.setTypeface(Typeface.DEFAULT);
-        text.setColor(withAlpha(0xBBF0DFC6, (int) (255 * reveal)));
-        c.drawText(g.levelTitle(), cx, cardRect.top + 118f, text);
+        text.setColor(withAlpha(0xCC000000, (int) (255 * reveal)));
+        c.drawText(g.levelTitle(), cx, cardT + 119.5f, text);
+        text.setColor(withAlpha(0xFFFFE0A8, (int) (255 * reveal)));
+        c.drawText(g.levelTitle(), cx, cardT + 118f, text);
 
         // 4. Calculate Earned Stars
         long elapsed = g.elapsedMillis();
@@ -140,7 +153,7 @@ public final class LevelCompleteOverlay {
         int earnedStars = LevelProgress.calculateStars(g.levelIndex(), elapsed, moves);
 
         // 5. Draw Sequential 3 Stars
-        drawSequentialStars(c, cx, cardRect.top + 200f, earnedStars, reveal);
+        drawSequentialStars(c, cx, cardT + 205f, earnedStars, reveal);
 
         // 6. Par Performance Breakdown Table
         long parTime = LevelProgress.getParTimeMillis(g.levelIndex());
@@ -149,10 +162,19 @@ public final class LevelCompleteOverlay {
         boolean timeStar = (elapsed <= parTime);
         boolean moveStar = (elapsed <= parTime && moves <= parMoves);
 
-        float tableT = cardRect.top + 285f;
-        drawStatRow(c, cx, tableT, "Trial Completion", "Solved", true, reveal);
-        drawStatRow(c, cx, tableT + 48f, "Time Efficiency", formatTime(elapsed) + " / " + (parTime / 1000L) + "s", timeStar, reveal);
-        drawStatRow(c, cx, tableT + 96f, "Move Precision", moves + " / " + parMoves + " moves", moveStar, reveal);
+        float tableT = cardT + 300f;
+        // Inlaid card plate for stat rows
+        fill.setColor(withAlpha(0x440E131E, (int) (255 * reveal)));
+        c.drawRoundRect(cx - 300f, tableT - 22f, cx + 300f, tableT + 130f, 16f, 16f, fill);
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(1.4f);
+        stroke.setColor(withAlpha(0x44D4AF37, (int) (180 * reveal)));
+        c.drawRoundRect(cx - 300f, tableT - 22f, cx + 300f, tableT + 130f, 16f, 16f, stroke);
+        stroke.setStyle(Paint.Style.FILL);
+
+        drawStatRow(c, cx, tableT + 10f, "Silhouette Completed", "85%+ Match", true, reveal);
+        drawStatRow(c, cx, tableT + 58f, "Time Efficiency", formatTime(elapsed) + " (Par " + (parTime / 1000L) + "s)", timeStar, reveal);
+        drawStatRow(c, cx, tableT + 106f, "Move Precision", moves + " (Par " + parMoves + ")", moveStar, reveal);
 
         // 7. Navigation Buttons
         btnNext.label = "NEXT TRIAL";
@@ -168,16 +190,16 @@ public final class LevelCompleteOverlay {
     }
 
     private static void drawSequentialStars(Canvas c, float cx, float cy, int stars, float reveal) {
-        float spacing = 86f;
+        float spacing = 96f;
         for (int i = 0; i < 3; i++) {
             float sx = cx + (i - 1) * spacing;
             boolean active = (i < stars);
 
-            // Stagger reveal: star 0 at 0.2, star 1 at 0.45, star 2 at 0.70
-            float threshold = 0.20f + i * 0.25f;
+            // Stagger reveal: star 0 at 0.15, star 1 at 0.40, star 2 at 0.65
+            float threshold = 0.15f + i * 0.25f;
             float starProgress = Math.max(0f, Math.min(1f, (reveal - threshold) / 0.25f));
 
-            float r = 36f;
+            float r = 40f;
             if (active && starProgress > 0f) {
                 // Bounce scale on entrance
                 float bounceScale = 1.0f + 0.35f * (float) Math.sin(starProgress * Math.PI);
@@ -205,12 +227,16 @@ public final class LevelCompleteOverlay {
             c.drawPath(starPath, fill);
 
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(2.5f);
+            stroke.setStrokeWidth(2.8f);
             stroke.setColor(withAlpha(0xFFFFF9C4, (int) (240 * alpha)));
             c.drawPath(starPath, stroke);
             stroke.setStyle(Paint.Style.FILL);
+
+            // Radiant white jewel dot at center
+            fill.setColor(withAlpha(0xFFFFFFFF, (int) (255 * alpha)));
+            c.drawCircle(cx, cy - 2f, 5.5f, fill);
         } else {
-            fill.setColor(withAlpha(0x33FFE0A8, (int) (200 * alpha)));
+            fill.setColor(withAlpha(0x33445566, (int) (200 * alpha)));
             c.drawPath(starPath, fill);
         }
     }
@@ -220,15 +246,15 @@ public final class LevelCompleteOverlay {
         float l = cx - rowW * 0.5f;
         float r = cx + rowW * 0.5f;
 
-        text.setTextSize(22f);
+        text.setTextSize(21f);
         text.setTypeface(Typeface.DEFAULT);
-        text.setColor(withAlpha(0xBBF0DFC6, (int) (255 * alpha)));
+        text.setColor(withAlpha(0xFFFFFDF8, (int) (255 * alpha)));
         text.setTextAlign(Paint.Align.LEFT);
         c.drawText(label, l, y, text);
 
         text.setTextAlign(Paint.Align.RIGHT);
         text.setTypeface(Typeface.DEFAULT_BOLD);
-        text.setColor(withAlpha(achieved ? 0xFFFFD54F : 0x77F0DFC6, (int) (255 * alpha)));
+        text.setColor(withAlpha(achieved ? 0xFFFFD54F : 0x778090A0, (int) (255 * alpha)));
         String mark = achieved ? " [⭐ OK]" : " [--]";
         c.drawText(value + mark, r, y, text);
     }
