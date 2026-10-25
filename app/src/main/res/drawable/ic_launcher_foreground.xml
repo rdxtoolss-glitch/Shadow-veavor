@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 1. Ambient Drop Shadow under central emblem -->
+    <path
+        android:fillColor="#55000000"
+        android:pathData="M54,32 A25,25 0 1 0 54,82 A25,25 0 1 0 54,32 Z" />
+
+    <!-- 2. Outer Astrolabe Golden Ring -->
+    <path
+        android:strokeColor="#FFD4AF37"
+        android:strokeWidth="1.8"
+        android:fillColor="#00000000"
+        android:pathData="M54,30 A24,24 0 1 0 54,78 A24,24 0 1 0 54,30 Z" />
+
+    <!-- Compass Star Finials at N, S, E, W -->
+    <path
+        android:fillColor="#FFFFD54F"
+        android:pathData="M54,26 L56,30 L54,29 L52,30 Z
+                          M54,82 L56,78 L54,79 L52,78 Z
+                          M26,54 L30,52 L29,54 L30,56 Z
+                          M82,54 L78,52 L79,54 L78,56 Z" />
+
+    <!-- 3. Cast Shadow Origami Falcon / Constellation Wings -->
+    <!-- Deep obsidian shadow body -->
+    <path
+        android:fillColor="#140B05"
+        android:pathData="M54,42 L68,36 L64,52 L76,50 L58,66 L54,60 L50,66 L32,50 L44,52 L40,36 Z" />
+
+    <!-- Gold leaf filigree edges on shadow wings -->
+    <path
+        android:strokeColor="#FFFFD54F"
+        android:strokeWidth="1.2"
+        android:fillColor="#00000000"
+        android:pathData="M54,42 L68,36 L64,52 L76,50 L58,66 L54,60 L50,66 L32,50 L44,52 L40,36 Z" />
+
+    <!-- Internal geometric origami fold lines in warm brass -->
+    <path
+        android:strokeColor="#AAFFE082"
+        android:strokeWidth="0.8"
+        android:pathData="M54,42 L54,60 M54,48 L64,52 M54,48 L44,52 M54,54 L76,50 M54,54 L32,50" />
+
+    <!-- 4. Classical Brass Candlestick Dish & Base -->
+    <path
+        android:fillColor="#FFD4AF37"
+        android:pathData="M48,74 L60,74 A2,2 0 0 1 62,76 L46,76 A2,2 0 0 1 48,74 Z" />
+
+    <!-- Ivory Tallow Candle Pillar -->
+    <path
+        android:fillColor="#FFEDE3D2"
+        android:pathData="M51,62 L57,62 L57,74 L51,74 Z" />
+
+    <!-- Wax drip -->
+    <path
+        android:fillColor="#FFF7EE"
+        android:pathData="M50.5,65 A1,1 0 1 0 50.5,67 A1,1 0 1 0 50.5,65 Z" />
+
+    <!-- Dark Wick -->
+    <path
+        android:strokeColor="#FF2E1C0F"
+        android:strokeWidth="1.0"
+        android:pathData="M54,58 L54,62" />
+
+    <!-- 5. Multi-Lobe Incandescent Flame -->
+    <!-- Outer Amber Glow -->
+    <path
+        android:fillColor="#FFFF8F00"
+        android:pathData="M54,46 C57,51 57.5,56 54,58 C50.5,56 51,51 54,46 Z" />
+
+    <!-- Inner Radiant Gold Core -->
+    <path
+        android:fillColor="#FFFFD54F"
+        android:pathData="M54,48 C56,52 56.5,55 54,57 C51.5,55 52,52 54,48 Z" />
+
+    <!-- White Incandescent Jewel Center -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,50 C55,53 55.5,55 54,56 C52.5,55 53,53 54,50 Z" />
+
+    <!-- Blue wick root flame -->
+    <path
+        android:fillColor="#BB3F51B5"
+        android:pathData="M54,56.5 A1.2,1.2 0 1 0 54,58.5 A1.2,1.2 0 1 0 54,56.5 Z" />
+
+    <!-- Sparkle Diamond Star at Apex -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,34 L55.5,37 L58.5,37 L56,39 L57,42 L54,40 L51,42 L52,39 L49.5,37 L52.5,37 Z" />
+
+</vector>

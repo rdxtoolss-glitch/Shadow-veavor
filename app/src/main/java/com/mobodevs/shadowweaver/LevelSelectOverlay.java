@@ -321,7 +321,7 @@ public final class LevelSelectOverlay {
                 }
             } else {
                 // Locked Padlock
-                drawPadlock(c, cardCx, t + 95f);
+                GameIcons.drawPadlock(c, cardCx, t + 95f, fill, stroke);
 
                 text.setTextSize(18f);
                 text.setTypeface(Typeface.DEFAULT);
@@ -421,16 +421,5 @@ public final class LevelSelectOverlay {
         }
         starPath.close();
         c.drawPath(starPath, fill);
-    }
-
-    private static void drawPadlock(Canvas c, float cx, float cy) {
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.8f);
-        stroke.setColor(0x6690A0B8);
-        c.drawArc(cx - 14f, cy - 22f, cx + 14f, cy - 2f, 180, 180, false, stroke);
-
-        fill.setColor(0x6690A0B8);
-        c.drawRoundRect(cx - 18f, cy - 4f, cx + 18f, cy + 20f, 4f, 4f, fill);
-        stroke.setStyle(Paint.Style.FILL);
     }
 }

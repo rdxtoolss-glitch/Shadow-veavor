@@ -947,20 +947,7 @@ final class GameRenderer {
         float pauseX = 64f;
         float pauseY = 82f;
         float pauseR = 30f;
-        fill.setColor(0xEE1A2234);
-        c.drawCircle(pauseX, pauseY, pauseR, fill);
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.2f);
-        stroke.setColor(0xFFD4AF37);
-        c.drawCircle(pauseX, pauseY, pauseR, stroke);
-
-        // Pause icon (two vertical bars)
-        fill.setColor(0xFFFFFDF8);
-        stroke.setStyle(Paint.Style.FILL);
-        rect.set(pauseX - 8f, pauseY - 11f, pauseX - 3f, pauseY + 11f);
-        c.drawRoundRect(rect, 2f, 2f, fill);
-        rect.set(pauseX + 3f, pauseY - 11f, pauseX + 8f, pauseY + 11f);
-        c.drawRoundRect(rect, 2f, 2f, fill);
+        GameIcons.drawPause(c, pauseX, pauseY, pauseR, fill, stroke, false);
 
         // 2. Top-Center: Level Title and Chapter
         float cx = ShadowCalculator.SCENE_W * 0.5f;
@@ -991,44 +978,12 @@ final class GameRenderer {
         float hintY = ShadowCalculator.SCENE_H - 72f;
         float btnR = 34f;
         boolean hintOn = g.isHintActive();
-
-        fill.setColor(hintOn ? 0xFFE5A836 : 0xEE1A2234);
-        c.drawCircle(hintX, hintY, btnR, fill);
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.2f);
-        stroke.setColor(hintOn ? 0xFFFFF4D0 : 0xFFD4AF37);
-        c.drawCircle(hintX, hintY, btnR, stroke);
-        stroke.setStyle(Paint.Style.FILL);
-
-        // Lightbulb glyph
-        fill.setColor(hintOn ? 0xFF140802 : 0xFFFFFDF8);
-        c.drawCircle(hintX, hintY - 4f, 10f, fill);
-        rect.set(hintX - 5f, hintY + 6f, hintX + 5f, hintY + 12f);
-        c.drawRoundRect(rect, 1.5f, 1.5f, fill);
+        GameIcons.drawHint(c, hintX, hintY, btnR, fill, stroke, hintOn);
 
         // 5. Bottom-Right: Reset Level Button
         float rstX = ShadowCalculator.SCENE_W - 96f;
         float rstY = ShadowCalculator.SCENE_H - 72f;
-        fill.setColor(0xEE1A2234);
-        c.drawCircle(rstX, rstY, btnR, fill);
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.2f);
-        stroke.setColor(0xFFD4AF37);
-        c.drawCircle(rstX, rstY, btnR, stroke);
-
-        // Curved reload arrow glyph
-        stroke.setStrokeWidth(2.8f);
-        stroke.setColor(0xFFFFFDF8);
-        rect.set(rstX - 11f, rstY - 11f, rstX + 11f, rstY + 11f);
-        c.drawArc(rect, 45f, 270f, false, stroke);
-        stroke.setStyle(Paint.Style.FILL);
-        fill.setColor(0xFFFFFDF8);
-        path.reset();
-        path.moveTo(rstX + 10f, rstY - 13f);
-        path.lineTo(rstX + 16f, rstY - 4f);
-        path.lineTo(rstX + 6f, rstY - 4f);
-        path.close();
-        c.drawPath(path, fill);
+        GameIcons.drawReset(c, rstX, rstY, btnR, fill, stroke);
 
         // 6. Hint text (fades when progress is high, or shown when hint toggle is on)
         if (hintOn || match < 55f) {

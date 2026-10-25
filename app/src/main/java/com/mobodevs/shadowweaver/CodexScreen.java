@@ -257,11 +257,8 @@ public final class CodexScreen {
             c.drawText(String.valueOf(i + 1), cardCx, t + 26f, text);
 
             if (isSolved) {
-                // Solved star icon
-                fill.setColor(0xFFFFD54F);
-                drawStarPath(c, cardCx, t + 62f, 16f);
-                fill.setColor(0xFFFFFFFF);
-                c.drawCircle(cardCx, t + 60f, 4f, fill);
+                // Bespoke Celestial Relic Icon
+                GameIcons.drawRelicIcon(c, i, cardCx, t + 64f, 20f, fill, stroke, true);
 
                 // Title
                 text.setTextSize(18f);
@@ -281,12 +278,8 @@ public final class CodexScreen {
                     c.drawText((best / 1000L) + "s", cardCx, t + 162f, text);
                 }
             } else if (isUnlocked) {
-                // Unsolved but reachable
-                stroke.setStyle(Paint.Style.STROKE);
-                stroke.setStrokeWidth(2.0f);
-                stroke.setColor(0x88FFE0A8);
-                c.drawCircle(cardCx, t + 62f, 16f, stroke);
-                stroke.setStyle(Paint.Style.FILL);
+                // Unsolved but reachable: outline relic glyph
+                GameIcons.drawRelicIcon(c, i, cardCx, t + 64f, 20f, fill, stroke, false);
 
                 text.setTextSize(17f);
                 text.setTypeface(Typeface.DEFAULT_BOLD);
@@ -298,8 +291,8 @@ public final class CodexScreen {
                 text.setColor(0x99FFE0A8);
                 c.drawText("Open", cardCx, t + 144f, text);
             } else {
-                // Locked
-                drawPadlock(c, cardCx, t + 62f);
+                // Locked Padlock
+                GameIcons.drawPadlock(c, cardCx, t + 64f, fill, stroke);
 
                 text.setTextSize(16f);
                 text.setTypeface(Typeface.DEFAULT);
@@ -338,37 +331,40 @@ public final class CodexScreen {
         text.setTextSize(17f);
         text.setTypeface(Typeface.DEFAULT_BOLD);
         text.setColor(0xCCFFE0A8);
-        c.drawText("ASTRAL RELIC NO. " + (selectedRelic + 1) + " • CHAPTER " + ((selectedRelic / 5) + 1), cx, specT + 42f, text);
+        c.drawText("ASTRAL RELIC NO. " + (selectedRelic + 1) + " • CHAPTER " + ((selectedRelic / 5) + 1), cx, specT + 38f, text);
 
         text.setTextSize(28f);
         text.setColor(0xFFFFFDF8);
-        c.drawText(selName, cx, specT + 84f, text);
+        c.drawText(selName, cx, specT + 75f, text);
 
         // Status badge
-        text.setTextSize(18f);
+        text.setTextSize(17f);
         text.setTypeface(Typeface.DEFAULT);
         if (isSelSolved) {
             long best = (progress != null) ? progress.getBestTime(selectedRelic) : 0L;
             text.setColor(0xFFFFD54F);
             String starsStr = (starsSel == 3 ? "⭐⭐⭐ 3 STARS - MASTER WEAVER" : (starsSel == 2 ? "⭐⭐ 2 STARS - ADEPT" : "⭐ 1 STAR - SOLVED"));
-            c.drawText(starsStr + " (Best: " + (best / 1000L) + "s)", cx, specT + 124f, text);
+            c.drawText(starsStr + " (Best: " + (best / 1000L) + "s)", cx, specT + 108f, text);
         } else if (isSelUnlocked) {
             text.setColor(0xFF80D8FF);
-            c.drawText("★ TRIAL UNLOCKED • READY TO WEAVE ★", cx, specT + 124f, text);
+            c.drawText("★ TRIAL UNLOCKED • READY TO WEAVE ★", cx, specT + 108f, text);
         } else {
             text.setColor(0xFF90A0B8);
-            c.drawText("🔒 LOCKED • COMPLETE PREVIOUS CHAPTER TRIALS", cx, specT + 124f, text);
+            c.drawText("🔒 LOCKED • COMPLETE PREVIOUS CHAPTER TRIALS", cx, specT + 108f, text);
         }
+
+        // Large Bespoke Relic Emblem Showcase
+        GameIcons.drawRelicIcon(c, selectedRelic, cx, specT + 165f, 32f, fill, stroke, isSelSolved);
 
         // Decorative separating line
         stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeWidth(1.8f);
         stroke.setColor(0x44D4AF37);
-        c.drawLine(cx - 220f, specT + 150f, cx + 220f, specT + 150f, stroke);
+        c.drawLine(cx - 220f, specT + 215f, cx + 220f, specT + 215f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
         // Ancient Lore Excerpt
-        text.setTextSize(21f);
+        text.setTextSize(20f);
         text.setTypeface(Typeface.DEFAULT);
         text.setColor(0xFFE2D4BA);
 
@@ -377,7 +373,7 @@ public final class CodexScreen {
         StringBuilder line1 = new StringBuilder();
         StringBuilder line2 = new StringBuilder();
         int wordIdx = 0;
-        while (wordIdx < words.length && line1.length() + words[wordIdx].length() < 42) {
+        while (wordIdx < words.length && line1.length() + words[wordIdx].length() < 44) {
             line1.append(words[wordIdx]).append(" ");
             wordIdx++;
         }
@@ -386,19 +382,19 @@ public final class CodexScreen {
             wordIdx++;
         }
 
-        c.drawText("\"" + line1.toString().trim(), cx, specT + 205f, text);
+        c.drawText("\"" + line1.toString().trim(), cx, specT + 252f, text);
         if (line2.length() > 0) {
-            c.drawText(line2.toString().trim() + "\"", cx, specT + 245f, text);
+            c.drawText(line2.toString().trim() + "\"", cx, specT + 284f, text);
         } else {
-            c.drawText("\"", cx, specT + 245f, text);
+            c.drawText("\"", cx, specT + 284f, text);
         }
 
         // Par benchmark stats
         long parTime = LevelProgress.getParTimeMillis(selectedRelic);
         int parMoves = LevelProgress.getParMoves(selectedRelic);
-        text.setTextSize(17f);
+        text.setTextSize(16f);
         text.setColor(0xCCFFE0A8);
-        c.drawText("Par Benchmark: Under " + (parTime / 1000L) + " seconds  •  Optimal moves: " + parMoves, cx, specT + 310f, text);
+        c.drawText("Par Benchmark: Under " + (parTime / 1000L) + " seconds  •  Optimal moves: " + parMoves, cx, specT + 332f, text);
 
         // 6. Back Button
         btnBack.label = "MAIN MENU";
@@ -434,16 +430,5 @@ public final class CodexScreen {
         }
         path.close();
         c.drawPath(path, fill);
-    }
-
-    private static void drawPadlock(Canvas c, float cx, float cy) {
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.5f);
-        stroke.setColor(0x668090A0);
-        c.drawArc(cx - 10f, cy - 18f, cx + 10f, cy - 2f, 180, 180, false, stroke);
-
-        fill.setColor(0x668090A0);
-        c.drawRoundRect(cx - 13f, cy - 4f, cx + 13f, cy + 14f, 4f, 4f, fill);
-        stroke.setStyle(Paint.Style.FILL);
     }
 }
