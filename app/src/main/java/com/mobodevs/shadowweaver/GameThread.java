@@ -386,21 +386,16 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         synchronized (stateLock) {
             if (selected < 0 || selected >= shapes.length) return false;
             ShapeObject s = shapes[selected];
-            float dialR = s.maxRadius() + 24f;
+            float dialR = s.maxRadius() + 30f;
             float handleAngleRad = (float) Math.toRadians(s.rotation);
             float hrx = s.x + dialR * (float) Math.cos(handleAngleRad);
             float hry = s.y + dialR * (float) Math.sin(handleAngleRad);
 
-            // Distance to knob
+            // ONLY the amber rotary knob handle is touchable.
+            // The circular guide line is completely non-touchable and does not block other pieces.
             float dx = sceneX - hrx;
             float dy = sceneY - hry;
-            if (dx * dx + dy * dy <= 44f * 44f) return true;
-
-            // Distance to ring band
-            float cdx = sceneX - s.x;
-            float cdy = sceneY - s.y;
-            float dist = (float) Math.hypot(cdx, cdy);
-            return Math.abs(dist - dialR) <= 24f;
+            return (dx * dx + dy * dy <= 42f * 42f);
         }
     }
 
@@ -491,6 +486,12 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
      */
     public void onTouch(int kind, float sceneX, float sceneY) {
         synchronized (stateLock) {
+            if (kind == EVENT_MOVE && pendingCount > 0 && pendingKind[pendingCount - 1] == EVENT_MOVE) {
+                // Coalesce continuous moves: replace coordinates with the latest touch position for zero lag
+                pendingX[pendingCount - 1] = Math.round(sceneX);
+                pendingY[pendingCount - 1] = Math.round(sceneY);
+                return;
+            }
             if (pendingCount >= MAX_PENDING_EVENTS) {
                 // Overflow: drop the oldest MOVE rather than the newest, so
                 // the shape keeps following the finger.
@@ -833,6 +834,8 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         float ny = ShadowCalculator.clampStageY(y + dragGrabDY);
         s.targetX = nx;
         s.targetY = ny;
+        s.x = nx;
+        s.y = ny;
         s.isDragging = true;
         s.isSnapping = false;
         s.spin = 0f;
@@ -977,11 +980,6 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         particles.update(dt, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, candleFlicker);
         for (ShapeObject s : shapes) {
             s.stepPhysics(dt);
-        }
-        for (int i = 0; i < shapes.length; i++) {
-            for (int j = i + 1; j < shapes.length; j++) {
-                ShapeObject.applySoftRepulsion(shapes[i], shapes[j], dt);
-            }
         }
     }
 

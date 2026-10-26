@@ -55,7 +55,7 @@ public class PhysicsSimulationTest {
         }
         System.out.println("Boundary collision correctly bounced token with restitution: vx=" + s1.vx);
 
-        // 4. Test Soft Inter-Token Repulsion
+        // 4. Test Token Non-Interference (Tokens must NOT push each other in tangram puzzles)
         s1.vx = 0f; s1.vy = 0f;
         s2.vx = 0f; s2.vy = 0f;
         s1.x = 500f; s1.y = 700f;
@@ -67,10 +67,10 @@ public class PhysicsSimulationTest {
             s2.stepPhysics(0.0166f);
         }
         float finalOverlapDist = (float) Math.hypot(s1.x - s2.x, s1.y - s2.y);
-        if (finalOverlapDist <= initialOverlapDist) {
-            throw new AssertionError("Soft repulsion failed to separate tokens: initial=" + initialOverlapDist + ", final=" + finalOverlapDist);
+        if (Math.abs(finalOverlapDist - initialOverlapDist) > 0.001f) {
+            throw new AssertionError("Tokens unexpectedly pushed each other: initial=" + initialOverlapDist + ", final=" + finalOverlapDist);
         }
-        System.out.println("Soft repulsion successfully separated tokens from " + initialOverlapDist + " to " + finalOverlapDist);
+        System.out.println("Tokens remain completely independent and non-pushing: dist=" + finalOverlapDist);
 
         System.out.println("Physics Simulation test PASS.");
     }

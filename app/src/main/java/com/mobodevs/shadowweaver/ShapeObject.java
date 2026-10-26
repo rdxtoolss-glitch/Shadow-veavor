@@ -156,12 +156,27 @@ public class ShapeObject {
         if (dt <= 0f) return;
         if (dt > 0.05f) dt = 0.05f; // cap physics dt to prevent tunnelling
 
-        if (isDragging || isSnapping) {
-            // Spring-mass-damper tracking to target
+        if (isDragging) {
+            // Direct 1:1 instant tracking under finger with ZERO lag
+            float prevX = x;
+            float prevY = y;
+            x = targetX;
+            y = targetY;
+            if (dt > 0.0001f) {
+                vx = (x - prevX) / dt;
+                vy = (y - prevY) / dt;
+            }
+            // Pseudo-3D tilt from velocity for subtle dynamic response
+            float desiredTiltX = -vy * 0.035f;
+            float desiredTiltY = vx * 0.035f;
+            tiltX += (desiredTiltX - tiltX) * Math.min(1.0f, dt * 20f);
+            tiltY += (desiredTiltY - tiltY) * Math.min(1.0f, dt * 20f);
+        } else if (isSnapping) {
+            // Smooth magnetic snap convergence to target
             float dx = targetX - x;
             float dy = targetY - y;
-            float k = isSnapping ? 260f : 180f;
-            float c = isSnapping ? 26f : 18f;
+            float k = 280f;
+            float c = 28f;
             float fx = k * dx - c * vx;
             float fy = k * dy - c * vy;
             vx += (fx / mass) * dt;
@@ -169,18 +184,15 @@ public class ShapeObject {
             x += vx * dt;
             y += vy * dt;
 
-            if (isSnapping && Math.abs(dx) < 0.2f && Math.abs(dy) < 0.2f && Math.abs(vx) < 0.5f && Math.abs(vy) < 0.5f) {
+            if (Math.abs(dx) < 0.2f && Math.abs(dy) < 0.2f && Math.abs(vx) < 0.5f && Math.abs(vy) < 0.5f) {
                 x = targetX;
                 y = targetY;
                 vx = 0f;
                 vy = 0f;
+                isSnapping = false;
             }
-
-            // Pseudo-3D tilt from velocity
-            float desiredTiltX = -vy * 0.04f;
-            float desiredTiltY = vx * 0.04f;
-            tiltX += (desiredTiltX - tiltX) * Math.min(1.0f, dt * 14f);
-            tiltY += (desiredTiltY - tiltY) * Math.min(1.0f, dt * 14f);
+            tiltX *= (float) Math.pow(0.05f, dt);
+            tiltY *= (float) Math.pow(0.05f, dt);
         } else {
             // Inertial glide with exponential surface friction
             x += vx * dt;
@@ -224,14 +236,18 @@ public class ShapeObject {
         }
 
         // Rotation physics
-        if (isRotating || isSnapping) {
+        if (isRotating) {
+            // Direct 1:1 instant rotation with ZERO lag
+            rotation = targetRotation;
+            angularVelocity = 0f;
+        } else if (isSnapping) {
             float dRot = normalizeDeltaAngle(targetRotation - rotation);
-            float kRot = isSnapping ? 240f : 160f;
-            float cRot = isSnapping ? 24f : 18f;
+            float kRot = 240f;
+            float cRot = 24f;
             float torque = kRot * dRot - cRot * angularVelocity;
             angularVelocity += torque * dt;
             rotation = normalizeAngle(rotation + angularVelocity * dt);
-            if (isSnapping && Math.abs(dRot) < 0.2f && Math.abs(angularVelocity) < 0.5f) {
+            if (Math.abs(dRot) < 0.2f && Math.abs(angularVelocity) < 0.5f) {
                 rotation = targetRotation;
                 angularVelocity = 0f;
                 isSnapping = false;
@@ -246,31 +262,11 @@ public class ShapeObject {
     }
 
     /**
-     * Soft elastic repulsion between two tokens to prevent stacking.
+     * Soft repulsion disabled: in tangram silhouette puzzles, shapes must NEVER push each other.
+     * Tokens can touch, align edge-to-edge, and overlap freely without displacing other pieces.
      */
     public static void applySoftRepulsion(ShapeObject a, ShapeObject b, float dt) {
-        if (a == null || b == null) return;
-        float dx = b.x - a.x;
-        float dy = b.y - a.y;
-        float distSq = dx * dx + dy * dy;
-        float minDist = (a.baseRadius() + b.baseRadius()) * 0.65f;
-
-        if (distSq > 0.001f && distSq < minDist * minDist) {
-            float dist = (float) Math.sqrt(distSq);
-            float overlap = minDist - dist;
-            float nx = dx / dist;
-            float ny = dy / dist;
-            float repelForce = overlap * 48f;
-
-            if (!a.isDragging) {
-                a.vx -= nx * repelForce * dt;
-                a.vy -= ny * repelForce * dt;
-            }
-            if (!b.isDragging) {
-                b.vx += nx * repelForce * dt;
-                b.vy += ny * repelForce * dt;
-            }
-        }
+        // No-op: pieces are completely independent on the workbench and do not push each other.
     }
 
     public ShapeObject(Kind kind, float width, float height, float x, float y, float rotation) {

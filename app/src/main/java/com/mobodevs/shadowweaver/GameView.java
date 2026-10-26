@@ -457,12 +457,12 @@ public class GameView extends SurfaceView implements GameThread.Looper {
             case MotionEvent.ACTION_MOVE: {
                 if (trackingRotate) {
                     if (e.getPointerCount() >= 2) {
-                        thread.updateRotate(gestureAngle(e) - rotateStartAngle);
+                        thread.updateRotate(gestureAngle(e));
                     } else {
                         ShapeObject s = thread.getSelectedShape();
                         if (s != null) {
                             float currentAngle = (float) Math.toDegrees(Math.atan2(sy - s.y, sx - s.x));
-                            thread.updateRotate(currentAngle - rotateStartAngle);
+                            thread.updateRotate(currentAngle);
                         }
                     }
                 } else if (dragActive) {
