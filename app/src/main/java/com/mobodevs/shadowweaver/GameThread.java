@@ -113,8 +113,8 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
     // ---- Input queue (UI thread writes, loop thread drains) ---------------
 
     private static final int MAX_PENDING_EVENTS = 64;
-    private final int[] pendingX = new int[MAX_PENDING_EVENTS];
-    private final int[] pendingY = new int[MAX_PENDING_EVENTS];
+    private final float[] pendingX = new float[MAX_PENDING_EVENTS];
+    private final float[] pendingY = new float[MAX_PENDING_EVENTS];
     private final int[] pendingKind = new int[MAX_PENDING_EVENTS];
     private int pendingCount;
 
@@ -488,8 +488,8 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         synchronized (stateLock) {
             if (kind == EVENT_MOVE && pendingCount > 0 && pendingKind[pendingCount - 1] == EVENT_MOVE) {
                 // Coalesce continuous moves: replace coordinates with the latest touch position for zero lag
-                pendingX[pendingCount - 1] = Math.round(sceneX);
-                pendingY[pendingCount - 1] = Math.round(sceneY);
+                pendingX[pendingCount - 1] = sceneX;
+                pendingY[pendingCount - 1] = sceneY;
                 return;
             }
             if (pendingCount >= MAX_PENDING_EVENTS) {
@@ -501,8 +501,8 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
                 pendingCount--;
             }
             pendingKind[pendingCount] = kind;
-            pendingX[pendingCount] = Math.round(sceneX);
-            pendingY[pendingCount] = Math.round(sceneY);
+            pendingX[pendingCount] = sceneX;
+            pendingY[pendingCount] = sceneY;
             pendingCount++;
         }
     }
@@ -830,12 +830,18 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
 
     private void moveDrag(float x, float y) {
         ShapeObject s = shapes[selected];
+        float prevX = s.x;
+        float prevY = s.y;
         float nx = ShadowCalculator.clampStageX(x + dragGrabDX);
         float ny = ShadowCalculator.clampStageY(y + dragGrabDY);
         s.targetX = nx;
         s.targetY = ny;
         s.x = nx;
         s.y = ny;
+        float dx = nx - prevX;
+        float dy = ny - prevY;
+        s.vx = s.vx * 0.35f + (dx / 0.016f) * 0.65f;
+        s.vy = s.vy * 0.35f + (dy / 0.016f) * 0.65f;
         s.isDragging = true;
         s.isSnapping = false;
         s.spin = 0f;

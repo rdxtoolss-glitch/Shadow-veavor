@@ -98,7 +98,9 @@ public final class CodexScreen {
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
         float padX = 50f;
-        float top = 310f;
+        float bannerT = (sceneH > 1800f ? 205f : (sceneH > 1620f ? 185f : 165f));
+        float bannerB = bannerT + 120f;
+        float top = bannerB + 25f;
         float gapX = 18f;
         float gapY = 16f;
         float cardW = (ShadowCalculator.SCENE_W - padX * 2 - gapX * (COLS - 1)) / COLS;
@@ -182,26 +184,27 @@ public final class CodexScreen {
         fill.setShader(null);
 
         // 2. Header
+        float headerY = (sceneH > 1800f ? 135f : (sceneH > 1620f ? 115f : 95f));
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
         text.setTextSize(46f);
         text.setColor(0xDD000000);
-        c.drawText("ASTRONOMY JOURNAL", cx, 97f, text);
+        c.drawText("ASTRONOMY JOURNAL", cx, headerY + 2f, text);
         text.setColor(0xFFFFFDF8);
-        c.drawText("ASTRONOMY JOURNAL", cx, 95f, text);
+        c.drawText("ASTRONOMY JOURNAL", cx, headerY, text);
 
         text.setTextSize(20f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
-        c.drawText("TREASURY OF COLLECTED CELESTIAL SHADOW RELICS", cx, 137f, text);
+        c.drawText("TREASURY OF COLLECTED CELESTIAL SHADOW RELICS", cx, headerY + 42f + 2f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText("TREASURY OF COLLECTED CELESTIAL SHADOW RELICS", cx, 135f, text);
+        c.drawText("TREASURY OF COLLECTED CELESTIAL SHADOW RELICS", cx, headerY + 42f, text);
 
         // 3. Player Alchemist Rank Banner
         float bannerL = 50f;
         float bannerR = sw - 50f;
-        float bannerT = 165f;
-        float bannerB = 285f;
+        float bannerT = (sceneH > 1800f ? 205f : (sceneH > 1620f ? 185f : 165f));
+        float bannerB = bannerT + 120f;
 
         fill.setColor(0xEE1E2434);
         c.drawRoundRect(bannerL, bannerT, bannerR, bannerB, 20f, 20f, fill);

@@ -60,7 +60,7 @@ final class GameRenderer {
     // TRANSFORM & RESPONSIVE PROJECTION
     // ======================================================================
 
-    public static final float HUD_TOP_Y = 118f;
+    public static final float HUD_TOP_Y = 114f;
     public static final float HUD_PAUSE_X = 68f;
     public static final float HUD_MATCH_X = 932f;
 
@@ -69,7 +69,17 @@ final class GameRenderer {
     }
 
     public static float getPauseY() {
-        return HUD_TOP_Y;
+        return getPauseY(ShadowCalculator.SCENE_H);
+    }
+
+    public static float getPauseY(float sceneH) {
+        if (sceneH > 1800f) {
+            return 148f;
+        } else if (sceneH > 1620f) {
+            return 130f;
+        } else {
+            return 114f;
+        }
     }
 
     public static float getHintX() {
@@ -405,7 +415,7 @@ final class GameRenderer {
 
     private static void drawVolumetricLightRays(Canvas c, float flicker, float time) {
         float lx = ShadowCalculator.LIGHT_X;
-        float ly = 165f;
+        float ly = 215f;
 
         float length = 1100f;
         float halfSpread = 8f;
@@ -450,7 +460,7 @@ final class GameRenderer {
 
     private static void drawCandle(Canvas c, float flicker) {
         float lx = ShadowCalculator.LIGHT_X;
-        float ly = 165f;
+        float ly = 215f;
 
         // Broad ambient pool of light behind everything
         float rOuter = 650f * (0.94f + 0.06f * flicker);
@@ -465,24 +475,23 @@ final class GameRenderer {
         c.drawCircle(lx, ly, rOuter, glow);
         glow.setShader(null);
 
-        // Candle ivory tallow pillar
+        // Candle ivory tallow pillar resting above dish rim (STAGE_TOP = 290f)
         fill.setColor(0xFFDFD4C4);
-        rect.set(lx - 10f, ly + 14f, lx + 10f, ly + 105f);
+        rect.set(lx - 9f, ly + 12f, lx + 9f, ly + 68f);
         c.drawRoundRect(rect, 4f, 4f, fill);
 
         // Shaded side of pillar
         fill.setColor(0x332A180C);
-        rect.set(lx + 2f, ly + 14f, lx + 10f, ly + 105f);
+        rect.set(lx + 2f, ly + 12f, lx + 9f, ly + 68f);
         c.drawRoundRect(rect, 4f, 4f, fill);
 
         // Melted wax drips
         fill.setColor(0xFFE8E0D2);
-        c.drawCircle(lx - 7f, ly + 36f, 4f, fill);
-        c.drawCircle(lx + 7f, ly + 46f, 3.5f, fill);
-        c.drawCircle(lx - 6f, ly + 58f, 3f, fill);
+        c.drawCircle(lx - 6f, ly + 28f, 3.5f, fill);
+        c.drawCircle(lx + 6f, ly + 40f, 3.0f, fill);
 
         // Brass candleholder dish rim resting directly on stage workbench
-        rect.set(lx - 28f, ly + 100f, lx + 28f, ly + 112f);
+        rect.set(lx - 26f, ly + 64f, lx + 26f, ly + 74f);
         fill.setColor(0xFFC5A059);
         c.drawRoundRect(rect, 4f, 4f, fill);
 
@@ -490,7 +499,7 @@ final class GameRenderer {
         stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeWidth(3.0f);
         stroke.setColor(0xFF261204);
-        c.drawLine(lx, ly + 14f, lx, ly + 4f, stroke);
+        c.drawLine(lx, ly + 12f, lx, ly + 3f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
         // Flame parameters
@@ -526,7 +535,7 @@ final class GameRenderer {
 
         // 3. Blue wick base
         fill.setColor(0xBB3F51B5);
-        c.drawCircle(lx, ly + 4f, 4.5f, fill);
+        c.drawCircle(lx, ly + 4f, 4.0f, fill);
 
         glow.setShader(null);
     }
@@ -781,14 +790,25 @@ final class GameRenderer {
             float[] poly = s.applyTransform();
             buildPath(poly);
 
-            // 1. Stage drop shadow (expands with elevation)
+            // 1. Stage drop shadow (expands with elevation and directional candle ray)
             float shadowOffsetY = 12f + s.elevation * 24f;
+            float shadowOffsetX = (s.x - ShadowCalculator.LIGHT_X) * 0.035f * (1.0f + s.elevation);
             float shadowAlpha = 0.28f + s.elevation * 0.20f;
             int saveShadow = c.save();
-            c.translate(0, shadowOffsetY);
+            c.translate(shadowOffsetX, shadowOffsetY);
+            if (s.elevation > 0.02f) {
+                float sScale = 1.0f + s.elevation * 0.08f;
+                c.scale(sScale, sScale, s.x, s.y);
+            }
             fill.setColor(withAlpha(0xFF000000, (int) (255 * shadowAlpha)));
             c.drawPath(path, fill);
             c.restoreToCount(saveShadow);
+
+            // Subtle scale lift on the active shape itself
+            if (s.elevation > 0.01f) {
+                float liftScale = 1.0f + 0.035f * s.elevation;
+                c.scale(liftScale, liftScale, s.x, s.y);
+            }
 
             // 2. Proximity Resonance Golden Aura
             if (s.proximityResonance > 0.05f) {
@@ -854,27 +874,34 @@ final class GameRenderer {
             // 4. Mechanical Precision Astrolabe Rotation Dial
             if (isSel) {
                 float r = s.maxRadius();
-                float dialR = r + 30f;
+                float dialR = r + 32f;
 
-                // Circular dial track
+                // Ethereal ambient halo behind track
                 stroke.setStyle(Paint.Style.STROKE);
-                stroke.setStrokeWidth(2.4f);
-                stroke.setColor(0x99FFE0A8);
+                stroke.setStrokeWidth(5.0f);
+                stroke.setColor(0x22D4AF37);
                 c.drawCircle(s.x, s.y, dialR, stroke);
 
-                // Astrolabe degree notches: 15° minor, 45° semi, 90° major ticks
-                for (int deg = 0; deg < 360; deg += 15) {
+                // Refined antique brass guide track (non-touchable reference ring)
+                stroke.setStrokeWidth(2.0f);
+                stroke.setColor(0x77D4AF37);
+                c.drawCircle(s.x, s.y, dialR, stroke);
+
+                // Astrolabe degree notches: 30° intervals with 4 cardinal star diamond nodes
+                for (int deg = 0; deg < 360; deg += 30) {
                     float rad = (float) Math.toRadians(deg);
                     boolean isMajor = (deg % 90 == 0);
-                    boolean isSemi = (deg % 45 == 0);
-                    float tickLen = isMajor ? 14f : (isSemi ? 9f : 6f);
+                    float tickLen = isMajor ? 12f : 6f;
                     float t1 = dialR - tickLen * 0.5f;
                     float t2 = dialR + tickLen * 0.5f;
                     float cos = (float) Math.cos(rad);
                     float sin = (float) Math.sin(rad);
-                    stroke.setStrokeWidth(isMajor ? 3.0f : 1.6f);
-                    stroke.setColor(isMajor ? 0xFFFFF8E1 : (isSemi ? 0xEEFFE082 : 0xAAFFE082));
+                    stroke.setStrokeWidth(isMajor ? 2.6f : 1.4f);
+                    stroke.setColor(isMajor ? 0xFFFFF8E1 : 0x99FFE082);
                     c.drawLine(s.x + cos * t1, s.y + sin * t1, s.x + cos * t2, s.y + sin * t2, stroke);
+                    if (isMajor) {
+                        drawStarNode(c, s.x + cos * (dialR + 10f), s.y + sin * (dialR + 10f), 3.2f, 0xBBFFE082);
+                    }
                 }
 
                 // Rotary spoke arm
@@ -884,25 +911,36 @@ final class GameRenderer {
                 float hrx = s.x + dialR * cosA;
                 float hry = s.y + dialR * sinA;
 
-                stroke.setStrokeWidth(2.8f);
-                stroke.setColor(0xDDFFE0A8);
+                stroke.setStrokeWidth(2.6f);
+                stroke.setColor(0xCCD4AF37);
                 c.drawLine(s.x, s.y, hrx, hry, stroke);
                 stroke.setStyle(Paint.Style.FILL);
 
                 // Rotary knob with glowing amber core and brass bezel
-                fill.setColor(withAlpha(0xFFFFC46A, (int) (90 + 55 * pulse)));
+                fill.setColor(withAlpha(0xFFFFB300, (int) (65 + 45 * pulse)));
                 c.drawCircle(hrx, hry, 22f + 2f * pulse, fill);
 
+                // Fluted brass bezel
+                fill.setColor(0xFF8D5B23);
+                c.drawCircle(hrx, hry, 15f, fill);
                 fill.setColor(0xFFE5B048);
-                c.drawCircle(hrx, hry, 14f, fill);
+                c.drawCircle(hrx, hry, 13f, fill);
+
                 stroke.setStyle(Paint.Style.STROKE);
-                stroke.setStrokeWidth(2.4f);
+                stroke.setStrokeWidth(2.2f);
                 stroke.setColor(0xFF1B0E05);
-                c.drawCircle(hrx, hry, 14f, stroke);
+                c.drawCircle(hrx, hry, 15f, stroke);
                 stroke.setStyle(Paint.Style.FILL);
 
+                // Radiant sunstone gem center
+                fill.setColor(0xFFFF8F00);
+                c.drawCircle(hrx, hry, 8f, fill);
+                fill.setColor(0xFFFFD54F);
+                c.drawCircle(hrx, hry, 5f, fill);
+
+                // Specular highlight
                 fill.setColor(0xFFFFFFFF);
-                c.drawCircle(hrx, hry, 5.5f, fill);
+                c.drawCircle(hrx - 2.5f, hry - 2.5f, 2.0f, fill);
             }
 
             c.restoreToCount(saveShape);
@@ -919,34 +957,60 @@ final class GameRenderer {
         float match = g.matchPercent();
         float cx = ShadowCalculator.SCENE_W * 0.5f;
 
+        float hudY = getPauseY(sceneH);
+
         // 1. Top-Left: Pause button (ample safe margin below status bar/notch)
         float pauseX = getPauseX();
-        float pauseY = getPauseY();
+        float pauseY = hudY;
         float pauseR = 34f;
         GameIcons.drawPause(c, pauseX, pauseY, pauseR, fill, stroke, false);
 
-        // 2. Top-Center: Level Title and Chapter
+        // 2. Top-Center: Level Title and Chapter inside elegant translucent cartouche
+        float badgeW = 460f;
+        float badgeH = 70f;
+        float bL = cx - badgeW * 0.5f;
+        float bR = cx + badgeW * 0.5f;
+        float bT = hudY - badgeH * 0.5f;
+        float bB = hudY + badgeH * 0.5f;
+
+        // Translucent obsidian tablet backing
+        fill.setColor(0xDD0F1420);
+        rect.set(bL, bT, bR, bB);
+        c.drawRoundRect(rect, 20f, 20f, fill);
+
+        // Antique brass bezel border
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2.0f);
+        stroke.setColor(0x88D4AF37);
+        c.drawRoundRect(rect, 20f, 20f, stroke);
+
+        // Specular highlight on top edge
+        stroke.setStrokeWidth(1.2f);
+        stroke.setColor(0x44FFFFFF);
+        c.drawLine(bL + 18f, bT + 1.2f, bR - 18f, bT + 1.2f, stroke);
+        stroke.setStyle(Paint.Style.FILL);
+
+        // Title text
         text.setTextAlign(Paint.Align.CENTER);
-        text.setTextSize(32f);
+        text.setTextSize(26f);
         text.setTypeface(SERIF_BOLD);
-
-        // Drop shadow for title
         text.setColor(0xCC000000);
-        c.drawText(title, cx, 101.5f, text);
+        c.drawText(title, cx, hudY - 4f + 1.5f, text);
         text.setColor(0xFFFFFDF8);
-        c.drawText(title, cx, 100f, text);
+        c.drawText(title, cx, hudY - 4f, text);
 
+        // Chapter subtitle
         int ch = (g.levelIndex() / 5) + 1;
         String chRoman = (ch == 1 ? "I" : (ch == 2 ? "II" : "III"));
-        text.setTextSize(20f);
+        text.setTextSize(16f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
-        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, 137.5f, text);
+        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, hudY + 22f + 1.5f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, 136f, text);
+        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, hudY + 22f, text);
 
-        // 3. Top-Right: Precision Circular Match Meter
-        drawMatchMeter(c, g, match);
+        // 3. Top-Right: Precision Circular Match Meter aligned with hudY
+        drawMatchMeter(c, g, match, hudY);
 
         // ==================================================================
         // 4. THE GRAND ALCHEMICAL CONSOLE DECK (WALL_BOTTOM to sceneH)
@@ -1136,9 +1200,9 @@ final class GameRenderer {
         stroke.setStyle(Paint.Style.FILL);
     }
 
-    private static void drawMatchMeter(Canvas c, GameThread g, float match) {
+    private static void drawMatchMeter(Canvas c, GameThread g, float match, float hudY) {
         float cx = HUD_MATCH_X;
-        float cy = HUD_TOP_Y;
+        float cy = hudY;
         float r = 32f;
 
         // Dial base plate

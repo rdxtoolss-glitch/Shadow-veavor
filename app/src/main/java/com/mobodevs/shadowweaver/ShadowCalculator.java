@@ -145,7 +145,7 @@ public final class ShadowCalculator {
 
     /** The candle: fixed at the top, centre horizontally. */
     public static final float LIGHT_X = 500f;
-    public static final float LIGHT_Y = 140f;
+    public static final float LIGHT_Y = 215f;
     /** Candle height above the floor, in normalised units. Keep at 1.0. */
     public static final float LIGHT_Z = 1.0f;
 

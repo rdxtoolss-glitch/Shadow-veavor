@@ -65,7 +65,8 @@ public final class TutorialScreen {
         float cardW = 820f;
         float cardH = 1040f;
         cardL = cx - cardW * 0.5f;
-        cardT = Math.max(120f, (sceneH - (cardH + 110f)) * 0.5f);
+        float headerY = (sceneH > 1800f ? 135f : (sceneH > 1620f ? 115f : 95f));
+        cardT = headerY + 80f;
         cardR = cardL + cardW;
         cardB = cardT + cardH;
 
@@ -158,20 +159,21 @@ public final class TutorialScreen {
         fill.setShader(null);
 
         // 2. Header
+        float headerY = (sceneH > 1800f ? 135f : (sceneH > 1620f ? 115f : 95f));
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
         text.setTextSize(46f);
         text.setColor(0xDD000000);
-        c.drawText("HOW TO PLAY", cx, 97f, text);
+        c.drawText("HOW TO PLAY", cx, headerY + 2f, text);
         text.setColor(0xFFFFFDF8);
-        c.drawText("HOW TO PLAY", cx, 95f, text);
+        c.drawText("HOW TO PLAY", cx, headerY, text);
 
         text.setTextSize(20f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
-        c.drawText("THE PRINCIPLES OF ASTRAL PERSPECTIVE", cx, 142f, text);
+        c.drawText("THE PRINCIPLES OF ASTRAL PERSPECTIVE", cx, headerY + 44f + 2f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText("THE PRINCIPLES OF ASTRAL PERSPECTIVE", cx, 140f, text);
+        c.drawText("THE PRINCIPLES OF ASTRAL PERSPECTIVE", cx, headerY + 44f, text);
 
         // 3. Frosted Obsidian Guide Card
         fill.setColor(0xFA1A2234);

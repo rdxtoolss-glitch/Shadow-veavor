@@ -383,7 +383,7 @@ public class GameView extends SurfaceView implements GameThread.Looper {
             case MotionEvent.ACTION_DOWN: {
                 // 1. Check HUD Pause button (safe radius 48f)
                 float px = GameRenderer.getPauseX();
-                float py = GameRenderer.getPauseY();
+                float py = GameRenderer.getPauseY(sceneH);
                 float pdx = sx - px;
                 float pdy = sy - py;
                 if (pdx * pdx + pdy * pdy <= 48f * 48f) {

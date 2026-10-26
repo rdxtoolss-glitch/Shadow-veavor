@@ -71,7 +71,7 @@ public final class LevelSelectOverlay {
         float padX = 54f;
 
         // Chapter Tabs
-        float tabTop = 190f;
+        float tabTop = (sceneH > 1800f ? 230f : (sceneH > 1620f ? 210f : 190f));
         float tabH = 74f;
         float tabGap = 16f;
         float tabW = (ShadowCalculator.SCENE_W - padX * 2 - tabGap * (CHAPTERS - 1)) / CHAPTERS;
@@ -85,7 +85,7 @@ public final class LevelSelectOverlay {
         }
 
         // 5 Level Cards (arranged as 2 top, 2 middle, 1 centered bottom)
-        float cardTop = 300f;
+        float cardTop = tabTop + tabH + 28f;
         float cardW = 415f;
         float cardH = 210f;
         float gapX = 30f;
@@ -217,14 +217,15 @@ public final class LevelSelectOverlay {
         fill.setShader(null);
 
         // 2. Header
+        float headerY = (sceneH > 1800f ? 135f : (sceneH > 1620f ? 115f : 95f));
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
         text.setTextSize(46f);
 
         text.setColor(0xDD000000);
-        c.drawText("CHAPTER MAP", cx, 97f, text);
+        c.drawText("CHAPTER MAP", cx, headerY + 2f, text);
         text.setColor(0xFFFFFDF8);
-        c.drawText("CHAPTER MAP", cx, 95f, text);
+        c.drawText("CHAPTER MAP", cx, headerY, text);
 
         text.setTextSize(20f);
         text.setTypeface(SERIF_NORMAL);
@@ -235,9 +236,9 @@ public final class LevelSelectOverlay {
                 "CHAPTER II: THE ALCHEMIST'S CHAMBER",
                 "CHAPTER III: THE CELESTIAL OBSERVATORY"
         };
-        c.drawText(chapterNames[activeChapter], cx, 139f, text);
+        c.drawText(chapterNames[activeChapter], cx, headerY + 44f + 2f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText(chapterNames[activeChapter], cx, 137f, text);
+        c.drawText(chapterNames[activeChapter], cx, headerY + 44f, text);
 
         // Dividing flourish
         stroke.setStyle(Paint.Style.STROKE);

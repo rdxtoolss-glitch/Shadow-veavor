@@ -158,14 +158,11 @@ public class ShapeObject {
 
         if (isDragging) {
             // Direct 1:1 instant tracking under finger with ZERO lag
-            float prevX = x;
-            float prevY = y;
             x = targetX;
             y = targetY;
-            if (dt > 0.0001f) {
-                vx = (x - prevX) / dt;
-                vy = (y - prevY) / dt;
-            }
+            // Velocity decay when held stationary under finger
+            vx *= (float) Math.pow(0.01f, dt);
+            vy *= (float) Math.pow(0.01f, dt);
             // Pseudo-3D tilt from velocity for subtle dynamic response
             float desiredTiltX = -vy * 0.035f;
             float desiredTiltY = vx * 0.035f;
@@ -197,11 +194,11 @@ public class ShapeObject {
             // Inertial glide with exponential surface friction
             x += vx * dt;
             y += vy * dt;
-            float friction = (float) Math.pow(0.08f, dt);
+            float friction = (float) Math.pow(0.005f, dt);
             vx *= friction;
             vy *= friction;
-            if (Math.abs(vx) < 0.4f) vx = 0f;
-            if (Math.abs(vy) < 0.4f) vy = 0f;
+            if (Math.abs(vx) < 0.5f) vx = 0f;
+            if (Math.abs(vy) < 0.5f) vy = 0f;
 
             // Tilt relaxes to zero
             tiltX *= (float) Math.pow(0.05f, dt);
