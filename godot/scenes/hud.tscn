@@ -1,0 +1,112 @@
+[gd_scene load_steps=5 format=3 uid="uid://c6hudscene001"]
+
+[ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud"]
+[ext_resource type="Script" path="res://scripts/ui_button.gd" id="2_uibtn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.14, 0.10, 0.08, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill"]
+bg_color = Color(0.88, 0.68, 0.28, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="TopBar" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 140.0
+grow_horizontal = 2
+
+[node name="TitleLabel" type="Label" parent="TopBar"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 720.0
+offset_bottom = 80.0
+theme_override_colors/font_color = Color(0.92, 0.82, 0.62, 1)
+theme_override_font_sizes/font_size = 28
+text = "LEVEL 1: HOUSE"
+vertical_alignment = 1
+
+[node name="HintLabel" type="Label" parent="TopBar"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 82.0
+offset_right = 800.0
+offset_bottom = 120.0
+theme_override_colors/font_color = Color(0.68, 0.62, 0.54, 1)
+theme_override_font_sizes/font_size = 18
+text = "A body, a roof above it, a slim chimney beside it."
+vertical_alignment = 1
+
+[node name="ResetButton" type="Button" parent="TopBar"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -170.0
+offset_top = 44.0
+offset_right = -110.0
+offset_bottom = 104.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.85, 0.75, 0.6, 1)
+theme_override_font_sizes/font_size = 24
+text = "↺"
+script = ExtResource("2_uibtn")
+
+[node name="PauseButton" type="Button" parent="TopBar"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -90.0
+offset_top = 44.0
+offset_right = -30.0
+offset_bottom = 104.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.85, 0.75, 0.6, 1)
+theme_override_font_sizes/font_size = 24
+text = "⏸"
+script = ExtResource("2_uibtn")
+
+[node name="ResonanceContainer" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -540.0
+offset_bottom = -490.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="ResonanceBar" type="ProgressBar" parent="ResonanceContainer"]
+layout_mode = 0
+offset_left = 120.0
+offset_top = 16.0
+offset_right = 800.0
+offset_bottom = 34.0
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
+show_percentage = false
+
+[node name="ResonanceLabel" type="Label" parent="ResonanceContainer"]
+layout_mode = 0
+offset_left = 820.0
+offset_top = 8.0
+offset_right = 920.0
+offset_bottom = 42.0
+theme_override_colors/font_color = Color(0.9, 0.85, 0.75, 1)
+theme_override_font_sizes/font_size = 20
+text = "0%"
+vertical_alignment = 1

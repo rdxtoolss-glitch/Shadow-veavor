@@ -11,3 +11,7 @@
 .externalNativeBuild
 out/
 *.apk
+
+# Godot 4
+.godot/
+godot/.godot/
