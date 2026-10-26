@@ -392,23 +392,23 @@ public class GameView extends SurfaceView implements GameThread.Looper {
                     return true;
                 }
 
-                // 2. Check HUD Hint button (safe radius 52f)
+                // 2. Check HUD Hint button (generous radius 64f)
                 float hx = GameRenderer.getHintX();
                 float hy = GameRenderer.getHintY(sceneH);
                 float hdx = sx - hx;
                 float hdy = sy - hy;
-                if (hdx * hdx + hdy * hdy <= 52f * 52f) {
+                if (hdx * hdx + hdy * hdy <= 64f * 64f) {
                     thread.toggleHint();
                     if (haptic != null) haptic.tap();
                     return true;
                 }
 
-                // 3. Check HUD Reset button (safe radius 52f)
+                // 3. Check HUD Reset button (generous radius 64f)
                 float rx = GameRenderer.getResetX();
                 float ry = GameRenderer.getResetY(sceneH);
                 float rdx = sx - rx;
                 float rdy = sy - ry;
-                if (rdx * rdx + rdy * rdy <= 52f * 52f) {
+                if (rdx * rdx + rdy * rdy <= 64f * 64f) {
                     thread.restart();
                     if (haptic != null) haptic.tap();
                     return true;

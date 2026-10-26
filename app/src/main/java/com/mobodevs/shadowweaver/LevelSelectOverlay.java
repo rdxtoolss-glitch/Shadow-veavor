@@ -113,12 +113,12 @@ public final class LevelSelectOverlay {
         CARD_R[4] = cx + card5W * 0.5f;
         CARD_B[4] = row3T + cardH;
 
-        // Back Button
-        float btnW = 440f;
-        float btnH = 76f;
-        float btnY = (sceneH > 1750f) ? 1340f : 1310f;
+        // Back Button (Anchored to bottom of viewport)
+        float btnW = 460f;
+        float btnH = 80f;
+        float btnY = (sceneH > 1800f) ? (sceneH - 125f) : (sceneH - 95f);
         btnBack.setBounds(cx - btnW * 0.5f, btnY, cx + btnW * 0.5f, btnY + btnH);
-        btnBack.cornerRadius = 18f;
+        btnBack.cornerRadius = 20f;
 
         layoutReady = true;
     }
@@ -348,23 +348,24 @@ public final class LevelSelectOverlay {
             }
         }
 
-        // 5. Chapter Mastery Summary Card
-        float sumL = cx - 360f;
-        float sumR = cx + 360f;
-        float sumT = 1045f;
-        float sumB = 1270f;
+        // 5. Chapter Mastery Summary Card (Proportionally sized and positioned)
+        float sumL = cx - 380f;
+        float sumR = cx + 380f;
+        float sumT = CARD_B[4] + (sceneH > 1800f ? 44f : 30f);
+        float sumH = (sceneH > 1800f) ? 320f : 230f;
+        float sumB = sumT + sumH;
 
         fill.setColor(0xEE1E2434);
-        c.drawRoundRect(sumL, sumT, sumR, sumB, 20f, 20f, fill);
+        c.drawRoundRect(sumL, sumT, sumR, sumB, 22f, 22f, fill);
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.2f);
+        stroke.setStrokeWidth(2.4f);
         stroke.setColor(0xFFD4AF37);
-        c.drawRoundRect(sumL, sumT, sumR, sumB, 20f, 20f, stroke);
+        c.drawRoundRect(sumL, sumT, sumR, sumB, 22f, 22f, stroke);
 
         // Specular highlight
         stroke.setStrokeWidth(1.2f);
         stroke.setColor(0x55FFFFFF);
-        c.drawLine(sumL + 20f, sumT + 1.5f, sumR - 20f, sumT + 1.5f, stroke);
+        c.drawLine(sumL + 22f, sumT + 1.5f, sumR - 22f, sumT + 1.5f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
         int chStars = (progress != null) ? progress.getChapterStars(activeChapter) : 0;
@@ -373,31 +374,42 @@ public final class LevelSelectOverlay {
         text.setColor(0xCCFFE0A8);
         c.drawText("CHAPTER STARS & MASTERY PROGRESS", cx, sumT + 42f, text);
 
-        text.setTextSize(26f);
+        text.setTextSize(28f);
         text.setColor(0xFFFFFDF8);
-        c.drawText("⭐ " + chStars + " of 15 Constellation Stars Earned", cx, sumT + 84f, text);
+        c.drawText("⭐ " + chStars + " of 15 Constellation Stars Earned", cx, sumT + 86f, text);
 
         // Progress bar
-        float barW = 520f;
-        float barH = 16f;
+        float barW = 560f;
+        float barH = 18f;
         float barL = cx - barW * 0.5f;
-        float barT = sumT + 116f;
+        float barT = sumT + 120f;
         fill.setColor(0x660E131E);
-        c.drawRoundRect(barL, barT, barL + barW, barT + barH, 8f, 8f, fill);
+        c.drawRoundRect(barL, barT, barL + barW, barT + barH, 9f, 9f, fill);
 
         float chPct = chStars / 15f;
         if (chPct > 0.01f) {
             fill.setColor(0xFFFFB300);
-            c.drawRoundRect(barL, barT, barL + barW * chPct, barT + barH, 8f, 8f, fill);
+            c.drawRoundRect(barL, barT, barL + barW * chPct, barT + barH, 9f, 9f, fill);
         }
 
-        text.setTextSize(16f);
+        text.setTextSize(17f);
         text.setTypeface(Typeface.DEFAULT);
         text.setColor(0xDDFFE0A8);
         String appraisal = (chStars == 15) ? "Complete Astral Perfection Achieved!"
                 : (chStars >= 10 ? "Great progress! Complete trials under par for all stars."
                 : "Solve silhouettes under par time and move limits to earn 3 stars.");
-        c.drawText(appraisal, cx, sumT + 168f, text);
+        c.drawText(appraisal, cx, sumT + 175f, text);
+
+        if (sceneH > 1800f) {
+            String[] lore = {
+                    "✦ The Apprentice's Study: Learn to bend candlelight and master single-plane shadows.",
+                    "✦ The Alchemist's Chamber: Shape compound silhouettes and rotational symmetries.",
+                    "✦ The Celestial Observatory: Weave complex constellations and celestial archetypes."
+            };
+            text.setTextSize(15f);
+            text.setColor(0x88FFE0A8);
+            c.drawText(lore[activeChapter], cx, sumT + 225f, text);
+        }
 
         // 6. Back Button
         btnBack.label = "MAIN MENU";

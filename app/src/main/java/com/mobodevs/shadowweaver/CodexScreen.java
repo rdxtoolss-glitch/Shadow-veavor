@@ -104,11 +104,11 @@ public final class CodexScreen {
             ITEM_B[i] = t + cardH;
         }
 
-        float btnW = 440f;
-        float btnH = 76f;
-        float btnY = (sceneH > 1750f) ? 1360f : 1330f;
+        float btnW = 460f;
+        float btnH = 80f;
+        float btnY = (sceneH > 1800f) ? (sceneH - 125f) : (sceneH - 95f);
         btnBack.setBounds(cx - btnW * 0.5f, btnY, cx + btnW * 0.5f, btnY + btnH);
-        btnBack.cornerRadius = 18f;
+        btnBack.cornerRadius = 20f;
 
         layoutReady = true;
     }
@@ -324,7 +324,8 @@ public final class CodexScreen {
         float specL = 50f;
         float specR = sw - 50f;
         float specT = 905f;
-        float specB = (sh > 1750f) ? 1310f : 1290f;
+        float specH = (sh > 1800f) ? 520f : ((sh > 1650f) ? 420f : 380f);
+        float specB = specT + specH;
 
         fill.setColor(0xEE1E2434);
         c.drawRoundRect(specL, specT, specR, specB, 22f, 22f, fill);
@@ -414,6 +415,24 @@ public final class CodexScreen {
         text.setTextSize(16f);
         text.setColor(0xCCFFE0A8);
         c.drawText("Par Benchmark: Under " + (parTime / 1000L) + " seconds  •  Optimal moves: " + parMoves, cx, specT + 332f, text);
+
+        if (sh > 1800f) {
+            text.setTextSize(15f);
+            text.setColor(0x88FFE0A8);
+            c.drawText("✦ Relic of the Ancient Order of Shadow Weavers ✦", cx, specT + 380f, text);
+            c.drawText("Preserved in the Great Archives of Alexandria", cx, specT + 412f, text);
+
+            // Antique decorative crest between plaque and back button
+            float sealCy = (specB + btnBack.top) * 0.5f;
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(1.4f);
+            stroke.setColor(0x33D4AF37);
+            c.drawCircle(cx, sealCy, 48f, stroke);
+            c.drawCircle(cx, sealCy, 68f, stroke);
+            stroke.setStyle(Paint.Style.FILL);
+            fill.setColor(0x66FFE0A8);
+            c.drawCircle(cx, sealCy, 4.5f, fill);
+        }
 
         // 6. Back Button
         btnBack.label = "MAIN MENU";
