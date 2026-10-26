@@ -142,9 +142,12 @@ public final class LevelCompleteOverlay {
         c.drawRect(0, 0, sw, sh, fill);
 
         int save = c.save();
-        // Subtle drop-in scale/slide
-        float slideY = (1f - reveal) * 60f;
+        // Emil Kowalski entrance: cubic ease-out, scale from 0.95, slide subtly
+        float ease = 1.0f - (float) Math.pow(1.0f - reveal, 3.0);
+        float cardScale = 0.95f + 0.05f * ease;
+        float slideY = (1.0f - ease) * 36f;
         c.translate(0, slideY);
+        c.scale(cardScale, cardScale, cx, (cardT + cardB) * 0.5f);
 
         // 2. Card Body (Luminous Frosted Obsidian-Slate Plate)
         fill.setColor(withAlpha(0xFF1A2234, (int) (252 * reveal)));

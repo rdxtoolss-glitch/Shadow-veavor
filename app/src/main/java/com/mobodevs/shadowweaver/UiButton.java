@@ -24,6 +24,7 @@ public class UiButton {
     public boolean isPrimary;
     public boolean enabled = true;
     public boolean isPressed;
+    private float animatedScale = 1.0f;
 
     private static Typeface safeTypeface(Typeface family, int style) {
         try {
@@ -79,11 +80,14 @@ public class UiButton {
     public void draw(Canvas c, Paint fill, Paint stroke, Paint text, float alpha) {
         if (alpha <= 0f) return;
 
+        float targetScale = (isPressed && enabled) ? 0.96f : 1.0f;
+        animatedScale += (targetScale - animatedScale) * 0.45f;
+
         int save = c.save();
-        if (isPressed) {
+        if (Math.abs(animatedScale - 1.0f) > 0.001f) {
             float cx = centerX();
             float cy = centerY();
-            c.scale(0.96f, 0.96f, cx, cy);
+            c.scale(animatedScale, animatedScale, cx, cy);
         }
 
         int a = (int) (255 * alpha);

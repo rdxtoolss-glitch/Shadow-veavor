@@ -151,6 +151,16 @@ public final class PauseOverlay {
         fill.setColor(0xCC0E121E);
         c.drawRect(0, 0, sw, sh, fill);
 
+        // Emil Kowalski modal entrance: start from scale(0.95) with cubic ease-out
+        float transAlpha = g.screenTransitionAlpha();
+        float ease = 1.0f - (float) Math.pow(1.0f - transAlpha, 3.0);
+        float cardScale = 0.95f + 0.05f * ease;
+        float slideY = (1.0f - ease) * 30f;
+
+        int saveCard = c.save();
+        c.translate(0, slideY);
+        c.scale(cardScale, cardScale, cx, (cardT + cardB) * 0.5f);
+
         // 2. Frosted Obsidian-Slate Panel
         fill.setColor(0xFA1A2234);
         c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, fill);
@@ -205,6 +215,7 @@ public final class PauseOverlay {
         btnSettings.draw(c, fill, stroke, text, 1.0f);
         btnMainMenu.draw(c, fill, stroke, text, 1.0f);
 
+        c.restoreToCount(saveCard);
         text.setTextAlign(Paint.Align.LEFT);
     }
 }

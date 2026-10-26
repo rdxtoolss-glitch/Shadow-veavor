@@ -196,6 +196,8 @@ public final class SettingsOverlay {
         fill.setColor(0xCC0E121E);
         c.drawRect(0, 0, sw, sh, fill);
 
+        int saveCard = c.save();
+
         // 2. Card Panel (Obsidian Alchemical Slate)
         fill.setColor(0xFA1A2234);
         c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, fill);
@@ -269,6 +271,7 @@ public final class SettingsOverlay {
         btnClose.label = "CLOSE";
         btnClose.draw(c, fill, stroke, text, 1.0f);
 
+        c.restoreToCount(saveCard);
         text.setTextAlign(Paint.Align.LEFT);
     }
 }

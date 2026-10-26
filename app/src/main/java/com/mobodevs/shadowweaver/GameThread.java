@@ -832,8 +832,8 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         ShapeObject s = shapes[selected];
         float prevX = s.x;
         float prevY = s.y;
-        float nx = ShadowCalculator.clampStageX(x + dragGrabDX);
-        float ny = ShadowCalculator.clampStageY(y + dragGrabDY);
+        float nx = ShadowCalculator.dampStageX(x + dragGrabDX);
+        float ny = ShadowCalculator.dampStageY(y + dragGrabDY);
         s.targetX = nx;
         s.targetY = ny;
         s.x = nx;

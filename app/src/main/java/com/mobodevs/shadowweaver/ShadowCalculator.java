@@ -732,6 +732,32 @@ public final class ShadowCalculator {
         return clamp(y, STAGE_TOP, STAGE_BOTTOM);
     }
 
+    /**
+     * Damped stage positioning during active drag (Emil Kowalski boundary damping).
+     * Applies smooth logarithmic resistance past the boundary instead of a rigid wall.
+     */
+    public static float dampStageX(float x) {
+        if (x < STAGE_LEFT) {
+            float over = STAGE_LEFT - x;
+            return STAGE_LEFT - (float) Math.log1p(over * 0.04f) * 16f;
+        } else if (x > STAGE_RIGHT) {
+            float over = x - STAGE_RIGHT;
+            return STAGE_RIGHT + (float) Math.log1p(over * 0.04f) * 16f;
+        }
+        return x;
+    }
+
+    public static float dampStageY(float y) {
+        if (y < STAGE_TOP) {
+            float over = STAGE_TOP - y;
+            return STAGE_TOP - (float) Math.log1p(over * 0.04f) * 16f;
+        } else if (y > STAGE_BOTTOM) {
+            float over = y - STAGE_BOTTOM;
+            return STAGE_BOTTOM + (float) Math.log1p(over * 0.04f) * 16f;
+        }
+        return y;
+    }
+
     public static float clamp(float v, float lo, float hi) {
         return v < lo ? lo : (v > hi ? hi : v);
     }

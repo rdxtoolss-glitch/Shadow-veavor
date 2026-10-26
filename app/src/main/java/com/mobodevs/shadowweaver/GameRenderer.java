@@ -232,6 +232,14 @@ final class GameRenderer {
         float y = 520f;
         float bw = 540f;
         float bh = 88f;
+
+        // Emil Kowalski entrance: start from scale(0.95) with cubic ease-out
+        float ease = 1.0f - (float) Math.pow(1.0f - Math.min(1.0f, alpha), 3.0);
+        float bannerScale = 0.95f + 0.05f * ease;
+
+        int saveBanner = c.save();
+        c.scale(bannerScale, bannerScale, cx, y);
+
         rect.set(cx - bw * 0.5f, y - bh * 0.5f, cx + bw * 0.5f, y + bh * 0.5f);
 
         int a = (int) (240 * alpha);
@@ -255,6 +263,8 @@ final class GameRenderer {
         text.setColor(withAlpha(0xBBFFE0B0, (int) (240 * alpha)));
         c.drawText("Chapter " + ((g.levelIndex() / 5) + 1) + " • Level " + (g.levelIndex() + 1), cx, y + 24f, text);
         text.setTextAlign(Paint.Align.LEFT);
+
+        c.restoreToCount(saveBanner);
     }
 
     private static void drawOnboardingCue(Canvas c, GameThread g, float time) {
