@@ -1,0 +1,124 @@
+[gd_scene load_steps=12 format=3 uid="uid://cwrld3d0001"]
+
+[ext_resource type="Script" path="res://scripts/world_3d.gd" id="1_world"]
+
+[sub_resource type="Environment" id="Environment_opt"]
+background_mode = 1
+background_color = Color(0.045, 0.032, 0.038, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.14, 0.1, 0.08, 1)
+ambient_light_energy = 0.6
+tonemap_mode = 3
+tonemap_exposure = 1.05
+glow_enabled = true
+glow_intensity = 0.65
+glow_bloom = 0.22
+glow_blend_mode = 1
+ssao_enabled = true
+ssao_radius = 1.2
+ssao_intensity = 2.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_table"]
+albedo_color = Color(0.16, 0.11, 0.08, 1)
+metallic = 0.06
+roughness = 0.28
+clearcoat_enabled = true
+clearcoat = 0.35
+clearcoat_roughness = 0.2
+
+[sub_resource type="BoxMesh" id="BoxMesh_table"]
+material = SubResource("StandardMaterial3D_table")
+size = Vector3(9.4, 0.3, 8.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_brass"]
+albedo_color = Color(0.85, 0.68, 0.32, 1)
+metallic = 0.88
+roughness = 0.22
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_cbase"]
+material = SubResource("StandardMaterial3D_brass")
+top_radius = 0.35
+bottom_radius = 0.45
+height = 0.12
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wax"]
+albedo_color = Color(0.94, 0.9, 0.82, 1)
+roughness = 0.4
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_cwax"]
+material = SubResource("StandardMaterial3D_wax")
+top_radius = 0.12
+bottom_radius = 0.14
+height = 0.65
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_flame"]
+shading_mode = 0
+albedo_color = Color(1, 0.85, 0.45, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_flame"]
+material = SubResource("StandardMaterial3D_flame")
+radius = 0.08
+height = 0.22
+
+[sub_resource type="SphereMesh" id="SphereMesh_dust"]
+radius = 0.015
+height = 0.03
+
+[node name="World3D" type="Node3D"]
+script = ExtResource("1_world")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_opt")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.898794, 0.438371, 0, -0.438371, 0.898794, 0, 4.2, 5.8)
+fov = 46.0
+
+[node name="CandleLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -3.8)
+light_color = Color(1, 0.74, 0.38, 1)
+light_energy = 3.4
+shadow_enabled = true
+shadow_bias = 0.03
+shadow_blur = 1.8
+omni_range = 14.0
+
+[node name="FillLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 1.5)
+light_color = Color(0.18, 0.14, 0.22, 1)
+light_energy = 0.5
+omni_range = 12.0
+
+[node name="Workbench" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0.2)
+mesh = SubResource("BoxMesh_table")
+
+[node name="Candle" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.8)
+
+[node name="Base" type="MeshInstance3D" parent="Candle"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, 0)
+mesh = SubResource("CylinderMesh_cbase")
+
+[node name="Wax" type="MeshInstance3D" parent="Candle"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+mesh = SubResource("CylinderMesh_cwax")
+
+[node name="Flame" type="MeshInstance3D" parent="Candle"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("SphereMesh_flame")
+
+[node name="DustParticles" type="CPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+amount = 32
+lifetime = 6.0
+preprocess = 3.0
+mesh = SubResource("SphereMesh_dust")
+emission_shape = 3
+emission_box_extents = Vector3(3.8, 1.8, 3.8)
+gravity = Vector3(0, 0.04, 0)
+initial_velocity_min = 0.02
+initial_velocity_max = 0.06
+color = Color(1, 0.85, 0.45, 0.32)
+
+[node name="TokensRoot" type="Node3D" parent="."]

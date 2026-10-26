@@ -1,28 +1,30 @@
 [gd_scene load_steps=8 format=3 uid="uid://cma1nscene001"]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
-[ext_resource type="Script" path="res://scripts/game_stage.gd" id="2_stage"]
+[ext_resource type="PackedScene" path="res://scenes/world_3d.tscn" id="2_world"]
 [ext_resource type="Script" path="res://scripts/wall_screen.gd" id="3_wall"]
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="4_hud"]
 [ext_resource type="PackedScene" path="res://scenes/pause_modal.tscn" id="5_pause"]
 [ext_resource type="PackedScene" path="res://scenes/level_complete_modal.tscn" id="6_comp"]
 [ext_resource type="Script" path="res://scripts/audio_manager.gd" id="7_audio"]
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="Node"]
 script = ExtResource("1_main")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
 offset_right = 1000.0
 offset_bottom = 1600.0
-color = Color(0.06, 0.045, 0.035, 1)
+stretch = true
 
-[node name="GameStage" type="Node2D" parent="."]
-script = ExtResource("2_stage")
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
+handle_input_locally = false
+size = Vector2i(1000, 1600)
+render_target_update_mode = 4
+
+[node name="World3D" parent="SubViewportContainer/SubViewport" instance=ExtResource("2_world")]
 
 [node name="WallScreen" type="Node2D" parent="."]
 script = ExtResource("3_wall")
-
-[node name="TokensContainer" type="Node2D" parent="."]
 
 [node name="HUD" parent="." instance=ExtResource("4_hud")]
 

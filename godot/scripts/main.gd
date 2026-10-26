@@ -1,22 +1,22 @@
 class_name Main
-extends Node2D
+extends Node
 
-@onready var game_stage: GameStage = $GameStage
+@onready var world_3d: GameWorld3D = $SubViewportContainer/SubViewport/World3D
+@onready var sub_viewport: SubViewport = $SubViewportContainer/SubViewport
 @onready var wall_screen: WallScreen = $WallScreen
 @onready var hud: HUD = $HUD
 @onready var level_complete_modal: LevelCompleteModal = $LevelCompleteModal
 @onready var pause_modal: PauseModal = $PauseModal
-@onready var tokens_container: Node2D = $TokensContainer
 @onready var audio_manager: AudioManager = $AudioManager
 
 var current_level_idx: int = 0
 var matcher: SilhouetteMatcher = SilhouetteMatcher.new()
-var active_token: ShapeToken = null
-var live_tokens: Array[ShapeToken] = []
+var active_token: Token3D = null
+var live_tokens: Array[Token3D] = []
 
 var level_start_time: float = 0.0
 var level_is_complete: bool = false
-var token_scene = preload("res://scenes/shape_token.tscn")
+const Token3DScript = preload("res://scripts/token_3d.gd")
 
 func _ready():
 	hud.pause_pressed.connect(_on_pause_pressed)
@@ -44,16 +44,16 @@ func load_level(idx: int):
 	var lv = LevelLoader.get_level(current_level_idx)
 	hud.update_level_info(lv.number, lv.title, lv.hint)
 
-	# 2. Forge and set target on wall
+	# 2. Forge target on wall screen
 	var target_polys = LevelLoader.forge_target(current_level_idx)
 	matcher.set_target(target_polys)
 	wall_screen.set_target(target_polys)
 
-	# 3. Create start shapes
+	# 3. Create 3D physical tokens
 	var start_shapes = LevelLoader.create_shapes(current_level_idx)
 	for data in start_shapes:
-		var token = token_scene.instantiate() as ShapeToken
-		tokens_container.add_child(token)
+		var token = Token3DScript.new() as Token3D
+		world_3d.tokens_root.add_child(token)
 		token.setup(data)
 		live_tokens.append(token)
 
@@ -63,6 +63,15 @@ func _input(event: InputEvent):
 	if level_is_complete: return
 	if pause_modal.visible or level_complete_modal.visible: return
 
+	# Normalize screen coordinate for subtle 3D camera parallax
+	if event is InputEventMouseMotion or event is InputEventScreenDrag:
+		var vp_size = sub_viewport.size
+		var norm_pos = Vector2(
+			(event.position.x / float(vp_size.x)) * 2.0 - 1.0,
+			(event.position.y / float(vp_size.y)) * 2.0 - 1.0
+		)
+		world_3d.set_parallax_target(norm_pos)
+
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
@@ -71,7 +80,8 @@ func _input(event: InputEvent):
 				_handle_release()
 	elif event is InputEventMouseMotion:
 		if active_token and (active_token.shape_data.is_dragging or active_token.shape_data.is_rotating):
-			active_token.update_drag(event.position)
+			var ray = _get_3d_ray(event.position)
+			active_token.update_drag_ray(ray.origin, ray.direction)
 			_evaluate_shadows()
 	elif event is InputEventScreenTouch:
 		if event.pressed:
@@ -80,21 +90,30 @@ func _input(event: InputEvent):
 			_handle_release()
 	elif event is InputEventScreenDrag:
 		if active_token and (active_token.shape_data.is_dragging or active_token.shape_data.is_rotating):
-			active_token.update_drag(event.position)
+			var ray = _get_3d_ray(event.position)
+			active_token.update_drag_ray(ray.origin, ray.direction)
 			_evaluate_shadows()
 
+func _get_3d_ray(screen_pos: Vector2) -> Dictionary:
+	var cam = world_3d.camera
+	var origin = cam.project_ray_origin(screen_pos)
+	var dir = cam.project_ray_normal(screen_pos)
+	return {"origin": origin, "direction": dir}
+
 func _handle_press(pos: Vector2):
-	# First check rotation handle on active token if already selected
-	if active_token and active_token.is_on_rotation_handle(pos):
-		active_token.start_handle_drag(pos)
+	var ray = _get_3d_ray(pos)
+
+	# 1. Check active token rotation handle
+	if active_token and active_token.is_on_rotation_handle(ray.origin, ray.direction):
+		active_token.start_handle_drag(ray.origin, ray.direction)
 		audio_manager.play_pick()
 		return
 
-	# Search top-to-bottom among tokens
-	var hit: ShapeToken = null
+	# 2. Check token bodies in 3D
+	var hit: Token3D = null
 	for i in range(live_tokens.size() - 1, -1, -1):
 		var t = live_tokens[i]
-		if t.contains_point(pos):
+		if t.contains_ray(ray.origin, ray.direction):
 			hit = t
 			break
 
@@ -103,9 +122,7 @@ func _handle_press(pos: Vector2):
 			active_token.is_selected = false
 		active_token = hit
 		active_token.is_selected = true
-		# Bring to top in scene tree
-		tokens_container.move_child(active_token, tokens_container.get_child_count() - 1)
-		active_token.start_drag(pos)
+		active_token.start_drag(ray.origin, ray.direction)
 		audio_manager.play_pick()
 	else:
 		if active_token:
@@ -128,24 +145,31 @@ func _evaluate_shadows():
 		shadow_polys.append(detailed["core"])
 
 	var raw_iou: float = matcher.evaluate(shadow_polys)
-	var pct: float = matcher.reportMatch(raw_iou) if matcher.has_method("reportMatch") else matcher.report_match(raw_iou)
+	var pct: float = matcher.report_match(raw_iou)
 
 	wall_screen.update_shadows(shadow_detailed, raw_iou)
 	hud.update_resonance(pct)
 
-	# Sound chimes
+	# Chime milestones
 	var chimes = matcher.newly_crossed_chimes(raw_iou)
 	if chimes & 1: audio_manager.play_resonance_chime(1)
 	if chimes & 2: audio_manager.play_resonance_chime(2)
 	if chimes & 4: audio_manager.play_resonance_chime(3)
 
-	# Level win condition
+	# Win condition
 	if matcher.is_complete(raw_iou) and not level_is_complete:
 		level_is_complete = true
 		var duration = (Time.get_ticks_msec() / 1000.0) - level_start_time
 		var stars = 3 if duration < 25.0 else (2 if duration < 50.0 else 1)
 		audio_manager.play_resonance_chime(3)
-		get_tree().create_timer(0.4).timeout.connect(func():
+
+		# Cinematic push-in on 3D camera
+		var cam = world_3d.camera
+		var tw = create_tween()
+		tw.tween_property(cam, "fov", 42.0, 0.4).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(cam, "fov", 46.0, 0.5)
+
+		get_tree().create_timer(0.45).timeout.connect(func():
 			level_complete_modal.show_completion(current_level_idx + 1, duration, stars)
 		)
 

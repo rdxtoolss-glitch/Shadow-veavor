@@ -48,6 +48,11 @@ func _init(p_kind: Kind = Kind.CIRCLE, p_w: float = 100.0, p_h: float = 100.0, p
 	target_y = p_y
 	target_rotation = p_rot
 
+func base_radius() -> float:
+	var hw: float = width * 0.5
+	var hh: float = height * 0.5
+	return sqrt(hw * hw + hh * hh)
+
 static func normalize_angle(deg: float) -> float:
 	var a: float = fmod(deg, 360.0)
 	if a < 0.0: a += 360.0
