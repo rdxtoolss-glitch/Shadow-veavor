@@ -25,6 +25,17 @@ public class UiButton {
     public boolean enabled = true;
     public boolean isPressed;
 
+    private static Typeface safeTypeface(Typeface family, int style) {
+        try {
+            return Typeface.create(family, style);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static final Typeface SERIF_BOLD = safeTypeface(Typeface.SERIF, Typeface.BOLD);
+    private static final Typeface SERIF_NORMAL = safeTypeface(Typeface.SERIF, Typeface.NORMAL);
+
     public UiButton() {
     }
 
@@ -125,7 +136,7 @@ public class UiButton {
         float cy = centerY();
 
         text.setTextAlign(Paint.Align.CENTER);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
 
         if (subLabel == null || subLabel.isEmpty()) {
             // Single line centered
@@ -163,7 +174,7 @@ public class UiButton {
             }
 
             text.setTextSize(Math.min(18f, height() * 0.26f));
-            text.setTypeface(Typeface.DEFAULT);
+            text.setTypeface(SERIF_NORMAL);
             if (!enabled) {
                 text.setColor(withAlpha(0x4490A0B8, a));
             } else if (isPrimary) {

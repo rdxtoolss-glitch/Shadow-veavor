@@ -29,6 +29,17 @@ public final class TitleScreen {
     private static final Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Path path = new Path();
 
+    private static Typeface safeTypeface(Typeface family, int style) {
+        try {
+            return Typeface.create(family, style);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static final Typeface SERIF_BOLD = safeTypeface(Typeface.SERIF, Typeface.BOLD);
+    private static final Typeface SERIF_NORMAL = safeTypeface(Typeface.SERIF, Typeface.NORMAL);
+
     private static final UiButton btnContinue = new UiButton();
     private static final UiButton btnChapters = new UiButton();
     private static final UiButton btnTutorial = new UiButton();
@@ -186,7 +197,7 @@ public final class TitleScreen {
         // 4. Logo Typography: "SHADOW WEAVER"
         float titleY = tall ? (sh * 0.17f) : 340f;
         text.setTextAlign(Paint.Align.CENTER);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setTextSize(66f);
 
         // Triple-pass gold leaf typography
@@ -200,7 +211,7 @@ public final class TitleScreen {
         // Subtitle banner with drop shadow
         float subY = titleY + 44f;
         text.setTextSize(21f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0xDD000000);
         c.drawText("✦  THE ALCHEMIST'S THEATER OF SHADOWS  ✦", cx, subY + 1.5f, text);
         text.setColor(0xFFFFE0A8);
@@ -273,7 +284,7 @@ public final class TitleScreen {
         text.setTextAlign(Paint.Align.CENTER);
         String rank = (progress != null) ? progress.getPlayerRank() : "Apprentice of Shadows";
         text.setTextSize(18f);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setColor(0xCCFFE0A8);
         c.drawText("CURRENT PLAYER ALCHEMIST RANK", cx, cardT + 42f, text);
 
@@ -296,7 +307,7 @@ public final class TitleScreen {
         }
 
         text.setTextSize(18f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0xEEFFE0A8);
         c.drawText("Constellation Mastery: " + Math.round(pct * 100f) + "% (" + totalStars + " / " + LevelProgress.TOTAL_MAX_STARS + " Stars)", cx, cardT + 175f, text);
 
@@ -309,7 +320,7 @@ public final class TitleScreen {
         // 9. Footer Version
         text.setTextAlign(Paint.Align.CENTER);
         text.setTextSize(16f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0x88D4AF37);
         c.drawText("v2.0 • Pure Native Android Engine • 60-120 FPS", cx, sh - 42f, text);
         text.setTextAlign(Paint.Align.LEFT);
@@ -354,7 +365,7 @@ public final class TitleScreen {
         // Radiant Latin / Alchemical Motto
         text.setTextAlign(Paint.Align.CENTER);
         text.setTextSize(16f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0x88FFE0A8);
         c.drawText("✦ QUOD EST INFERIUS EST SICUT QUOD EST SUPERIUS ✦", cx, cy + 118f, text);
         text.setTextSize(13f);

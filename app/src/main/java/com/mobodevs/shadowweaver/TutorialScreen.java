@@ -30,6 +30,17 @@ public final class TutorialScreen {
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Path path = new Path();
 
+    private static Typeface safeTypeface(Typeface family, int style) {
+        try {
+            return Typeface.create(family, style);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static final Typeface SERIF_BOLD = safeTypeface(Typeface.SERIF, Typeface.BOLD);
+    private static final Typeface SERIF_NORMAL = safeTypeface(Typeface.SERIF, Typeface.NORMAL);
+
     private static float cardL;
     private static float cardT;
     private static float cardR;
@@ -148,7 +159,7 @@ public final class TutorialScreen {
 
         // 2. Header
         text.setTextAlign(Paint.Align.CENTER);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setTextSize(46f);
         text.setColor(0xDD000000);
         c.drawText("HOW TO PLAY", cx, 97f, text);
@@ -156,7 +167,7 @@ public final class TutorialScreen {
         c.drawText("HOW TO PLAY", cx, 95f, text);
 
         text.setTextSize(20f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
         c.drawText("THE PRINCIPLES OF ASTRAL PERSPECTIVE", cx, 142f, text);
         text.setColor(0xFFFFE0A8);
@@ -227,7 +238,7 @@ public final class TutorialScreen {
         switch (page) {
             case 0: { // The Candle & Scale
                 text.setTextSize(32f);
-                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setTypeface(SERIF_BOLD);
                 text.setColor(0xCC000000);
                 c.drawText("I. DISTANCE & SCALE", cx, topY + 21.5f, text);
                 text.setColor(0xFFFFD54F);
@@ -269,12 +280,12 @@ public final class TutorialScreen {
 
                 // Explanation Text
                 text.setTextSize(24f);
-                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setTypeface(SERIF_BOLD);
                 text.setColor(0xFFFFFDF8);
                 c.drawText("Shadows obey physical optics and distance.", cx, topY + 500f, text);
 
                 text.setTextSize(20f);
-                text.setTypeface(Typeface.DEFAULT);
+                text.setTypeface(SERIF_NORMAL);
                 text.setColor(0xDDFFE0A8);
                 c.drawText("Drag a token UP toward the candle flame to ENLARGE its shadow.", cx, topY + 545f, text);
                 c.drawText("Drag it DOWN away from the flame to SHRINK the shadow.", cx, topY + 585f, text);
@@ -284,7 +295,7 @@ public final class TutorialScreen {
 
             case 1: { // Rotation & Orientation
                 text.setTextSize(32f);
-                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setTypeface(SERIF_BOLD);
                 text.setColor(0xCC000000);
                 c.drawText("II. MECHANICAL ROTATION", cx, topY + 21.5f, text);
                 text.setColor(0xFFFFD54F);
@@ -335,12 +346,12 @@ public final class TutorialScreen {
 
                 // Explanation
                 text.setTextSize(24f);
-                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setTypeface(SERIF_BOLD);
                 text.setColor(0xFFFFFDF8);
                 c.drawText("Precision angle alignment and orientation.", cx, topY + 500f, text);
 
                 text.setTextSize(20f);
-                text.setTypeface(Typeface.DEFAULT);
+                text.setTypeface(SERIF_NORMAL);
                 text.setColor(0xDDFFE0A8);
                 c.drawText("Spin tokens using the outer tactile amber rotary knob,", cx, topY + 545f, text);
                 c.drawText("or place two fingers anywhere on screen to pinch and twist.", cx, topY + 585f, text);
@@ -350,7 +361,7 @@ public final class TutorialScreen {
 
             case 2: { // Magnetic Resonance & Snap
                 text.setTextSize(32f);
-                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setTypeface(SERIF_BOLD);
                 text.setColor(0xCC000000);
                 c.drawText("III. RESONANCE & SNAP", cx, topY + 21.5f, text);
                 text.setColor(0xFFFFD54F);
@@ -387,12 +398,12 @@ public final class TutorialScreen {
 
                 // Explanation
                 text.setTextSize(24f);
-                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setTypeface(SERIF_BOLD);
                 text.setColor(0xFFFFFDF8);
                 c.drawText("Magnetic resonance guides every alignment.", cx, topY + 500f, text);
 
                 text.setTextSize(20f);
-                text.setTypeface(Typeface.DEFAULT);
+                text.setTypeface(SERIF_NORMAL);
                 text.setColor(0xDDFFE0A8);
                 c.drawText("Tokens emit a radiant golden aura when close to target.", cx, topY + 545f, text);
                 c.drawText("An animated magnetic flux tether shows the exact solution point.", cx, topY + 585f, text);
@@ -402,7 +413,7 @@ public final class TutorialScreen {
 
             case 3: { // Constellation & Stars
                 text.setTextSize(32f);
-                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setTypeface(SERIF_BOLD);
                 text.setColor(0xCC000000);
                 c.drawText("IV. ASTRAL REVEAL & 3 STARS", cx, topY + 21.5f, text);
                 text.setColor(0xFFFFD54F);
@@ -424,12 +435,12 @@ public final class TutorialScreen {
 
                 // Explanation
                 text.setTextSize(24f);
-                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setTypeface(SERIF_BOLD);
                 text.setColor(0xFFFFFDF8);
                 c.drawText("Master trials with speed and efficiency.", cx, topY + 500f, text);
 
                 text.setTextSize(20f);
-                text.setTypeface(Typeface.DEFAULT);
+                text.setTypeface(SERIF_NORMAL);
                 text.setColor(0xDDFFE0A8);
                 c.drawText("Reach 85% match to weave the silhouette and win.", cx, topY + 545f, text);
                 c.drawText("⭐ 1 Star: Silhouette solved   ⭐⭐ 2 Stars: Solved under par time", cx, topY + 585f, text);

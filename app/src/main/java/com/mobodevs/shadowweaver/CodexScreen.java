@@ -31,6 +31,17 @@ public final class CodexScreen {
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Path path = new Path();
 
+    private static Typeface safeTypeface(Typeface family, int style) {
+        try {
+            return Typeface.create(family, style);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static final Typeface SERIF_BOLD = safeTypeface(Typeface.SERIF, Typeface.BOLD);
+    private static final Typeface SERIF_NORMAL = safeTypeface(Typeface.SERIF, Typeface.NORMAL);
+
     private static final float[] ITEM_L = new float[TOTAL_ITEMS];
     private static final float[] ITEM_T = new float[TOTAL_ITEMS];
     private static final float[] ITEM_R = new float[TOTAL_ITEMS];
@@ -172,7 +183,7 @@ public final class CodexScreen {
 
         // 2. Header
         text.setTextAlign(Paint.Align.CENTER);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setTextSize(46f);
         text.setColor(0xDD000000);
         c.drawText("ASTRONOMY JOURNAL", cx, 97f, text);
@@ -180,7 +191,7 @@ public final class CodexScreen {
         c.drawText("ASTRONOMY JOURNAL", cx, 95f, text);
 
         text.setTextSize(20f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
         c.drawText("TREASURY OF COLLECTED CELESTIAL SHADOW RELICS", cx, 137f, text);
         text.setColor(0xFFFFE0A8);
@@ -209,7 +220,7 @@ public final class CodexScreen {
         String rankTitle = (progress != null) ? progress.getPlayerRank() : "Apprentice of Shadows";
 
         text.setTextSize(16f);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setColor(0xCCFFE0A8);
         c.drawText("ASTRONOMER RANK", cx, bannerT + 34f, text);
 
@@ -271,7 +282,7 @@ public final class CodexScreen {
 
             // Level Number badge
             text.setTextSize(16f);
-            text.setTypeface(Typeface.DEFAULT_BOLD);
+            text.setTypeface(SERIF_BOLD);
             text.setColor(isSolved ? 0xFFFFD54F : (isUnlocked ? 0xAAFFE0A8 : 0x448090A0));
             c.drawText(String.valueOf(i + 1), cardCx, t + 26f, text);
 
@@ -281,7 +292,7 @@ public final class CodexScreen {
 
                 // Title
                 text.setTextSize(18f);
-                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setTypeface(SERIF_BOLD);
                 text.setColor(0xFFFFFDF8);
                 c.drawText(title, cardCx, t + 112f, text);
 
@@ -292,7 +303,7 @@ public final class CodexScreen {
                 long best = (progress != null) ? progress.getBestTime(i) : 0L;
                 if (best > 0L) {
                     text.setTextSize(14f);
-                    text.setTypeface(Typeface.DEFAULT);
+                    text.setTypeface(SERIF_NORMAL);
                     text.setColor(0xDDFFE0A8);
                     c.drawText((best / 1000L) + "s", cardCx, t + 162f, text);
                 }
@@ -301,12 +312,12 @@ public final class CodexScreen {
                 GameIcons.drawRelicIcon(c, i, cardCx, t + 64f, 20f, fill, stroke, false);
 
                 text.setTextSize(17f);
-                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setTypeface(SERIF_BOLD);
                 text.setColor(0xDDFFFDF8);
                 c.drawText(title, cardCx, t + 112f, text);
 
                 text.setTextSize(14f);
-                text.setTypeface(Typeface.DEFAULT);
+                text.setTypeface(SERIF_NORMAL);
                 text.setColor(0x99FFE0A8);
                 c.drawText("Open", cardCx, t + 144f, text);
             } else {
@@ -314,7 +325,7 @@ public final class CodexScreen {
                 GameIcons.drawPadlock(c, cardCx, t + 64f, fill, stroke);
 
                 text.setTextSize(16f);
-                text.setTypeface(Typeface.DEFAULT);
+                text.setTypeface(SERIF_NORMAL);
                 text.setColor(0x668090A0);
                 c.drawText("Locked", cardCx, t + 116f, text);
             }
@@ -349,7 +360,7 @@ public final class CodexScreen {
         String selLore = RELIC_LORE[Math.max(0, Math.min(selectedRelic, TOTAL_ITEMS - 1))];
 
         text.setTextSize(17f);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setColor(0xCCFFE0A8);
         c.drawText("ASTRAL RELIC NO. " + (selectedRelic + 1) + " • CHAPTER " + ((selectedRelic / 5) + 1), cx, specT + 38f, text);
 
@@ -359,7 +370,7 @@ public final class CodexScreen {
 
         // Status badge
         text.setTextSize(17f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         if (isSelSolved) {
             long best = (progress != null) ? progress.getBestTime(selectedRelic) : 0L;
             text.setColor(0xFFFFD54F);
@@ -385,7 +396,7 @@ public final class CodexScreen {
 
         // Ancient Lore Excerpt
         text.setTextSize(20f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0xFFE2D4BA);
 
         // Multi-line wrap lore display
@@ -440,7 +451,7 @@ public final class CodexScreen {
 
         // 7. Grounding footer
         text.setTextSize(16f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0x77D4AF37);
         c.drawText("Tap any relic card above to inspect its ancient lore", cx, sh - 46f, text);
         text.setTextAlign(Paint.Align.LEFT);

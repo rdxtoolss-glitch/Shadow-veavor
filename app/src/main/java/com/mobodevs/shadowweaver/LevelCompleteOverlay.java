@@ -23,6 +23,17 @@ public final class LevelCompleteOverlay {
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Path starPath = new Path();
 
+    private static Typeface safeTypeface(Typeface family, int style) {
+        try {
+            return Typeface.create(family, style);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static final Typeface SERIF_BOLD = safeTypeface(Typeface.SERIF, Typeface.BOLD);
+    private static final Typeface SERIF_NORMAL = safeTypeface(Typeface.SERIF, Typeface.NORMAL);
+
     private static float cardL;
     private static float cardT;
     private static float cardR;
@@ -152,7 +163,7 @@ public final class LevelCompleteOverlay {
 
         // 3. Victory Header
         text.setTextAlign(Paint.Align.CENTER);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setTextSize(48f);
         text.setColor(withAlpha(0xEE000000, (int) (255 * reveal)));
         c.drawText("SHADOW WOVEN", cx, cardT + 76.5f, text);
@@ -160,7 +171,7 @@ public final class LevelCompleteOverlay {
         c.drawText("SHADOW WOVEN", cx, cardT + 75f, text);
 
         text.setTextSize(26f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(withAlpha(0xCC000000, (int) (255 * reveal)));
         c.drawText(g.levelTitle(), cx, cardT + 119.5f, text);
         text.setColor(withAlpha(0xFFFFE0A8, (int) (255 * reveal)));
@@ -266,13 +277,13 @@ public final class LevelCompleteOverlay {
         float r = cx + rowW * 0.5f;
 
         text.setTextSize(21f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(withAlpha(0xFFFFFDF8, (int) (255 * alpha)));
         text.setTextAlign(Paint.Align.LEFT);
         c.drawText(label, l, y, text);
 
         text.setTextAlign(Paint.Align.RIGHT);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setColor(withAlpha(achieved ? 0xFFFFD54F : 0x778090A0, (int) (255 * alpha)));
         String mark = achieved ? " [⭐ OK]" : " [--]";
         c.drawText(value + mark, r, y, text);

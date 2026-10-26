@@ -23,6 +23,17 @@ public final class SettingsOverlay {
     private static final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
 
+    private static Typeface safeTypeface(Typeface family, int style) {
+        try {
+            return Typeface.create(family, style);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static final Typeface SERIF_BOLD = safeTypeface(Typeface.SERIF, Typeface.BOLD);
+    private static final Typeface SERIF_NORMAL = safeTypeface(Typeface.SERIF, Typeface.NORMAL);
+
     private static float cardL;
     private static float cardT;
     private static float cardR;
@@ -202,7 +213,7 @@ public final class SettingsOverlay {
 
         // 3. Header
         text.setTextAlign(Paint.Align.CENTER);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setTextSize(40f);
         text.setColor(0xDD000000);
         c.drawText("ALCHEMICAL SETTINGS", cx, cardT + 66.5f, text);
@@ -210,7 +221,7 @@ public final class SettingsOverlay {
         c.drawText("ALCHEMICAL SETTINGS", cx, cardT + 65f, text);
 
         text.setTextSize(18f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
         c.drawText("Acoustic Chimes, Haptic Resonance & Progress", cx, cardT + 106.5f, text);
         text.setColor(0xFFFFE0A8);
@@ -234,7 +245,7 @@ public final class SettingsOverlay {
 
         if (confirmingReset) {
             text.setTextSize(18f);
-            text.setTypeface(Typeface.DEFAULT_BOLD);
+            text.setTypeface(SERIF_BOLD);
             text.setColor(0xFFFF8A80);
             c.drawText("ARE YOU SURE? RESET ALL 15 STARS & PROGRESS?", cx, cardT + 340f, text);
 

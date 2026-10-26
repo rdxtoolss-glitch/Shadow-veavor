@@ -41,6 +41,17 @@ final class GameRenderer {
     private static final Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint haze = new Paint();
 
+    private static Typeface safeTypeface(Typeface family, int style) {
+        try {
+            return Typeface.create(family, style);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static final Typeface SERIF_BOLD = safeTypeface(Typeface.SERIF, Typeface.BOLD);
+    private static final Typeface SERIF_NORMAL = safeTypeface(Typeface.SERIF, Typeface.NORMAL);
+
     private static final Path path = new Path();
     private static final Path path2 = new Path();
     private static final RectF rect = new RectF();
@@ -170,6 +181,11 @@ final class GameRenderer {
             drawShapes(canvas, g);
             g.particles().drawSparks(canvas, fill);
 
+            // Onboarding FTUE hint for Level 1 House when moveCount == 0
+            if (g.levelIndex() == 0 && g.moveCount() == 0 && !g.isSolved()) {
+                drawOnboardingCue(canvas, g, g.timeSeconds());
+            }
+
             // HUD and Alchemical Control Console
             drawHud(canvas, g, sceneH);
 
@@ -186,6 +202,15 @@ final class GameRenderer {
             } else if (state == ScreenState.SETTINGS) {
                 SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics(), sceneH);
             }
+        }
+
+        // Screen transition veil
+        float transAlpha = g.screenTransitionAlpha();
+        if (transAlpha < 1.0f) {
+            int veilAlpha = (int) ((1.0f - transAlpha) * 160);
+            fill.setStyle(Paint.Style.FILL);
+            fill.setColor((veilAlpha << 24) | 0x05070D);
+            canvas.drawRect(0, 0, ShadowCalculator.SCENE_W, sceneH, fill);
         }
 
         canvas.restoreToCount(save);
@@ -210,15 +235,78 @@ final class GameRenderer {
         stroke.setStyle(Paint.Style.FILL);
 
         text.setTextAlign(Paint.Align.CENTER);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setTextSize(30f);
         text.setColor(withAlpha(0xFFFFE9C4, (int) (255 * alpha)));
         c.drawText(g.levelTitle(), cx, y - 6f, text);
 
         text.setTextSize(19f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(withAlpha(0xBBFFE0B0, (int) (240 * alpha)));
         c.drawText("Chapter " + ((g.levelIndex() / 5) + 1) + " • Level " + (g.levelIndex() + 1), cx, y + 24f, text);
+        text.setTextAlign(Paint.Align.LEFT);
+    }
+
+    private static void drawOnboardingCue(Canvas c, GameThread g, float time) {
+        ShapeObject[] shapes = g.shapes();
+        if (shapes == null || shapes.length == 0) return;
+
+        ShapeObject s0 = shapes[0];
+        float sx = s0.x;
+        float sy = s0.y;
+
+        // 1. Pulsing golden beacon around the first shape
+        float pulse = (float) Math.sin(time * 3.5f);
+        float r = 58f + pulse * 8f;
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2.6f);
+        stroke.setColor(withAlpha(0xFFFFD54F, (int) (180 + 60 * pulse)));
+        c.drawCircle(sx, sy, r, stroke);
+
+        // Animated dashed orbit around it
+        stroke.setStrokeWidth(1.2f);
+        stroke.setColor(withAlpha(0xFFFFF9C4, (int) (140 + 50 * pulse)));
+        c.drawCircle(sx, sy, r + 14f, stroke);
+
+        // 2. Animated upward-pointing chevron guides indicating drag towards flame
+        float flow = (time * 75f) % 60f;
+        float arrowY = sy - 60f - flow;
+        int arrowAlpha = (int) (220 * (1.0f - (flow / 60f)));
+        if (arrowAlpha > 0) {
+            stroke.setStrokeWidth(3.0f);
+            stroke.setColor(withAlpha(0xFFFFD54F, arrowAlpha));
+            c.drawLine(sx - 18f, arrowY + 12f, sx, arrowY, stroke);
+            c.drawLine(sx + 18f, arrowY + 12f, sx, arrowY, stroke);
+        }
+
+        // 3. Elegant parchment banner centered on workbench
+        float cx = ShadowCalculator.SCENE_W * 0.5f;
+        float cardY = 250f;
+        float cardW = 680f;
+        float cardH = 82f;
+        float cL = cx - cardW * 0.5f;
+        float cR = cx + cardW * 0.5f;
+        float cT = cardY - cardH * 0.5f;
+        float cB = cardY + cardH * 0.5f;
+
+        fill.setColor(0xEE141C2B);
+        c.drawRoundRect(cL, cT, cR, cB, 18f, 18f, fill);
+
+        stroke.setStrokeWidth(2.0f);
+        stroke.setColor(0xCCFFD54F);
+        c.drawRoundRect(cL, cT, cR, cB, 18f, 18f, stroke);
+        stroke.setStyle(Paint.Style.FILL);
+
+        text.setTextAlign(Paint.Align.CENTER);
+        text.setTypeface(SERIF_BOLD);
+        text.setTextSize(17f);
+        text.setColor(0xFFFFD54F);
+        c.drawText("✦ TOUCH & DRAG PIECES ON WORKBENCH ✦", cx, cT + 30f, text);
+
+        text.setTypeface(SERIF_NORMAL);
+        text.setTextSize(15f);
+        text.setColor(0xFFFFFDF8);
+        c.drawText("Closer to candle (up) = larger shadow • Twist to rotate", cx, cT + 60f, text);
         text.setTextAlign(Paint.Align.LEFT);
     }
 
@@ -840,7 +928,7 @@ final class GameRenderer {
         // 2. Top-Center: Level Title and Chapter
         text.setTextAlign(Paint.Align.CENTER);
         text.setTextSize(32f);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
 
         // Drop shadow for title
         text.setColor(0xCC000000);
@@ -851,7 +939,7 @@ final class GameRenderer {
         int ch = (g.levelIndex() / 5) + 1;
         String chRoman = (ch == 1 ? "I" : (ch == 2 ? "II" : "III"));
         text.setTextSize(20f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
         c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, 137.5f, text);
         text.setColor(0xFFFFE0A8);
@@ -909,13 +997,13 @@ final class GameRenderer {
         // Oracle Scroll Header
         text.setTextAlign(Paint.Align.CENTER);
         text.setTextSize(16f);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setColor(hintOn ? 0xFFFFD54F : 0xCCFFE0A8);
         c.drawText(hintOn ? "✦ THE ORACLE'S REVELATION ✦" : "✦ THE ORACLE'S GUIDANCE ✦", cx, scT + 28f, text);
 
         // Hint Text
         text.setTextSize(21f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(hintOn ? 0xFFFFFDF8 : 0xFFFFE0A8);
         c.drawText(hint, cx, scT + 66f, text);
 
@@ -947,7 +1035,7 @@ final class GameRenderer {
             // Badge 1: Silhouette Match
             float col1X = tL + 140f;
             text.setTextSize(15f);
-            text.setTypeface(Typeface.DEFAULT_BOLD);
+            text.setTypeface(SERIF_BOLD);
             text.setColor(0xAAFFE0A8);
             c.drawText("SILHOUETTE", col1X, tT + 34f, text);
             text.setTextSize(26f);
@@ -991,7 +1079,7 @@ final class GameRenderer {
         GameIcons.drawHint(c, hintX, ctrlY, btnR, fill, stroke, hintOn);
         text.setTextAlign(Paint.Align.CENTER);
         text.setTextSize(18f);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setColor(hintOn ? 0xFFFFD54F : 0xEEFFE0A8);
         c.drawText("ORACLE HINT", hintX, ctrlY + btnR + 28f, text);
 
@@ -1038,7 +1126,7 @@ final class GameRenderer {
         // Center Percentage
         text.setTextAlign(Paint.Align.CENTER);
         text.setTextSize(26f);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setColor(0xFFFFFDF8);
         c.drawText(Math.round(match) + "%", cx, cy + 9f, text);
 
@@ -1071,7 +1159,7 @@ final class GameRenderer {
         // Center label
         text.setTextAlign(Paint.Align.CENTER);
         text.setTextSize(18f);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setColor(0xFFFFFDF8);
         c.drawText(Math.round(match) + "%", cx, cy + 6.5f, text);
         stroke.setStyle(Paint.Style.FILL);

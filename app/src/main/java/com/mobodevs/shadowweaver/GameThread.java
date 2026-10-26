@@ -547,6 +547,9 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
     private float celebrationReveal = 0f;
     private float levelBannerTimer = 0f;
 
+    private float transitionTimer = 0f;
+    private static final float TRANSITION_DURATION = 0.20f;
+
     public ScreenState getScreenState() {
         synchronized (stateLock) {
             return screenState;
@@ -557,6 +560,7 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         synchronized (stateLock) {
             if (this.screenState != state) {
                 this.previousScreenState = this.screenState;
+                this.transitionTimer = TRANSITION_DURATION;
             }
             this.screenState = state;
             if (state == ScreenState.PAUSE) {
@@ -572,6 +576,13 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
     public ScreenState getPreviousScreenState() {
         synchronized (stateLock) {
             return previousScreenState;
+        }
+    }
+
+    public float screenTransitionAlpha() {
+        synchronized (stateLock) {
+            if (transitionTimer <= 0f) return 1.0f;
+            return Math.max(0f, Math.min(1.0f, 1.0f - (transitionTimer / TRANSITION_DURATION)));
         }
     }
 
@@ -742,6 +753,9 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
         }
 
         synchronized (stateLock) {
+            if (transitionTimer > 0f) {
+                transitionTimer = Math.max(0f, transitionTimer - dt);
+            }
             if (screenState == ScreenState.LEVEL_COMPLETE) {
                 celebrationReveal = Math.min(1.0f, celebrationReveal + dt * 1.4f);
             }
@@ -1025,6 +1039,7 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
                 celebrateNow = true;
                 celebrationReveal = 0f;
                 screenState = ScreenState.LEVEL_COMPLETE;
+                transitionTimer = TRANSITION_DURATION;
                 // Unlock the next level immediately rather than waiting for the
                 // player to press Next: if they close the app on the win
                 // screen, the progress should still be kept.

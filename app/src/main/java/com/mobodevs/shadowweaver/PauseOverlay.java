@@ -19,6 +19,17 @@ public final class PauseOverlay {
     private static final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
 
+    private static Typeface safeTypeface(Typeface family, int style) {
+        try {
+            return Typeface.create(family, style);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static final Typeface SERIF_BOLD = safeTypeface(Typeface.SERIF, Typeface.BOLD);
+    private static final Typeface SERIF_NORMAL = safeTypeface(Typeface.SERIF, Typeface.NORMAL);
+
     private static float cardL;
     private static float cardT;
     private static float cardR;
@@ -157,7 +168,7 @@ public final class PauseOverlay {
 
         // 3. Header
         text.setTextAlign(Paint.Align.CENTER);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setTextSize(42f);
         text.setColor(0xDD000000);
         c.drawText("PAUSED", cx, cardT + 71.5f, text);
@@ -165,7 +176,7 @@ public final class PauseOverlay {
         c.drawText("PAUSED", cx, cardT + 70f, text);
 
         text.setTextSize(20f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
         c.drawText(g.levelTitle() + " • CHAPTER " + ((g.levelIndex() / 5) + 1), cx, cardT + 111f, text);
         text.setColor(0xFFFFE0A8);

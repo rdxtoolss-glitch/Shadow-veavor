@@ -30,6 +30,17 @@ public final class LevelSelectOverlay {
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Path starPath = new Path();
 
+    private static Typeface safeTypeface(Typeface family, int style) {
+        try {
+            return Typeface.create(family, style);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static final Typeface SERIF_BOLD = safeTypeface(Typeface.SERIF, Typeface.BOLD);
+    private static final Typeface SERIF_NORMAL = safeTypeface(Typeface.SERIF, Typeface.NORMAL);
+
     private static int activeChapter = 0;
     private static int lastPickedLevel = -1;
 
@@ -207,7 +218,7 @@ public final class LevelSelectOverlay {
 
         // 2. Header
         text.setTextAlign(Paint.Align.CENTER);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setTextSize(46f);
 
         text.setColor(0xDD000000);
@@ -216,7 +227,7 @@ public final class LevelSelectOverlay {
         c.drawText("CHAPTER MAP", cx, 95f, text);
 
         text.setTextSize(20f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
 
         String[] chapterNames = {
@@ -254,13 +265,13 @@ public final class LevelSelectOverlay {
             float tabCy = (TAB_T[i] + TAB_B[i]) * 0.5f;
 
             text.setTextSize(19f);
-            text.setTypeface(Typeface.DEFAULT_BOLD);
+            text.setTypeface(SERIF_BOLD);
             text.setColor(isSel ? 0xFF140802 : (isUnlocked ? 0xFFFFFDF8 : 0x6690A0B8));
             c.drawText(roman[i], tabCx, tabCy - 5f, text);
 
             int chapterStars = (progress != null) ? progress.getChapterStars(i) : 0;
             text.setTextSize(15f);
-            text.setTypeface(Typeface.DEFAULT);
+            text.setTypeface(SERIF_NORMAL);
             text.setColor(isSel ? 0xDD2A1404 : (isUnlocked ? 0xFFFFE0A8 : 0x4490A0B8));
             c.drawText("⭐ " + chapterStars + " / 15", tabCx, tabCy + 20f, text);
         }
@@ -310,14 +321,14 @@ public final class LevelSelectOverlay {
 
             // Level number badge
             text.setTextSize(18f);
-            text.setTypeface(Typeface.DEFAULT_BOLD);
+            text.setTypeface(SERIF_BOLD);
             text.setColor(isUnlocked ? 0xFFFFD54F : 0x5590A0B8);
             c.drawText("LEVEL " + (globalLevel + 1), cardCx, t + 36f, text);
 
             if (isUnlocked) {
                 // Title
                 text.setTextSize(26f);
-                text.setTypeface(Typeface.DEFAULT_BOLD);
+                text.setTypeface(SERIF_BOLD);
                 text.setColor(0xCC000000);
                 c.drawText(title, cardCx, t + 79f, text);
                 text.setColor(0xFFFFFDF8);
@@ -330,7 +341,7 @@ public final class LevelSelectOverlay {
                 long best = (progress != null) ? progress.getBestTime(globalLevel) : 0L;
                 long parTime = LevelProgress.getParTimeMillis(globalLevel);
                 text.setTextSize(16f);
-                text.setTypeface(Typeface.DEFAULT);
+                text.setTypeface(SERIF_NORMAL);
                 text.setColor(0xDDFFE0A8);
                 if (best > 0L) {
                     c.drawText("Best: " + (best / 1000L) + "s (Par " + (parTime / 1000L) + "s)", cardCx, t + 176f, text);
@@ -342,7 +353,7 @@ public final class LevelSelectOverlay {
                 GameIcons.drawPadlock(c, cardCx, t + 95f, fill, stroke);
 
                 text.setTextSize(18f);
-                text.setTypeface(Typeface.DEFAULT);
+                text.setTypeface(SERIF_NORMAL);
                 text.setColor(0x6690A0B8);
                 c.drawText("Locked", cardCx, t + 160f, text);
             }
@@ -370,7 +381,7 @@ public final class LevelSelectOverlay {
 
         int chStars = (progress != null) ? progress.getChapterStars(activeChapter) : 0;
         text.setTextSize(17f);
-        text.setTypeface(Typeface.DEFAULT_BOLD);
+        text.setTypeface(SERIF_BOLD);
         text.setColor(0xCCFFE0A8);
         c.drawText("CHAPTER STARS & MASTERY PROGRESS", cx, sumT + 42f, text);
 
@@ -393,7 +404,7 @@ public final class LevelSelectOverlay {
         }
 
         text.setTextSize(17f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0xDDFFE0A8);
         String appraisal = (chStars == 15) ? "Complete Astral Perfection Achieved!"
                 : (chStars >= 10 ? "Great progress! Complete trials under par for all stars."
@@ -417,7 +428,7 @@ public final class LevelSelectOverlay {
 
         // 7. Grounding footer
         text.setTextSize(16f);
-        text.setTypeface(Typeface.DEFAULT);
+        text.setTypeface(SERIF_NORMAL);
         text.setColor(0x77D4AF37);
         c.drawText("Select any unlocked trial to begin weaving", cx, sh - 46f, text);
         text.setTextAlign(Paint.Align.LEFT);
