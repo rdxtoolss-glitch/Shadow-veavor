@@ -78,6 +78,13 @@ public class UiButton {
      * Draw the button with antique brass filigree and tactile press animation.
      */
     public void draw(Canvas c, Paint fill, Paint stroke, Paint text, float alpha) {
+        draw(c, fill, stroke, text, alpha, 0f);
+    }
+
+    /**
+     * Draw the button with antique brass filigree, tactile press animation, and specular sweep.
+     */
+    public void draw(Canvas c, Paint fill, Paint stroke, Paint text, float alpha, float time) {
         if (alpha <= 0f) return;
 
         float targetScale = (isPressed && enabled) ? 0.96f : 1.0f;
@@ -106,6 +113,26 @@ public class UiButton {
             fill.setColor(withAlpha(baseColor, a));
             c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, fill);
 
+            // Specular sheen sweep animation
+            if (time > 0f) {
+                float sweepCycle = 3.2f;
+                float frac = (time % sweepCycle) / sweepCycle;
+                if (frac < 0.36f) {
+                    float p = frac / 0.36f;
+                    float beamX = left - 90f + (width() + 180f) * p;
+                    int saveSweep = c.save();
+                    c.clipRect(left, top, right, bottom);
+                    fill.setShader(new android.graphics.LinearGradient(
+                            beamX - 45f, top, beamX + 45f, bottom,
+                            new int[]{0x00FFFFFF, withAlpha(0x55FFFDF8, a), 0x00FFFFFF},
+                            new float[]{0f, 0.5f, 1f},
+                            android.graphics.Shader.TileMode.CLAMP));
+                    c.drawRect(left, top, right, bottom, fill);
+                    fill.setShader(null);
+                    c.restoreToCount(saveSweep);
+                }
+            }
+
             // Inner bevel highlight on top edge
             stroke.setStyle(Paint.Style.STROKE);
             stroke.setStrokeWidth(2.0f);
@@ -132,6 +159,14 @@ public class UiButton {
             stroke.setStrokeWidth(1.2f);
             stroke.setColor(withAlpha(0x55FFFFFF, (int) (180 * alpha)));
             c.drawLine(left + cornerRadius, top + 1f, right - cornerRadius, top + 1f, stroke);
+
+            // Delicate corner rivets
+            float rOff = Math.min(cornerRadius * 0.7f, 14f);
+            fill.setColor(withAlpha(0xFFD4AF37, (int) (180 * alpha)));
+            c.drawCircle(left + rOff, top + rOff, 2.2f, fill);
+            c.drawCircle(right - rOff, top + rOff, 2.2f, fill);
+            c.drawCircle(left + rOff, bottom - rOff, 2.2f, fill);
+            c.drawCircle(right - rOff, bottom - rOff, 2.2f, fill);
         }
         stroke.setStyle(Paint.Style.FILL);
 
