@@ -37,6 +37,7 @@ func _ready():
 	pause_modal.restart_pressed.connect(_on_reset_pressed)
 	pause_modal.sound_toggled.connect(_on_sound_toggled)
 
+	chapter_select_modal.audio_manager = audio_manager
 	chapter_select_modal.mission_selected.connect(_on_mission_selected_from_codex)
 
 	# Start on the highest unlocked mission if valid, or Level 1
@@ -69,6 +70,8 @@ func load_level(idx: int):
 		var token = Token3DScript.new() as Token3D
 		world_3d.tokens_root.add_child(token)
 		token.setup(data)
+		token.gear_ticked.connect(func(_t): audio_manager.play_gear_tick())
+		token.detent_snapped.connect(func(_t): audio_manager.play_detent())
 		live_tokens.append(token)
 
 	_evaluate_shadows()
@@ -96,6 +99,9 @@ func _input(event: InputEvent):
 		if active_token and (active_token.shape_data.is_dragging or active_token.shape_data.is_rotating):
 			var ray = _get_3d_ray(event.position)
 			active_token.update_drag_ray(ray.origin, ray.direction)
+			if active_token.shape_data.is_dragging:
+				var spd = event.velocity.length() if "velocity" in event else (event.relative.length() * 60.0)
+				audio_manager.update_slide(spd)
 			_evaluate_shadows()
 	elif event is InputEventScreenTouch:
 		if event.pressed:
@@ -106,6 +112,9 @@ func _input(event: InputEvent):
 		if active_token and (active_token.shape_data.is_dragging or active_token.shape_data.is_rotating):
 			var ray = _get_3d_ray(event.position)
 			active_token.update_drag_ray(ray.origin, ray.direction)
+			if active_token.shape_data.is_dragging:
+				var spd = event.velocity.length() if "velocity" in event else (event.relative.length() * 60.0)
+				audio_manager.update_slide(spd)
 			_evaluate_shadows()
 
 func _get_3d_ray(screen_pos: Vector2) -> Dictionary:
@@ -138,6 +147,7 @@ func _handle_press(pos: Vector2):
 		active_token.is_selected = true
 		active_token.start_drag(ray.origin, ray.direction)
 		audio_manager.play_pick()
+		audio_manager.start_slide()
 	else:
 		if active_token:
 			active_token.is_selected = false
@@ -146,6 +156,7 @@ func _handle_press(pos: Vector2):
 func _handle_release():
 	if active_token:
 		active_token.finish_drag()
+		audio_manager.stop_slide()
 		audio_manager.play_drop()
 
 func _evaluate_shadows():
@@ -163,6 +174,7 @@ func _evaluate_shadows():
 
 	wall_screen.update_shadows(shadow_detailed, raw_iou)
 	hud.update_resonance(pct)
+	audio_manager.update_resonance_alignment(raw_iou)
 
 	# Chime milestones
 	var chimes = matcher.newly_crossed_chimes(raw_iou)
@@ -179,7 +191,8 @@ func _evaluate_shadows():
 		var stars = 3 if duration <= par else (2 if duration <= par * 1.5 else 1)
 
 		SaveManager.record_completion(lv.number, duration, stars)
-		audio_manager.play_resonance_chime(3)
+		audio_manager.stop_slide()
+		audio_manager.play_victory()
 
 		# Cinematic push-in on 3D camera
 		var cam = world_3d.camera
@@ -188,16 +201,18 @@ func _evaluate_shadows():
 		tw.tween_property(cam, "fov", 46.0, 0.5)
 
 		get_tree().create_timer(0.45).timeout.connect(func():
-			level_complete_modal.show_completion(lv.number, duration, stars)
+			level_complete_modal.show_completion(lv.number, duration, stars, audio_manager)
 		)
 
 func _on_pause_pressed():
+	audio_manager.play_ui_tap()
 	pause_modal.open()
 
 func _on_resume_pressed():
-	pass
+	audio_manager.play_ui_tap()
 
 func _on_reset_pressed():
+	audio_manager.play_ui_tap()
 	load_level(current_level_idx)
 
 func _on_codex_pressed():
@@ -208,11 +223,13 @@ func _on_mission_selected_from_codex(idx: int):
 	load_level(idx)
 
 func _on_next_level_pressed():
+	audio_manager.play_ui_tap()
 	level_complete_modal.hide()
 	var next_idx = (current_level_idx + 1) % LevelLoader.count()
 	load_level(next_idx)
 
 func _on_replay_pressed():
+	audio_manager.play_ui_tap()
 	level_complete_modal.hide()
 	load_level(current_level_idx)
 

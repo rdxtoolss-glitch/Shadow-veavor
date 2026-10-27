@@ -10,6 +10,7 @@ const CHAPTER_COUNT: int = 10
 const MISSIONS_PER_CHAPTER: int = 10
 
 var current_chapter: int = 1 # 1-based (1 to 10)
+var audio_manager: AudioManager = null
 
 @onready var backdrop: ColorRect = $Backdrop
 @onready var panel: Panel = $MainPanel
@@ -65,6 +66,8 @@ func open(target_chapter: int = 1):
 	current_chapter = clampi(target_chapter, 1, CHAPTER_COUNT)
 	show()
 	_refresh_ui()
+	if audio_manager:
+		audio_manager.play_parchment_open()
 
 	# Emil Kowalski entrance: start scale 0.96, cubic ease out
 	panel.scale = Vector2(0.96, 0.96)
@@ -77,6 +80,9 @@ func open(target_chapter: int = 1):
 	tw.tween_property(panel, "modulate:a", 1.0, 0.22)
 
 func close():
+	if audio_manager:
+		audio_manager.play_parchment_close()
+
 	var tw = create_tween().set_parallel(true)
 	tw.tween_property(backdrop, "modulate:a", 0.0, 0.18)
 	tw.tween_property(panel, "scale", Vector2(0.96, 0.96), 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
@@ -87,6 +93,8 @@ func close():
 	)
 
 func _on_close_pressed():
+	if audio_manager:
+		audio_manager.play_ui_tap()
 	close()
 
 func _on_prev_chapter():
@@ -96,11 +104,16 @@ func _on_next_chapter():
 	select_chapter(mini(CHAPTER_COUNT, current_chapter + 1))
 
 func _on_toggle_unlock_all():
+	if audio_manager:
+		audio_manager.play_ui_tap()
 	var unlocked = SaveManager.toggle_unlock_all()
 	_refresh_ui()
 
 func select_chapter(ch_num: int):
-	current_chapter = clampi(ch_num, 1, CHAPTER_COUNT)
+	var clamped = clampi(ch_num, 1, CHAPTER_COUNT)
+	if clamped != current_chapter and audio_manager:
+		audio_manager.play_parchment_flip()
+	current_chapter = clamped
 	_refresh_ui()
 
 func _refresh_ui():
@@ -271,5 +284,7 @@ func _create_mission_card(level_idx: int, lv: LevelData, is_unlocked: bool, star
 	return card
 
 func _on_select_mission(idx: int):
+	if audio_manager:
+		audio_manager.play_ui_tap()
 	close()
 	mission_selected.emit(idx)

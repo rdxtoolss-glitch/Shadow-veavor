@@ -19,6 +19,10 @@ func _on_resized():
 
 func _on_down():
 	_target_scale = 0.96
+	if get_tree() and get_tree().root:
+		var audio_mgr = get_tree().root.find_child("AudioManager", true, false)
+		if audio_mgr and audio_mgr.has_method("play_ui_tap"):
+			audio_mgr.play_ui_tap()
 
 func _on_up():
 	_target_scale = 1.0

@@ -15,7 +15,7 @@ func _ready():
 	next_btn.pressed.connect(func(): next_pressed.emit())
 	replay_btn.pressed.connect(func(): replay_pressed.emit())
 
-func show_completion(level_num: int, time_sec: float, stars: int):
+func show_completion(level_num: int, time_sec: float, stars: int, audio_mgr: AudioManager = null):
 	show()
 	stats_label.text = "Crafted in %.1fs" % time_sec
 
@@ -36,10 +36,13 @@ func show_completion(level_num: int, time_sec: float, stars: int):
 	tw.tween_property(card, "position:y", 480.0, 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tw.tween_property(card, "modulate:a", 1.0, 0.24)
 
-	# Staggered star animation
+	# Staggered star animation with crystalline bell chimes
 	for i in range(stars):
 		var star = stars_container.get_child(i) as Label
 		var star_tw = create_tween()
-		star_tw.tween_interval(0.24 + i * 0.12)
-		star_tw.tween_property(star, "scale", Vector2(1.2, 1.2), 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		star_tw.tween_interval(0.24 + i * 0.18)
+		star_tw.tween_callback(func():
+			if audio_mgr: audio_mgr.play_star(i)
+		)
+		star_tw.tween_property(star, "scale", Vector2(1.25, 1.25), 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		star_tw.tween_property(star, "scale", Vector2(1.0, 1.0), 0.10)

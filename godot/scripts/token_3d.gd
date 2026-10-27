@@ -5,6 +5,8 @@ signal picked(token: Token3D)
 signal dragged(token: Token3D)
 signal released(token: Token3D)
 signal rotated(token: Token3D)
+signal gear_ticked(token: Token3D)
+signal detent_snapped(token: Token3D)
 
 var shape_data: ShapeObject
 var is_selected: bool = false
@@ -21,6 +23,8 @@ var _drag_offset_3d: Vector3 = Vector3.ZERO
 var _is_handle_dragging: bool = false
 var _initial_rot_angle: float = 0.0
 var _initial_shape_rot: float = 0.0
+var _last_gear_angle: float = 0.0
+var _in_detent_zone: bool = false
 
 # Materials
 static var _mat_wood: StandardMaterial3D
@@ -214,6 +218,8 @@ func start_handle_drag(ray_origin: Vector3, ray_dir: Vector3):
 	var delta: Vector2 = Vector2(hit_pt.x - position.x, hit_pt.z - position.z)
 	_initial_rot_angle = rad_to_deg(delta.angle())
 	_initial_shape_rot = shape_data.rotation
+	_last_gear_angle = shape_data.rotation
+	_in_detent_zone = (absf(ShapeObject.normalize_delta_angle(shape_data.rotation - round(shape_data.rotation / 45.0) * 45.0)) < 4.5)
 	picked.emit(self)
 
 func update_drag_ray(ray_origin: Vector3, ray_dir: Vector3):
@@ -228,8 +234,21 @@ func update_drag_ray(ray_origin: Vector3, ray_dir: Vector3):
 		var new_rot: float = ShapeObject.normalize_angle(_initial_shape_rot + d_angle)
 
 		var detent: float = round(new_rot / 45.0) * 45.0
-		if absf(ShapeObject.normalize_delta_angle(new_rot - detent)) < 4.5:
+		var detent_dist: float = absf(ShapeObject.normalize_delta_angle(new_rot - detent))
+		var was_in_detent: bool = _in_detent_zone
+
+		if detent_dist < 4.5:
 			new_rot = ShapeObject.normalize_angle(detent)
+			_in_detent_zone = true
+			if not was_in_detent:
+				detent_snapped.emit(self)
+		else:
+			_in_detent_zone = false
+
+		if absf(ShapeObject.normalize_delta_angle(new_rot - _last_gear_angle)) >= 14.0:
+			_last_gear_angle = new_rot
+			if not _in_detent_zone:
+				gear_ticked.emit(self)
 
 		shape_data.target_rotation = new_rot
 		rotated.emit(self)
