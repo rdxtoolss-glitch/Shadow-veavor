@@ -34,17 +34,23 @@ class StartShape:
 		rotation = p_rot
 
 var number: int = 1
+var chapter: int = 1
+var chapter_title: String = ""
 var title: String = ""
 var hint: String = ""
+var par_seconds: float = 30.0
 var solution: Array[SolutionShape] = []
 var start: Array[StartShape] = []
 
-func _init(p_num: int, p_title: String, p_hint: String, p_sol: Array[SolutionShape], p_start: Array[StartShape]):
+func _init(p_num: int, p_title: String, p_hint: String, p_sol: Array[SolutionShape], p_start: Array[StartShape], p_chap: int = 1, p_ch_title: String = "", p_par: float = 30.0):
 	number = p_num
 	title = p_title
 	hint = p_hint
 	solution = p_sol
 	start = p_start
+	chapter = p_chap
+	chapter_title = p_ch_title
+	par_seconds = p_par
 
 func shape_count() -> int:
 	return solution.size()

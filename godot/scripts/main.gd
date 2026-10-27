@@ -7,6 +7,8 @@ extends Node
 @onready var hud: HUD = $HUD
 @onready var level_complete_modal: LevelCompleteModal = $LevelCompleteModal
 @onready var pause_modal: PauseModal = $PauseModal
+const ChapterSelectModal = preload("res://scripts/chapter_select_modal.gd")
+@onready var chapter_select_modal: Control = $ChapterSelectModal
 @onready var audio_manager: AudioManager = $AudioManager
 
 var current_level_idx: int = 0
@@ -17,17 +19,29 @@ var live_tokens: Array[Token3D] = []
 var level_start_time: float = 0.0
 var level_is_complete: bool = false
 const Token3DScript = preload("res://scripts/token_3d.gd")
+const SaveManager = preload("res://scripts/save_manager.gd")
 
 func _ready():
+	SaveManager.init_if_needed()
+	audio_manager.sound_enabled = SaveManager.sound_enabled
+	audio_manager.haptics_enabled = SaveManager.haptics_enabled
+
 	hud.pause_pressed.connect(_on_pause_pressed)
 	hud.reset_pressed.connect(_on_reset_pressed)
+	hud.codex_pressed.connect(_on_codex_pressed)
+
 	level_complete_modal.next_pressed.connect(_on_next_level_pressed)
 	level_complete_modal.replay_pressed.connect(_on_replay_pressed)
+
 	pause_modal.resume_pressed.connect(_on_resume_pressed)
 	pause_modal.restart_pressed.connect(_on_reset_pressed)
 	pause_modal.sound_toggled.connect(_on_sound_toggled)
 
-	load_level(current_level_idx)
+	chapter_select_modal.mission_selected.connect(_on_mission_selected_from_codex)
+
+	# Start on the highest unlocked mission if valid, or Level 1
+	var start_idx = clampi(SaveManager.unlocked_max - 1, 0, LevelLoader.count() - 1)
+	load_level(start_idx)
 
 func load_level(idx: int):
 	current_level_idx = clampi(idx, 0, LevelLoader.count() - 1)
@@ -42,7 +56,7 @@ func load_level(idx: int):
 	live_tokens.clear()
 
 	var lv = LevelLoader.get_level(current_level_idx)
-	hud.update_level_info(lv.number, lv.title, lv.hint)
+	hud.update_level_info(lv.number, lv.title, lv.hint, lv.chapter, lv.chapter_title)
 
 	# 2. Forge target on wall screen
 	var target_polys = LevelLoader.forge_target(current_level_idx)
@@ -61,7 +75,7 @@ func load_level(idx: int):
 
 func _input(event: InputEvent):
 	if level_is_complete: return
-	if pause_modal.visible or level_complete_modal.visible: return
+	if pause_modal.visible or level_complete_modal.visible or chapter_select_modal.visible: return
 
 	# Normalize screen coordinate for subtle 3D camera parallax
 	if event is InputEventMouseMotion or event is InputEventScreenDrag:
@@ -160,7 +174,11 @@ func _evaluate_shadows():
 	if matcher.is_complete(raw_iou) and not level_is_complete:
 		level_is_complete = true
 		var duration = (Time.get_ticks_msec() / 1000.0) - level_start_time
-		var stars = 3 if duration < 25.0 else (2 if duration < 50.0 else 1)
+		var lv = LevelLoader.get_level(current_level_idx)
+		var par = float(lv.par_seconds)
+		var stars = 3 if duration <= par else (2 if duration <= par * 1.5 else 1)
+
+		SaveManager.record_completion(lv.number, duration, stars)
 		audio_manager.play_resonance_chime(3)
 
 		# Cinematic push-in on 3D camera
@@ -170,7 +188,7 @@ func _evaluate_shadows():
 		tw.tween_property(cam, "fov", 46.0, 0.5)
 
 		get_tree().create_timer(0.45).timeout.connect(func():
-			level_complete_modal.show_completion(current_level_idx + 1, duration, stars)
+			level_complete_modal.show_completion(lv.number, duration, stars)
 		)
 
 func _on_pause_pressed():
@@ -181,6 +199,13 @@ func _on_resume_pressed():
 
 func _on_reset_pressed():
 	load_level(current_level_idx)
+
+func _on_codex_pressed():
+	var lv = LevelLoader.get_level(current_level_idx)
+	chapter_select_modal.open(lv.chapter)
+
+func _on_mission_selected_from_codex(idx: int):
+	load_level(idx)
 
 func _on_next_level_pressed():
 	level_complete_modal.hide()
@@ -193,3 +218,5 @@ func _on_replay_pressed():
 
 func _on_sound_toggled(enabled: bool):
 	audio_manager.sound_enabled = enabled
+	SaveManager.sound_enabled = enabled
+	SaveManager.save_data()

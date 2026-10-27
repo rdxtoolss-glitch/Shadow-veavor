@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://cma1nscene001"]
+[gd_scene load_steps=9 format=3 uid="uid://cma1nscene001"]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/world_3d.tscn" id="2_world"]
@@ -6,7 +6,8 @@
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="4_hud"]
 [ext_resource type="PackedScene" path="res://scenes/pause_modal.tscn" id="5_pause"]
 [ext_resource type="PackedScene" path="res://scenes/level_complete_modal.tscn" id="6_comp"]
-[ext_resource type="Script" path="res://scripts/audio_manager.gd" id="7_audio"]
+[ext_resource type="PackedScene" path="res://scenes/chapter_select_modal.tscn" id="7_codex"]
+[ext_resource type="Script" path="res://scripts/audio_manager.gd" id="8_audio"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
@@ -34,5 +35,8 @@ visible = false
 [node name="LevelCompleteModal" parent="." instance=ExtResource("6_comp")]
 visible = false
 
+[node name="ChapterSelectModal" parent="." instance=ExtResource("7_codex")]
+visible = false
+
 [node name="AudioManager" type="Node" parent="."]
-script = ExtResource("7_audio")
+script = ExtResource("8_audio")

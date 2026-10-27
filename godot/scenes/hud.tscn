@@ -49,6 +49,21 @@ theme_override_font_sizes/font_size = 18
 text = "A body, a roof above it, a slim chimney beside it."
 vertical_alignment = 1
 
+[node name="CodexButton" type="Button" parent="TopBar"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -250.0
+offset_top = 44.0
+offset_right = -190.0
+offset_bottom = 104.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.85, 0.75, 0.6, 1)
+theme_override_font_sizes/font_size = 24
+text = "📜"
+script = ExtResource("2_uibtn")
+
 [node name="ResetButton" type="Button" parent="TopBar"]
 layout_mode = 1
 anchors_preset = 1

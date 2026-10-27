@@ -21,27 +21,39 @@ func _ready():
 
 func play_pick():
 	if not sound_enabled: return
-	# Warm wooden clack (pitch ~420Hz decaying fast)
-	_synthesize_wood_tap(420.0, 0.045, 0.35)
+	# Warm wooden clack with subtle organic pitch variation (395-445 Hz)
+	var freq: float = randf_range(395.0, 445.0)
+	_synthesize_wood_tap(freq, 0.045, 0.35)
+	_trigger_haptic(15)
 
 func play_drop():
 	if not sound_enabled: return
-	# Deeper wooden settling tap (~320Hz)
-	_synthesize_wood_tap(320.0, 0.055, 0.4)
+	# Deeper wooden settling tap with subtle variation (305-335 Hz)
+	var freq: float = randf_range(305.0, 335.0)
+	_synthesize_wood_tap(freq, 0.055, 0.40)
+	_trigger_haptic(25)
 
 func play_detent():
 	if not sound_enabled: return
-	# Tiny soft click (~680Hz)
-	_synthesize_wood_tap(680.0, 0.02, 0.18)
+	# Tiny soft mechanical click (660-710 Hz)
+	var freq: float = randf_range(660.0, 710.0)
+	_synthesize_wood_tap(freq, 0.020, 0.18)
+	_trigger_haptic(10)
 
 func play_resonance_chime(tier: int):
 	if not sound_enabled: return
-	# Harmonic glass bells
+	# Harmonic crystalline bells
 	var freq: float = 523.25 # C5
 	if tier == 1: freq = 659.25 # E5
 	elif tier == 2: freq = 783.99 # G5
 	elif tier >= 3: freq = 1046.50 # C6
-	_synthesize_bell(freq, 0.45, 0.4)
+	_synthesize_bell(freq, 0.50, 0.42)
+	_trigger_haptic(40)
+
+func _trigger_haptic(duration_ms: int):
+	if not haptics_enabled: return
+	if OS.has_feature("mobile"):
+		Input.vibrate_handheld(duration_ms)
 
 func _synthesize_wood_tap(freq: float, duration: float, volume: float):
 	if not _playback: return
@@ -50,9 +62,9 @@ func _synthesize_wood_tap(freq: float, duration: float, volume: float):
 	var to_write: int = mini(frames, available)
 	for i in range(to_write):
 		var t: float = float(i) / _sample_rate
-		var decay: float = exp(-t * 80.0)
+		var decay: float = exp(-t * 85.0)
 		var sample: float = sin(2.0 * PI * freq * t) * decay * volume
-		# Add a touch of noise burst for organic strike impact
+		# Micro noise transient for organic physical timber impact
 		if t < 0.005:
 			sample += (randf() * 2.0 - 1.0) * (0.005 - t) * 120.0 * volume
 		_playback.push_frame(Vector2(sample, sample))
@@ -64,7 +76,7 @@ func _synthesize_bell(freq: float, duration: float, volume: float):
 	var to_write: int = mini(frames, available)
 	for i in range(to_write):
 		var t: float = float(i) / _sample_rate
-		var decay: float = exp(-t * 6.5)
-		# Dual harmonics (fundamental + 2.76x overtone)
-		var sample: float = (sin(2.0 * PI * freq * t) * 0.75 + sin(2.0 * PI * freq * 2.76 * t) * 0.25) * decay * volume
+		var decay: float = exp(-t * 6.0)
+		# Dual harmonics (fundamental + 2.76x crystalline overtone)
+		var sample: float = (sin(2.0 * PI * freq * t) * 0.72 + sin(2.0 * PI * freq * 2.76 * t) * 0.28) * decay * volume
 		_playback.push_frame(Vector2(sample, sample))
