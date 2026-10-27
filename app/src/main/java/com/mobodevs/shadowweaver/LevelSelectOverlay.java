@@ -444,26 +444,7 @@ public final class LevelSelectOverlay {
         for (int i = 0; i < 3; i++) {
             float sx = cx + (i - 1) * spacing;
             boolean filled = (i < stars);
-
-            starPath.reset();
-            float r = 11f;
-            for (int k = 0; k < 10; k++) {
-                float rad = (float) Math.toRadians(k * 36 - 90);
-                float currR = (k % 2 == 0) ? r : (r * 0.45f);
-                float px = sx + (float) Math.cos(rad) * currR;
-                float py = cy + (float) Math.sin(rad) * currR;
-                if (k == 0) starPath.moveTo(px, py);
-                else starPath.lineTo(px, py);
-            }
-            starPath.close();
-
-            fill.setColor(filled ? 0xFFFFD54F : 0x33607080);
-            c.drawPath(starPath, fill);
-
-            if (filled) {
-                fill.setColor(0xFFFFFFFF);
-                c.drawCircle(sx, cy - 1f, 2f, fill);
-            }
+            GameIcons.drawStar(c, sx, cy, 14f, filled);
         }
     }
 }

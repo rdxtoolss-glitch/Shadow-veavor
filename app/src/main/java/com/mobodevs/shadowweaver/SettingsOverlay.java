@@ -288,6 +288,10 @@ public final class SettingsOverlay {
         btnSound.draw(c, fill, stroke, text, 1.0f, time);
         btnHaptics.draw(c, fill, stroke, text, 1.0f, time);
 
+        // Render official game-icons.net badges inside settings buttons
+        GameIcons.drawSpeaker(c, btnSound.left + 44f, btnSound.centerY(), 20f, soundMuted, soundMuted ? 0x99FFE0A8 : 0xFFFFD54F);
+        GameIcons.drawHaptics(c, btnHaptics.left + 44f, btnHaptics.centerY(), 20f, hapticsOn ? 0xFFFFD54F : 0x99FFE0A8);
+
         if (confirmingReset) {
             // Danger Warning Plate
             float warnT = cardT + 364f;
@@ -325,6 +329,7 @@ public final class SettingsOverlay {
             btnReset.label = "RESET ASTRAL JOURNEY";
             btnReset.subLabel = "Clear all unlocked stars, times, and relics";
             btnReset.draw(c, fill, stroke, text, 1.0f, time);
+            GameIcons.drawReset(c, btnReset.left + 44f, btnReset.centerY(), 20f, fill, stroke);
 
             // Subtle edition hallmark
             text.setTextSize(15f);

@@ -372,6 +372,10 @@ public final class TitleScreen {
         btnCodex.draw(c, fill, stroke, text, 1.0f, time);
         btnSettings.draw(c, fill, stroke, text, 1.0f, time);
 
+        // Official game-icons.net embellishments on menu buttons
+        GameIcons.drawIcon(c, GameIcons.RELIC_PATHS[14], btnChapters.left + 50f, btnChapters.centerY(), 20f, 0xFFFFD54F);
+        GameIcons.drawIcon(c, GameIcons.PATH_SETTINGS, btnSettings.left + 50f, btnSettings.centerY(), 19f, 0xFFFFD54F);
+
         // ---------------------------------------------------------------------
         // 10. ALCHEMIST MASTERY STATUS CARD (700PX WIDTH - MATCHES BUTTONS)
         // ---------------------------------------------------------------------

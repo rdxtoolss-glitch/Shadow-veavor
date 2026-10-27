@@ -222,6 +222,9 @@ public final class LevelCompleteOverlay {
         btnRetry.draw(c, fill, stroke, text, reveal, t);
         btnSelect.draw(c, fill, stroke, text, reveal, t);
 
+        GameIcons.drawReset(c, btnRetry.left + 36f, btnRetry.centerY(), 16f, fill, stroke);
+        GameIcons.drawIcon(c, GameIcons.RELIC_PATHS[14], btnSelect.left + 44f, btnSelect.centerY(), 18f, 0xFFFFD54F);
+
         c.restoreToCount(save);
         text.setTextAlign(Paint.Align.LEFT);
     }
@@ -248,33 +251,10 @@ public final class LevelCompleteOverlay {
     }
 
     private static void drawStar(Canvas c, float cx, float cy, float r, boolean filled, float alpha) {
-        starPath.reset();
-        for (int i = 0; i < 10; i++) {
-            float rad = (float) Math.toRadians(i * 36 - 90);
-            float currR = (i % 2 == 0) ? r : (r * 0.45f);
-            float px = cx + (float) Math.cos(rad) * currR;
-            float py = cy + (float) Math.sin(rad) * currR;
-            if (i == 0) starPath.moveTo(px, py);
-            else starPath.lineTo(px, py);
-        }
-        starPath.close();
-
+        GameIcons.drawStar(c, cx, cy, r, filled);
         if (filled) {
-            fill.setColor(withAlpha(0xFFFFD54F, (int) (255 * alpha)));
-            c.drawPath(starPath, fill);
-
-            stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(2.8f);
-            stroke.setColor(withAlpha(0xFFFFF9C4, (int) (240 * alpha)));
-            c.drawPath(starPath, stroke);
-            stroke.setStyle(Paint.Style.FILL);
-
-            // Radiant white jewel dot at center
             fill.setColor(withAlpha(0xFFFFFFFF, (int) (255 * alpha)));
-            c.drawCircle(cx, cy - 2f, 5.5f, fill);
-        } else {
-            fill.setColor(withAlpha(0x33445566, (int) (200 * alpha)));
-            c.drawPath(starPath, fill);
+            c.drawCircle(cx, cy, r * 0.18f, fill);
         }
     }
 

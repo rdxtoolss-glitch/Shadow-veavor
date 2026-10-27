@@ -525,19 +525,7 @@ public final class TutorialScreen {
     }
 
     private static void drawSmallStar(Canvas c, float cx, float cy, float r, boolean filled) {
-        path.reset();
-        for (int i = 0; i < 10; i++) {
-            float rad = (float) Math.toRadians(i * 36 - 90);
-            float currR = (i % 2 == 0) ? r : (r * 0.45f);
-            float px = cx + (float) Math.cos(rad) * currR;
-            float py = cy + (float) Math.sin(rad) * currR;
-            if (i == 0) path.moveTo(px, py);
-            else path.lineTo(px, py);
-        }
-        path.close();
-        fill.setColor(filled ? 0xFFFFD54F : 0x44607080);
-        c.drawPath(path, fill);
-
+        GameIcons.drawStar(c, cx, cy, r, filled);
         if (filled) {
             fill.setColor(0xFFFFFFFF);
             c.drawCircle(cx, cy - 2f, 3.5f, fill);

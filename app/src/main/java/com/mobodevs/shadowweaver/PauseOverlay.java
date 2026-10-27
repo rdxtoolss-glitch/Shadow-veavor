@@ -241,6 +241,12 @@ public final class PauseOverlay {
         btnSettings.draw(c, fill, stroke, text, 1.0f, t);
         btnMainMenu.draw(c, fill, stroke, text, 1.0f, t);
 
+        // Official game-icons.net embellishments on pause buttons
+        GameIcons.drawPause(c, btnResume.left + 46f, btnResume.centerY(), 18f, fill, stroke, false);
+        GameIcons.drawReset(c, btnRestart.left + 46f, btnRestart.centerY(), 18f, fill, stroke);
+        GameIcons.drawIcon(c, GameIcons.RELIC_PATHS[14], btnChapters.left + 46f, btnChapters.centerY(), 18f, 0xFFFFD54F);
+        GameIcons.drawIcon(c, GameIcons.PATH_SETTINGS, btnSettings.left + 46f, btnSettings.centerY(), 18f, 0xFFFFD54F);
+
         c.restoreToCount(saveCard);
         text.setTextAlign(Paint.Align.LEFT);
     }
