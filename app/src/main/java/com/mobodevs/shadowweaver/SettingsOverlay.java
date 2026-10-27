@@ -3,15 +3,17 @@ package com.mobodevs.shadowweaver;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Typeface;
 
 /**
  * Shadow Weaver - SettingsOverlay
  * ===============================
- * Dedicated settings screen with audio, haptics, physics preferences,
+ * Dedicated alchemical settings modal with audio, haptics preferences,
  * and safety-guarded progress reset.
  *
- * Fully responsive: centers dynamically on any aspect ratio.
+ * Fully responsive: centered horizontally and vertically on any aspect ratio.
+ * Industry-standard 720px card width with balanced golden-ratio spacing.
  */
 public final class SettingsOverlay {
 
@@ -22,6 +24,7 @@ public final class SettingsOverlay {
     private static final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private static final Path path = new Path();
 
     private static Typeface safeTypeface(Typeface family, int style) {
         try {
@@ -61,43 +64,54 @@ public final class SettingsOverlay {
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
         float cardW = 720f;
-        float cardH = 760f;
+        float cardH = 680f;
         cardL = cx - cardW * 0.5f;
         cardT = (sceneH - cardH) * 0.5f;
         cardR = cardL + cardW;
         cardB = cardT + cardH;
 
-        float btnW = 580f;
-        float btnH = 88f;
+        float btnW = 640f;
+        float btnH = 84f;
         float btnL = cx - btnW * 0.5f;
         float btnR = cx + btnW * 0.5f;
 
         float startY = cardT + 160f;
-        float gap = 24f;
+        float gap = 18f;
 
+        // Button 1: Sound
         btnSound.setBounds(btnL, startY, btnR, startY + btnH);
         btnSound.cornerRadius = 18f;
 
+        // Button 2: Haptics
         float y2 = startY + btnH + gap;
         btnHaptics.setBounds(btnL, y2, btnR, y2 + btnH);
         btnHaptics.cornerRadius = 18f;
 
+        // Button 3: Reset
         float y3 = y2 + btnH + gap;
         btnReset.setBounds(btnL, y3, btnR, y3 + btnH);
         btnReset.cornerRadius = 18f;
 
-        float yClose = cardB - 110f;
-        btnClose.setBounds(cx - 180f, yClose, cx + 180f, yClose + 72f);
-        btnClose.isPrimary = true;
-        btnClose.cornerRadius = 18f;
-
         // Confirmation buttons (side-by-side)
-        float halfW = (btnW - gap) * 0.5f;
-        btnConfirmYes.setBounds(btnL, y3, btnL + halfW, y3 + btnH);
+        float confirmH = 74f;
+        float confirmY = cardT + 466f;
+        float splitGap = 16f;
+        float halfW = (btnW - splitGap) * 0.5f;
+        btnConfirmYes.setBounds(btnL, confirmY, btnL + halfW, confirmY + confirmH);
         btnConfirmYes.cornerRadius = 18f;
+        btnConfirmYes.isPrimary = true;
 
-        btnConfirmNo.setBounds(btnL + halfW + gap, y3, btnR, y3 + btnH);
+        btnConfirmNo.setBounds(btnL + halfW + splitGap, confirmY, btnR, confirmY + confirmH);
         btnConfirmNo.cornerRadius = 18f;
+        btnConfirmNo.isPrimary = false;
+
+        // Close Button (Primary gold sheen)
+        float closeW = 360f;
+        float closeH = 74f;
+        float yClose = cardT + 574f;
+        btnClose.setBounds(cx - closeW * 0.5f, yClose, cx + closeW * 0.5f, yClose + closeH);
+        btnClose.isPrimary = true;
+        btnClose.cornerRadius = 20f;
 
         layoutReady = true;
     }
@@ -115,16 +129,20 @@ public final class SettingsOverlay {
             btnSound.isPressed = btnSound.hitTest(sx, sy);
             btnHaptics.isPressed = btnHaptics.hitTest(sx, sy);
             btnReset.isPressed = btnReset.hitTest(sx, sy);
-            btnClose.isPressed = btnClose.hitTest(sx, sy);
         }
+        btnClose.isPressed = btnClose.hitTest(sx, sy);
         return Action.NONE;
     }
 
     public static Action onTouchUp(float sx, float sy, Context context, LevelProgress progress, AudioManager audio, HapticManager haptic) {
-        return onTouchUp(sx, sy, context, progress, audio, haptic, ShadowCalculator.SCENE_H);
+        return onTouchUp(sx, sy, context, progress, audio, haptic, 0f, ShadowCalculator.SCENE_H);
     }
 
     public static Action onTouchUp(float sx, float sy, Context context, LevelProgress progress, AudioManager audio, HapticManager haptic, float sceneH) {
+        return onTouchUp(sx, sy, context, progress, audio, haptic, 0f, sceneH);
+    }
+
+    public static Action onTouchUp(float sx, float sy, Context context, LevelProgress progress, AudioManager audio, HapticManager haptic, float time, float sceneH) {
         layout(sceneH);
         Action act = Action.NONE;
 
@@ -157,9 +175,12 @@ public final class SettingsOverlay {
                 act = Action.TOGGLE_HAPTICS;
             } else if (btnReset.isPressed && btnReset.hitTest(sx, sy)) {
                 confirmingReset = true;
-            } else if (btnClose.isPressed && btnClose.hitTest(sx, sy)) {
-                act = Action.CLOSE;
             }
+        }
+
+        if (btnClose.isPressed && btnClose.hitTest(sx, sy)) {
+            confirmingReset = false;
+            act = Action.CLOSE;
         }
 
         btnSound.isPressed = false;
@@ -182,10 +203,14 @@ public final class SettingsOverlay {
     }
 
     public static void draw(Canvas c, LevelProgress progress, AudioManager audio, HapticManager haptic) {
-        draw(c, progress, audio, haptic, ShadowCalculator.SCENE_H);
+        draw(c, progress, audio, haptic, 0f, ShadowCalculator.SCENE_H);
     }
 
     public static void draw(Canvas c, LevelProgress progress, AudioManager audio, HapticManager haptic, float sceneH) {
+        draw(c, progress, audio, haptic, 0f, sceneH);
+    }
+
+    public static void draw(Canvas c, LevelProgress progress, AudioManager audio, HapticManager haptic, float time, float sceneH) {
         layout(sceneH);
 
         float sw = ShadowCalculator.SCENE_W;
@@ -193,48 +218,63 @@ public final class SettingsOverlay {
         float cx = sw * 0.5f;
 
         // 1. Dark Modal Scrim
-        fill.setColor(0xCC0E121E);
+        fill.setColor(0xDD080C14);
         c.drawRect(0, 0, sw, sh, fill);
 
         int saveCard = c.save();
 
         // 2. Card Panel (Obsidian Alchemical Slate)
-        fill.setColor(0xFA1A2234);
+        fill.setColor(0xFA141A28);
         c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, fill);
 
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.6f);
+        stroke.setStrokeWidth(2.8f);
         stroke.setColor(0xFFD4AF37);
         c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, stroke);
 
         // Specular highlight line
         stroke.setStrokeWidth(1.4f);
-        stroke.setColor(0x66FFFFFF);
-        c.drawLine(cardL + 24f, cardT + 1.5f, cardR - 24f, cardT + 1.5f, stroke);
+        stroke.setColor(0x55FFFFFF);
+        c.drawLine(cardL + 24f, cardT + 2f, cardR - 24f, cardT + 2f, stroke);
         stroke.setStyle(Paint.Style.FILL);
+
+        // 4 Corner Brass Filigree Brackets
+        drawCornerBrackets(c, cardL, cardT, cardR, cardB);
 
         // 3. Header
+        float headY = cardT + 68f;
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
-        text.setTextSize(40f);
+        text.setTextSize(38f);
         text.setColor(0xDD000000);
-        c.drawText("ALCHEMICAL SETTINGS", cx, cardT + 66.5f, text);
+        c.drawText("ALCHEMICAL SETTINGS", cx, headY + 2f, text);
         text.setColor(0xFFFFFDF8);
-        c.drawText("ALCHEMICAL SETTINGS", cx, cardT + 65f, text);
+        c.drawText("ALCHEMICAL SETTINGS", cx, headY, text);
 
-        text.setTextSize(18f);
+        text.setTextSize(17f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
-        c.drawText("Acoustic Chimes, Haptic Resonance & Progress", cx, cardT + 106.5f, text);
+        c.drawText("Acoustic Chimes, Haptic Resonance & Progress", cx, headY + 36f + 1.5f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText("Acoustic Chimes, Haptic Resonance & Progress", cx, cardT + 105f, text);
+        c.drawText("Acoustic Chimes, Haptic Resonance & Progress", cx, headY + 36f, text);
 
-        // Divider
+        // Ornamental divider with center diamond pip
+        float divY = cardT + 138f;
         stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeWidth(1.8f);
-        stroke.setColor(0x44D4AF37);
-        c.drawLine(cardL + 40f, cardT + 125f, cardR - 40f, cardT + 125f, stroke);
+        stroke.setColor(0x66D4AF37);
+        c.drawLine(cardL + 48f, divY, cx - 18f, divY, stroke);
+        c.drawLine(cx + 18f, divY, cardR - 48f, divY, stroke);
         stroke.setStyle(Paint.Style.FILL);
+
+        fill.setColor(0xFFFFD54F);
+        path.reset();
+        path.moveTo(cx, divY - 6f);
+        path.lineTo(cx + 6f, divY);
+        path.lineTo(cx, divY + 6f);
+        path.lineTo(cx - 6f, divY);
+        path.close();
+        c.drawPath(path, fill);
 
         // 4. Update Button Labels
         boolean soundMuted = (progress != null && progress.isSoundMuted());
@@ -245,33 +285,90 @@ public final class SettingsOverlay {
         btnHaptics.label = hapticsOn ? "HAPTIC RESONANCE: ACTIVE" : "HAPTIC RESONANCE: OFF";
         btnHaptics.subLabel = hapticsOn ? "Tactile detent ticks and magnetic snap impulses" : "Vibration feedback disabled";
 
+        btnSound.draw(c, fill, stroke, text, 1.0f, time);
+        btnHaptics.draw(c, fill, stroke, text, 1.0f, time);
+
         if (confirmingReset) {
-            text.setTextSize(18f);
+            // Danger Warning Plate
+            float warnT = cardT + 364f;
+            float warnB = cardT + 452f;
+            float warnL = cardL + 40f;
+            float warnR = cardR - 40f;
+
+            fill.setColor(0x33B71C1C);
+            c.drawRoundRect(warnL, warnT, warnR, warnB, 16f, 16f, fill);
+
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(2.0f);
+            stroke.setColor(0xCCFF5252);
+            c.drawRoundRect(warnL, warnT, warnR, warnB, 16f, 16f, stroke);
+            stroke.setStyle(Paint.Style.FILL);
+
+            text.setTextSize(19f);
             text.setTypeface(SERIF_BOLD);
             text.setColor(0xFFFF8A80);
-            c.drawText("ARE YOU SURE? RESET ALL 15 STARS & PROGRESS?", cx, cardT + 340f, text);
+            c.drawText("RESET ALL 15 STARS & PROGRESS?", cx, warnT + 36f, text);
+
+            text.setTextSize(15f);
+            text.setTypeface(SERIF_NORMAL);
+            text.setColor(0xFFFFCDD2);
+            c.drawText("All times, stars and codex relics will be permanently cleared.", cx, warnT + 64f, text);
 
             btnConfirmYes.label = "CONFIRM RESET";
             btnConfirmYes.subLabel = "Irreversible";
-            btnConfirmYes.isPrimary = true;
-            btnConfirmYes.draw(c, fill, stroke, text, 1.0f);
+            btnConfirmYes.draw(c, fill, stroke, text, 1.0f, time);
 
             btnConfirmNo.label = "CANCEL";
             btnConfirmNo.subLabel = "Keep Progress";
-            btnConfirmNo.draw(c, fill, stroke, text, 1.0f);
+            btnConfirmNo.draw(c, fill, stroke, text, 1.0f, time);
         } else {
             btnReset.label = "RESET ASTRAL JOURNEY";
             btnReset.subLabel = "Clear all unlocked stars, times, and relics";
-            btnReset.draw(c, fill, stroke, text, 1.0f);
+            btnReset.draw(c, fill, stroke, text, 1.0f, time);
+
+            // Subtle edition hallmark
+            text.setTextSize(15f);
+            text.setTypeface(SERIF_NORMAL);
+            text.setColor(0x88FFE0A8);
+            c.drawText("SHADOW WEAVER \u2022 ALCHEMICAL MASTER EDITION v1.0.0", cx, cardT + 494f, text);
+
+            stroke.setStyle(Paint.Style.STROKE);
+            stroke.setStrokeWidth(1.2f);
+            stroke.setColor(0x33D4AF37);
+            c.drawLine(cardL + 120f, cardT + 524f, cardR - 120f, cardT + 524f, stroke);
+            stroke.setStyle(Paint.Style.FILL);
         }
 
-        btnSound.draw(c, fill, stroke, text, 1.0f);
-        btnHaptics.draw(c, fill, stroke, text, 1.0f);
-
-        btnClose.label = "CLOSE";
-        btnClose.draw(c, fill, stroke, text, 1.0f);
+        // 5. Close Button
+        btnClose.label = "RETURN";
+        btnClose.draw(c, fill, stroke, text, 1.0f, time);
 
         c.restoreToCount(saveCard);
         text.setTextAlign(Paint.Align.LEFT);
+    }
+
+    private static void drawCornerBrackets(Canvas c, float l, float t, float r, float b) {
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2.2f);
+        stroke.setColor(0xFFD4AF37);
+
+        float len = 20f;
+        // Top-Left
+        c.drawLine(l + 10f, t + 10f, l + 10f + len, t + 10f, stroke);
+        c.drawLine(l + 10f, t + 10f, l + 10f, t + 10f + len, stroke);
+
+        // Top-Right
+        c.drawLine(r - 10f, t + 10f, r - 10f - len, t + 10f, stroke);
+        c.drawLine(r - 10f, t + 10f, r - 10f, t + 10f + len, stroke);
+
+        // Bottom-Left
+        c.drawLine(l + 10f, b - 10f, l + 10f + len, b - 10f, stroke);
+        c.drawLine(l + 10f, b - 10f, l + 10f, b - 10f - len, stroke);
+
+        // Bottom-Right
+        c.drawLine(r - 10f, b - 10f, r - 10f - len, b - 10f, stroke);
+        c.drawLine(r - 10f, b - 10f, r - 10f, b - 10f - len, stroke);
+
+        stroke.setStyle(Paint.Style.FILL);
     }
 }

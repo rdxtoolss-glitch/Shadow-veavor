@@ -1,10 +1,8 @@
 package com.mobodevs.shadowweaver;
 
 import android.graphics.Canvas;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.Shader;
 import android.graphics.Typeface;
 
 /**
@@ -14,7 +12,8 @@ import android.graphics.Typeface;
  * Supports 3 chapters of 5 levels each, chapter progression tabs,
  * 3-star completion indicators, best completion times, and locked trial padlocks.
  *
- * Fully responsive: expands seamlessly across tall phone aspect ratios with zero black bars.
+ * Fully responsive: dynamically centered horizontally and vertically on any aspect ratio.
+ * Backed by the rich living animated celestial chamber.
  */
 public final class LevelSelectOverlay {
 
@@ -29,6 +28,7 @@ public final class LevelSelectOverlay {
     private static final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Path starPath = new Path();
+    private static final Path path = new Path();
 
     private static Typeface safeTypeface(Typeface family, int style) {
         try {
@@ -55,7 +55,13 @@ public final class LevelSelectOverlay {
     private static final float[] CARD_R = new float[LEVELS_PER_CHAPTER];
     private static final float[] CARD_B = new float[LEVELS_PER_CHAPTER];
 
+    private static float summaryL;
+    private static float summaryT;
+    private static float summaryR;
+    private static float summaryB;
+
     private static final UiButton btnBack = new UiButton();
+    private static float cachedHeaderY;
     private static boolean layoutReady;
     private static float lastSceneH = 0f;
 
@@ -68,31 +74,44 @@ public final class LevelSelectOverlay {
         lastSceneH = sceneH;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
-        float padX = 54f;
 
-        // Chapter Tabs
-        float tabTop = (sceneH > 1800f ? 230f : (sceneH > 1620f ? 210f : 190f));
-        float tabH = 74f;
+        // Content heights
+        float headerH = 110f;
+        float tabH = 76f;
+        float cardH = 205f;
+        float gapY = 20f;
+        float gridH = 3 * cardH + 2 * gapY; // 655f
+        float summaryH = 42f;
+        float backH = 78f;
+
+        float totalH = headerH + 18f + tabH + 24f + gridH + 20f + summaryH + 20f + backH; // 1043f
+        float remaining = Math.max(50f, sceneH - totalH);
+        float topPad = remaining * 0.36f + 25f;
+
+        cachedHeaderY = topPad + 45f;
+
+        // 1. Chapter Tabs (Centered across 896px width)
+        float tabTop = cachedHeaderY + 68f;
+        float tabW = 288f;
         float tabGap = 16f;
-        float tabW = (ShadowCalculator.SCENE_W - padX * 2 - tabGap * (CHAPTERS - 1)) / CHAPTERS;
+        float totalTabsW = CHAPTERS * tabW + (CHAPTERS - 1) * tabGap; // 896f
+        float tabStartX = cx - totalTabsW * 0.5f;
 
         for (int i = 0; i < CHAPTERS; i++) {
-            float l = padX + i * (tabW + tabGap);
+            float l = tabStartX + i * (tabW + tabGap);
             TAB_L[i] = l;
             TAB_T[i] = tabTop;
             TAB_R[i] = l + tabW;
             TAB_B[i] = tabTop + tabH;
         }
 
-        // 5 Level Cards (arranged as 2 top, 2 middle, 1 centered bottom)
-        float cardTop = tabTop + tabH + 28f;
-        float cardW = 415f;
-        float cardH = 210f;
-        float gapX = 30f;
-        float gapY = 24f;
+        // 2. 5 Level Cards (Arranged as 2 top, 2 middle, 1 centered bottom)
+        float cardTop = tabTop + tabH + 24f;
+        float cardW = 420f;
+        float gapX = 32f;
 
         // Row 1 (Levels 1 & 2 in chapter)
-        float row1W = cardW * 2 + gapX;
+        float row1W = cardW * 2 + gapX; // 872f
         float row1L = cx - row1W * 0.5f;
         CARD_L[0] = row1L;
         CARD_T[0] = cardTop;
@@ -116,19 +135,24 @@ public final class LevelSelectOverlay {
         CARD_R[3] = row1L + cardW * 2 + gapX;
         CARD_B[3] = row2T + cardH;
 
-        // Row 3 (Level 5 centered)
+        // Row 3 (Level 5 Boss / Capstone Trial centered)
         float row3T = row2T + cardH + gapY;
-        float card5W = 460f;
+        float card5W = 540f;
         CARD_L[4] = cx - card5W * 0.5f;
         CARD_T[4] = row3T;
         CARD_R[4] = cx + card5W * 0.5f;
         CARD_B[4] = row3T + cardH;
 
-        // Back Button (Anchored to bottom of viewport)
+        // 3. Chapter Summary Bar below Row 3
+        summaryT = row3T + cardH + 20f;
+        summaryB = summaryT + summaryH;
+        summaryL = cx - 448f;
+        summaryR = cx + 448f;
+
+        // 4. Back Button (Centered below summary bar)
         float btnW = 460f;
-        float btnH = 80f;
-        float btnY = (sceneH > 1800f) ? (sceneH - 125f) : (sceneH - 95f);
-        btnBack.setBounds(cx - btnW * 0.5f, btnY, cx + btnW * 0.5f, btnY + btnH);
+        float btnY = summaryB + 20f;
+        btnBack.setBounds(cx - btnW * 0.5f, btnY, cx + btnW * 0.5f, btnY + backH);
         btnBack.cornerRadius = 20f;
 
         layoutReady = true;
@@ -148,22 +172,33 @@ public final class LevelSelectOverlay {
         }
     }
 
-    public static Action onTouchDown(float sx, float sy, int unlocked) {
-        return onTouchDown(sx, sy, unlocked, ShadowCalculator.SCENE_H);
+    public static Action onTouchDown(float sx, float sy) {
+        return onTouchDown(sx, sy, ShadowCalculator.SCENE_H);
     }
 
-    public static Action onTouchDown(float sx, float sy, int unlocked, float sceneH) {
+    public static Action onTouchDown(float sx, float sy, float sceneH) {
         layout(sceneH);
         btnBack.isPressed = btnBack.hitTest(sx, sy);
         return Action.NONE;
     }
 
-    public static Action onTouchUp(float sx, float sy, int unlocked) {
+    public static Action onTouchDown(float sx, float sy, int unlocked, float sceneH) {
+        return onTouchDown(sx, sy, sceneH);
+    }
+
+    public static Action onTouchUp(float sx, float sy, LevelProgress progress, int currentLevel) {
+        int unlocked = (progress != null) ? progress.getHighestUnlocked() : currentLevel;
         return onTouchUp(sx, sy, unlocked, ShadowCalculator.SCENE_H);
+    }
+
+    public static Action onTouchUp(float sx, float sy, LevelProgress progress, int currentLevel, float sceneH) {
+        int unlocked = (progress != null) ? progress.getHighestUnlocked() : currentLevel;
+        return onTouchUp(sx, sy, unlocked, sceneH);
     }
 
     public static Action onTouchUp(float sx, float sy, int unlocked, float sceneH) {
         layout(sceneH);
+
         if (btnBack.isPressed && btnBack.hitTest(sx, sy)) {
             btnBack.isPressed = false;
             return Action.CLOSE;
@@ -197,27 +232,25 @@ public final class LevelSelectOverlay {
     }
 
     public static void draw(Canvas c, LevelProgress progress, int currentLevel) {
-        draw(c, progress, currentLevel, ShadowCalculator.SCENE_H);
+        draw(c, progress, currentLevel, 0f, ShadowCalculator.SCENE_H);
     }
 
     public static void draw(Canvas c, LevelProgress progress, int currentLevel, float sceneH) {
+        draw(c, progress, currentLevel, 0f, sceneH);
+    }
+
+    public static void draw(Canvas c, LevelProgress progress, int currentLevel, float time, float sceneH) {
         layout(sceneH);
 
         int unlocked = (progress != null) ? progress.getHighestUnlocked() : currentLevel;
         float sw = ShadowCalculator.SCENE_W;
-        float sh = sceneH;
         float cx = sw * 0.5f;
 
-        // 1. Modal Scrim Backdrop with Celestial Twilight Gradient (Fills 100% of screen)
-        fill.setShader(new LinearGradient(0, 0, 0, sh,
-                new int[]{0xFF24160E, 0xFF1B2032, 0xFF101320},
-                new float[]{0f, 0.40f, 1f},
-                Shader.TileMode.CLAMP));
-        c.drawRect(0, 0, sw, sh, fill);
-        fill.setShader(null);
+        // 1. Rich living animated celestial chamber backdrop
+        TitleScreen.drawCelestialBackdrop(c, time, 1.0f, sceneH);
 
         // 2. Header
-        float headerY = (sceneH > 1800f ? 135f : (sceneH > 1620f ? 115f : 95f));
+        float headerY = cachedHeaderY;
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
         text.setTextSize(46f);
@@ -236,16 +269,27 @@ public final class LevelSelectOverlay {
                 "CHAPTER II: THE ALCHEMIST'S CHAMBER",
                 "CHAPTER III: THE CELESTIAL OBSERVATORY"
         };
-        c.drawText(chapterNames[activeChapter], cx, headerY + 44f + 2f, text);
+        c.drawText(chapterNames[activeChapter], cx, headerY + 42f + 2f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText(chapterNames[activeChapter], cx, headerY + 44f, text);
+        c.drawText(chapterNames[activeChapter], cx, headerY + 42f, text);
 
         // Dividing flourish
+        float divY = headerY + 58f;
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.0f);
-        stroke.setColor(0xFFD4AF37);
-        c.drawLine(cx - 180f, 155f, cx + 180f, 155f, stroke);
+        stroke.setStrokeWidth(1.8f);
+        stroke.setColor(0x66D4AF37);
+        c.drawLine(cx - 240f, divY, cx - 18f, divY, stroke);
+        c.drawLine(cx + 18f, divY, cx + 240f, divY, stroke);
         stroke.setStyle(Paint.Style.FILL);
+
+        fill.setColor(0xFFFFD54F);
+        path.reset();
+        path.moveTo(cx, divY - 5f);
+        path.lineTo(cx + 5f, divY);
+        path.lineTo(cx, divY + 5f);
+        path.lineTo(cx - 5f, divY);
+        path.close();
+        c.drawPath(path, fill);
 
         // 3. Chapter Tabs
         String[] roman = {"CHAPTER I", "CHAPTER II", "CHAPTER III"};
@@ -253,11 +297,11 @@ public final class LevelSelectOverlay {
             boolean isSel = (i == activeChapter);
             boolean isUnlocked = (progress == null || progress.isChapterUnlocked(i));
 
-            fill.setColor(isSel ? 0xFFE5A836 : (isUnlocked ? 0xEE1E2434 : 0x55141A28));
+            fill.setColor(isSel ? 0xFFE5A836 : (isUnlocked ? 0xEE1C2234 : 0x55141A28));
             c.drawRoundRect(TAB_L[i], TAB_T[i], TAB_R[i], TAB_B[i], 16f, 16f, fill);
 
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(isSel ? 2.5f : 1.8f);
+            stroke.setStrokeWidth(isSel ? 2.6f : 1.8f);
             stroke.setColor(isSel ? 0xFFFFF4D0 : (isUnlocked ? 0xFFD4AF37 : 0x44607080));
             c.drawRoundRect(TAB_L[i], TAB_T[i], TAB_R[i], TAB_B[i], 16f, 16f, stroke);
             stroke.setStyle(Paint.Style.FILL);
@@ -274,15 +318,15 @@ public final class LevelSelectOverlay {
             text.setTextSize(15f);
             text.setTypeface(SERIF_NORMAL);
             text.setColor(isSel ? 0xDD2A1404 : (isUnlocked ? 0xFFFFE0A8 : 0x4490A0B8));
-            c.drawText("⭐ " + chapterStars + " / 15", tabCx, tabCy + 20f, text);
+            c.drawText("\u2605 " + chapterStars + " / 15", tabCx, tabCy + 20f, text);
         }
 
         // 4. 5 Level Cards for Active Chapter
         for (int i = 0; i < LEVELS_PER_CHAPTER; i++) {
             int globalLevel = activeChapter * LEVELS_PER_CHAPTER + i;
             boolean isUnlocked = (globalLevel <= unlocked);
-            boolean isCurrent = (globalLevel == currentLevel);
             int stars = (progress != null) ? progress.getStars(globalLevel) : 0;
+            boolean isCurrent = (globalLevel == currentLevel);
             boolean isSolved = (stars > 0);
 
             float l = CARD_L[i];
@@ -291,9 +335,9 @@ public final class LevelSelectOverlay {
             float b = CARD_B[i];
             float cardCx = (l + r) * 0.5f;
 
-            // Card background
+            // Card Panel Fill
             if (isCurrent) {
-                fill.setColor(0xF02A2438);
+                fill.setColor(0xFA262036);
             } else if (isSolved) {
                 fill.setColor(0xEE1E2434);
             } else if (isUnlocked) {
@@ -303,165 +347,123 @@ public final class LevelSelectOverlay {
             }
             c.drawRoundRect(l, t, r, b, 20f, 20f, fill);
 
-            // Card border
+            // Card Border
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(isCurrent ? 3.5f : (isSolved ? 2.4f : 1.5f));
+            stroke.setStrokeWidth(isCurrent ? 3.0f : (isSolved ? 2.2f : (isUnlocked ? 1.6f : 1.2f)));
             stroke.setColor(isCurrent ? 0xFFFFD54F : (isSolved ? 0xFFD4AF37 : (isUnlocked ? 0x88D4AF37 : 0x33607080)));
             c.drawRoundRect(l, t, r, b, 20f, 20f, stroke);
 
             // Specular top highlight
             if (isUnlocked) {
                 stroke.setStrokeWidth(1.2f);
-                stroke.setColor(0x44FFFFFF);
-                c.drawLine(l + 20f, t + 1.5f, r - 20f, t + 1.5f, stroke);
+                stroke.setColor(0x55FFFFFF);
+                c.drawLine(l + 20f, t + 2f, r - 20f, t + 2f, stroke);
             }
             stroke.setStyle(Paint.Style.FILL);
 
-            LevelData data = LevelLoader.get(globalLevel);
-            String title = (data != null) ? data.title : ("Trial " + (globalLevel + 1));
+            LevelData level = LevelLoader.get(globalLevel);
+            String title = (level != null) ? level.title : ("Trial " + (globalLevel + 1));
 
-            // Level number badge
-            text.setTextSize(18f);
+            // Trial badge
+            text.setTextSize(16f);
             text.setTypeface(SERIF_BOLD);
-            text.setColor(isUnlocked ? 0xFFFFD54F : 0x5590A0B8);
-            c.drawText("LEVEL " + (globalLevel + 1), cardCx, t + 36f, text);
+            text.setColor(isCurrent ? 0xFFFFD54F : (isSolved ? 0xFFFFE0A8 : (isUnlocked ? 0xAAFFE0A8 : 0x448090A0)));
+            String badge = "TRIAL " + String.format("%02d", globalLevel + 1) + (i == 4 ? " \u2022 CAPSTONE" : "");
+            c.drawText(badge, cardCx, t + 32f, text);
 
-            if (isUnlocked) {
+            if (isSolved) {
+                // Relic glyph
+                GameIcons.drawRelicIcon(c, globalLevel, cardCx, t + 78f, 24f, fill, stroke, true);
+
                 // Title
-                text.setTextSize(26f);
+                text.setTextSize(20f);
                 text.setTypeface(SERIF_BOLD);
-                text.setColor(0xCC000000);
-                c.drawText(title, cardCx, t + 79f, text);
                 text.setColor(0xFFFFFDF8);
-                c.drawText(title, cardCx, t + 77f, text);
+                c.drawText(title, cardCx, t + 132f, text);
 
-                // Stars row
-                drawStarsRow(c, cardCx, t + 125f, stars);
+                // 3 Stars Row
+                drawCardStars(c, cardCx, t + 162f, stars);
 
                 // Best time
                 long best = (progress != null) ? progress.getBestTime(globalLevel) : 0L;
-                long parTime = LevelProgress.getParTimeMillis(globalLevel);
+                if (best > 0L) {
+                    text.setTextSize(14f);
+                    text.setTypeface(SERIF_NORMAL);
+                    text.setColor(0xCCFFE0A8);
+                    c.drawText("Best: " + (best / 1000L) + "s", cardCx, t + 188f, text);
+                }
+            } else if (isUnlocked) {
+                // Outline glyph
+                GameIcons.drawRelicIcon(c, globalLevel, cardCx, t + 78f, 24f, fill, stroke, false);
+
+                // Title
+                text.setTextSize(20f);
+                text.setTypeface(SERIF_BOLD);
+                text.setColor(0xEEFFFDF8);
+                c.drawText(title, cardCx, t + 132f, text);
+
                 text.setTextSize(16f);
                 text.setTypeface(SERIF_NORMAL);
-                text.setColor(0xDDFFE0A8);
-                if (best > 0L) {
-                    c.drawText("Best: " + (best / 1000L) + "s (Par " + (parTime / 1000L) + "s)", cardCx, t + 176f, text);
-                } else {
-                    c.drawText(isCurrent ? "★ CURRENT TRIAL ★" : "Ready to Solve", cardCx, t + 176f, text);
-                }
+                text.setColor(isCurrent ? 0xFFFFD54F : 0xAAFFE0A8);
+                c.drawText(isCurrent ? "\u25B6 CURRENT TRIAL" : "UNLOCKED", cardCx, t + 168f, text);
             } else {
                 // Locked Padlock
-                GameIcons.drawPadlock(c, cardCx, t + 95f, fill, stroke);
+                GameIcons.drawPadlock(c, cardCx, t + 82f, fill, stroke);
 
-                text.setTextSize(18f);
+                text.setTextSize(19f);
                 text.setTypeface(SERIF_NORMAL);
-                text.setColor(0x6690A0B8);
-                c.drawText("Locked", cardCx, t + 160f, text);
+                text.setColor(0x668090A0);
+                c.drawText("SEALED VAULT", cardCx, t + 145f, text);
             }
         }
 
-        // 5. Chapter Mastery Summary Card (Proportionally sized and positioned)
-        float sumL = cx - 380f;
-        float sumR = cx + 380f;
-        float sumT = CARD_B[4] + (sceneH > 1800f ? 44f : 30f);
-        float sumH = (sceneH > 1800f) ? 320f : 230f;
-        float sumB = sumT + sumH;
-
-        fill.setColor(0xEE1E2434);
-        c.drawRoundRect(sumL, sumT, sumR, sumB, 22f, 22f, fill);
+        // 5. Chapter Summary Bar
+        fill.setColor(0xEE141A28);
+        c.drawRoundRect(summaryL, summaryT, summaryR, summaryB, 14f, 14f, fill);
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.4f);
-        stroke.setColor(0xFFD4AF37);
-        c.drawRoundRect(sumL, sumT, sumR, sumB, 22f, 22f, stroke);
-
-        // Specular highlight
-        stroke.setStrokeWidth(1.2f);
-        stroke.setColor(0x55FFFFFF);
-        c.drawLine(sumL + 22f, sumT + 1.5f, sumR - 22f, sumT + 1.5f, stroke);
+        stroke.setStrokeWidth(1.6f);
+        stroke.setColor(0x88D4AF37);
+        c.drawRoundRect(summaryL, summaryT, summaryR, summaryB, 14f, 14f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
-        int chStars = (progress != null) ? progress.getChapterStars(activeChapter) : 0;
-        text.setTextSize(17f);
-        text.setTypeface(SERIF_BOLD);
-        text.setColor(0xCCFFE0A8);
-        c.drawText("CHAPTER STARS & MASTERY PROGRESS", cx, sumT + 42f, text);
-
-        text.setTextSize(28f);
-        text.setColor(0xFFFFFDF8);
-        c.drawText("⭐ " + chStars + " of 15 Constellation Stars Earned", cx, sumT + 86f, text);
-
-        // Progress bar
-        float barW = 560f;
-        float barH = 18f;
-        float barL = cx - barW * 0.5f;
-        float barT = sumT + 120f;
-        fill.setColor(0x660E131E);
-        c.drawRoundRect(barL, barT, barL + barW, barT + barH, 9f, 9f, fill);
-
-        float chPct = chStars / 15f;
-        if (chPct > 0.01f) {
-            fill.setColor(0xFFFFB300);
-            c.drawRoundRect(barL, barT, barL + barW * chPct, barT + barH, 9f, 9f, fill);
-        }
-
-        text.setTextSize(17f);
+        int totalStars = (progress != null) ? progress.getTotalStars() : 0;
+        text.setTextSize(16f);
         text.setTypeface(SERIF_NORMAL);
-        text.setColor(0xDDFFE0A8);
-        String appraisal = (chStars == 15) ? "Complete Astral Perfection Achieved!"
-                : (chStars >= 10 ? "Great progress! Complete trials under par for all stars."
-                : "Solve silhouettes under par time and move limits to earn 3 stars.");
-        c.drawText(appraisal, cx, sumT + 175f, text);
-
-        if (sceneH > 1800f) {
-            String[] lore = {
-                    "✦ The Apprentice's Study: Learn to bend candlelight and master single-plane shadows.",
-                    "✦ The Alchemist's Chamber: Shape compound silhouettes and rotational symmetries.",
-                    "✦ The Celestial Observatory: Weave complex constellations and celestial archetypes."
-            };
-            text.setTextSize(15f);
-            text.setColor(0x88FFE0A8);
-            c.drawText(lore[activeChapter], cx, sumT + 225f, text);
-        }
+        text.setColor(0xFFFFE0A8);
+        c.drawText("TOTAL STARS: " + totalStars + " / 45   \u2022   ASTRONOMER RANK: " + ((progress != null) ? progress.getPlayerRank() : "Apprentice"), cx, summaryT + 26f, text);
 
         // 6. Back Button
         btnBack.label = "MAIN MENU";
-        btnBack.draw(c, fill, stroke, text, 1.0f);
+        btnBack.draw(c, fill, stroke, text, 1.0f, time);
 
-        // 7. Grounding footer
-        text.setTextSize(16f);
-        text.setTypeface(SERIF_NORMAL);
-        text.setColor(0x77D4AF37);
-        c.drawText("Select any unlocked trial to begin weaving", cx, sh - 46f, text);
         text.setTextAlign(Paint.Align.LEFT);
     }
 
-    private static void drawStarsRow(Canvas c, float cx, float cy, int stars) {
-        float spacing = 38f;
+    private static void drawCardStars(Canvas c, float cx, float cy, int stars) {
+        float spacing = 28f;
         for (int i = 0; i < 3; i++) {
             float sx = cx + (i - 1) * spacing;
             boolean filled = (i < stars);
-            fill.setColor(filled ? 0xFFFFD54F : 0x33445566);
-            drawStarPath(c, sx, cy, 14f);
+
+            starPath.reset();
+            float r = 11f;
+            for (int k = 0; k < 10; k++) {
+                float rad = (float) Math.toRadians(k * 36 - 90);
+                float currR = (k % 2 == 0) ? r : (r * 0.45f);
+                float px = sx + (float) Math.cos(rad) * currR;
+                float py = cy + (float) Math.sin(rad) * currR;
+                if (k == 0) starPath.moveTo(px, py);
+                else starPath.lineTo(px, py);
+            }
+            starPath.close();
+
+            fill.setColor(filled ? 0xFFFFD54F : 0x33607080);
+            c.drawPath(starPath, fill);
 
             if (filled) {
-                // White specular pearl at star center
                 fill.setColor(0xFFFFFFFF);
-                c.drawCircle(sx, cy - 2f, 3.5f, fill);
+                c.drawCircle(sx, cy - 1f, 2f, fill);
             }
         }
-    }
-
-    private static void drawStarPath(Canvas c, float cx, float cy, float r) {
-        starPath.reset();
-        for (int i = 0; i < 10; i++) {
-            float rad = (float) Math.toRadians(i * 36 - 90);
-            float currR = (i % 2 == 0) ? r : (r * 0.45f);
-            float px = cx + (float) Math.cos(rad) * currR;
-            float py = cy + (float) Math.sin(rad) * currR;
-            if (i == 0) starPath.moveTo(px, py);
-            else starPath.lineTo(px, py);
-        }
-        starPath.close();
-        c.drawPath(starPath, fill);
     }
 }

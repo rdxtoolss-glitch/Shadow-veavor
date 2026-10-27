@@ -166,12 +166,12 @@ final class GameRenderer {
             CodexScreen.draw(canvas, g.progress(), g.timeSeconds(), sceneH);
             g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
         } else if (state == ScreenState.LEVEL_SELECT) {
-            LevelSelectOverlay.draw(canvas, g.progress(), g.levelIndex(), sceneH);
+            LevelSelectOverlay.draw(canvas, g.progress(), g.levelIndex(), g.timeSeconds(), sceneH);
             g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
         } else if (state == ScreenState.SETTINGS && g.getPreviousScreenState() == ScreenState.TITLE) {
             TitleScreen.draw(canvas, g.progress(), g.timeSeconds(), g.candleFlicker(), sceneH);
             g.particles().drawAmbient(canvas, fill, ShadowCalculator.LIGHT_X, ShadowCalculator.LIGHT_Y, g.candleFlicker());
-            SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics(), sceneH);
+            SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics(), g.timeSeconds(), sceneH);
         } else {
             // In-Game Puzzle Stage (PLAY, PAUSE, LEVEL_COMPLETE, or in-game SETTINGS)
             drawBackdrop(canvas, g.candleFlicker(), sceneH);
@@ -210,7 +210,7 @@ final class GameRenderer {
             } else if (state == ScreenState.LEVEL_COMPLETE) {
                 LevelCompleteOverlay.draw(canvas, g, g.celebrationReveal(), sceneH);
             } else if (state == ScreenState.SETTINGS) {
-                SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics(), sceneH);
+                SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics(), g.timeSeconds(), sceneH);
             }
         }
 
@@ -261,7 +261,7 @@ final class GameRenderer {
         text.setTextSize(19f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(withAlpha(0xBBFFE0B0, (int) (240 * alpha)));
-        c.drawText("Chapter " + ((g.levelIndex() / 5) + 1) + " • Level " + (g.levelIndex() + 1), cx, y + 24f, text);
+        c.drawText("Chapter " + ((g.levelIndex() / 5) + 1) + " \u2022 Level " + (g.levelIndex() + 1), cx, y + 24f, text);
         text.setTextAlign(Paint.Align.LEFT);
 
         c.restoreToCount(saveBanner);
@@ -321,12 +321,12 @@ final class GameRenderer {
         text.setTypeface(SERIF_BOLD);
         text.setTextSize(17f);
         text.setColor(0xFFFFD54F);
-        c.drawText("✦ TOUCH & DRAG PIECES ON WORKBENCH ✦", cx, cT + 30f, text);
+        c.drawText("\u2726 TOUCH & DRAG PIECES ON WORKBENCH \u2726", cx, cT + 30f, text);
 
         text.setTypeface(SERIF_NORMAL);
         text.setTextSize(15f);
         text.setColor(0xFFFFFDF8);
-        c.drawText("Closer to candle (up) = larger shadow • Twist to rotate", cx, cT + 60f, text);
+        c.drawText("Closer to candle (up) = larger shadow \u2022 Twist to rotate", cx, cT + 60f, text);
         text.setTextAlign(Paint.Align.LEFT);
     }
 
@@ -897,7 +897,7 @@ final class GameRenderer {
                 stroke.setColor(0x77D4AF37);
                 c.drawCircle(s.x, s.y, dialR, stroke);
 
-                // Astrolabe degree notches: 30° intervals with 4 cardinal star diamond nodes
+                // Astrolabe degree notches: 30 deg intervals with 4 cardinal star diamond nodes
                 for (int deg = 0; deg < 360; deg += 30) {
                     float rad = (float) Math.toRadians(deg);
                     boolean isMajor = (deg % 90 == 0);
@@ -1015,9 +1015,9 @@ final class GameRenderer {
         text.setTextSize(16f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
-        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, hudY + 22f + 1.5f, text);
+        c.drawText("Chapter " + chRoman + " \u2022 Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, hudY + 22f + 1.5f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText("Chapter " + chRoman + " • Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, hudY + 22f, text);
+        c.drawText("Chapter " + chRoman + " \u2022 Level " + (g.levelIndex() + 1) + " of " + g.levelCount(), cx, hudY + 22f, text);
 
         // 3. Top-Right: Precision Circular Match Meter aligned with hudY
         drawMatchMeter(c, g, match, hudY);
@@ -1073,7 +1073,7 @@ final class GameRenderer {
         text.setTextSize(16f);
         text.setTypeface(SERIF_BOLD);
         text.setColor(hintOn ? 0xFFFFD54F : 0xCCFFE0A8);
-        c.drawText(hintOn ? "✦ THE ORACLE'S REVELATION ✦" : "✦ THE ORACLE'S GUIDANCE ✦", cx, scT + 28f, text);
+        c.drawText(hintOn ? "\u2726 THE ORACLE'S REVELATION \u2726" : "\u2726 THE ORACLE'S GUIDANCE \u2726", cx, scT + 28f, text);
 
         // Hint Text
         text.setTextSize(21f);

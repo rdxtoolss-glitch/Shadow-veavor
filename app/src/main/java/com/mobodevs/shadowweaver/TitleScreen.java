@@ -239,16 +239,13 @@ public final class TitleScreen {
         draw(c, progress, time, flicker, ShadowCalculator.SCENE_H);
     }
 
-    public static void draw(Canvas c, LevelProgress progress, float time, float flicker, float sceneH) {
-        layout(sceneH);
-
+    public static void drawCelestialBackdrop(Canvas c, float time, float flicker, float sceneH) {
+        ensureEmbers();
         float cx = ShadowCalculator.SCENE_W * 0.5f;
         float sw = ShadowCalculator.SCENE_W;
         float sh = sceneH;
 
-        // ---------------------------------------------------------------------
-        // 1. RICH ATMOSPHERIC CHAMBER GRADIENT (ANTI-BANDING 4-STOP DITHERED)
-        // ---------------------------------------------------------------------
+        // 1. Rich Atmospheric Chamber Gradient (Anti-banding 4-stop dithered)
         fill.setShader(new LinearGradient(0, 0, 0, sh,
                 new int[]{
                         GameRenderer.mix(0xFF381F12, 0xFF4A2B19, flicker), // Luminous amber warmth near flame
@@ -261,10 +258,8 @@ public final class TitleScreen {
         c.drawRect(0, 0, sw, sh, fill);
         fill.setShader(null);
 
-        // ---------------------------------------------------------------------
-        // 2. VOLUMETRIC CANDLELIGHT RADIAL GLOW
-        // ---------------------------------------------------------------------
-        float candleFlameY = cachedCandleY;
+        // 2. Volumetric Candlelight Radial Glow
+        float candleFlameY = (cachedCandleY > 0f) ? cachedCandleY : 120f;
         float rGlow = (520f + 30f * (float) Math.sin(time * 2.2f)) * (0.95f + 0.05f * flicker);
         glow.setShader(new RadialGradient(cx, candleFlameY, rGlow,
                 new int[]{
@@ -278,21 +273,28 @@ public final class TitleScreen {
         c.drawCircle(cx, candleFlameY, rGlow, glow);
         glow.setShader(null);
 
-        // ---------------------------------------------------------------------
-        // 3. SUBTLE DRIFTING AMBIENT SHADOW SILHOUETTES (THEATER OF SHADOWS)
-        // ---------------------------------------------------------------------
+        // 3. Subtle Drifting Ambient Shadow Silhouettes
         drawAmbientShadowSilhouettes(c, time, sw, sh);
 
-        // ---------------------------------------------------------------------
-        // 4. DUAL COUNTER-ROTATING CELESTIAL ASTROLABES & PLANETARY ORBITS
-        // ---------------------------------------------------------------------
-        float astrolabeCy = cachedCandleY + 60f;
+        // 4. Dual Counter-Rotating Celestial Astrolabes & Planetary Orbits
+        float astrolabeCy = candleFlameY + 60f;
         drawCelestialAstrolabes(c, cx, astrolabeCy, time, flicker);
 
-        // ---------------------------------------------------------------------
-        // 5. LIVING FLOATING CANDLELIT DUST MOTES & GOLDEN EMBERS
-        // ---------------------------------------------------------------------
+        // 5. Living Floating Golden Embers
         drawFloatingEmbers(c, time, sh);
+    }
+
+    public static void draw(Canvas c, LevelProgress progress, float time, float flicker, float sceneH) {
+        layout(sceneH);
+
+        float cx = ShadowCalculator.SCENE_W * 0.5f;
+        float sw = ShadowCalculator.SCENE_W;
+        float sh = sceneH;
+
+        // ---------------------------------------------------------------------
+        // 1-5. CELESTIAL ANIMATED BACKDROP
+        // ---------------------------------------------------------------------
+        drawCelestialBackdrop(c, time, flicker, sceneH);
 
         // ---------------------------------------------------------------------
         // 6. LIVING CANDLE AT TOP

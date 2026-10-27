@@ -2,12 +2,14 @@ package com.mobodevs.shadowweaver;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Typeface;
 
 /**
  * Shadow Weaver - PauseOverlay
  * ============================
  * Frosted modal dialog for game pause, restart, settings, and navigation.
+ * Perfectly centered horizontally and vertically with golden-ratio button sizing.
  */
 public final class PauseOverlay {
 
@@ -18,6 +20,7 @@ public final class PauseOverlay {
     private static final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private static final Path path = new Path();
 
     private static Typeface safeTypeface(Typeface family, int style) {
         try {
@@ -53,20 +56,20 @@ public final class PauseOverlay {
         lastSceneH = sceneH;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
-        float cardW = 680f;
-        float cardH = 720f;
+        float cardW = 700f;
+        float cardH = 660f;
         cardL = cx - cardW * 0.5f;
         cardT = (sceneH - cardH) * 0.5f;
         cardR = cardL + cardW;
         cardB = cardT + cardH;
 
-        float btnW = 540f;
-        float btnH = 72f;
+        float btnW = 600f;
+        float btnH = 76f;
         float btnL = cx - btnW * 0.5f;
         float btnR = cx + btnW * 0.5f;
 
-        float startY = cardT + 160f;
-        float gap = 20f;
+        float startY = cardT + 152f;
+        float gap = 16f;
 
         btnResume.setBounds(btnL, startY, btnR, startY + btnH);
         btnResume.isPrimary = true;
@@ -148,7 +151,7 @@ public final class PauseOverlay {
         float cx = sw * 0.5f;
 
         // 1. Dark Modal Scrim
-        fill.setColor(0xCC0E121E);
+        fill.setColor(0xDD080C14);
         c.drawRect(0, 0, sw, sh, fill);
 
         // Emil Kowalski modal entrance: start from scale(0.95) with cubic ease-out
@@ -162,7 +165,7 @@ public final class PauseOverlay {
         c.scale(cardScale, cardScale, cx, (cardT + cardB) * 0.5f);
 
         // 2. Frosted Obsidian-Slate Panel
-        fill.setColor(0xFA1A2234);
+        fill.setColor(0xFA141A28);
         c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, fill);
 
         stroke.setStyle(Paint.Style.STROKE);
@@ -171,26 +174,48 @@ public final class PauseOverlay {
         c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, stroke);
 
         // Specular top highlight
-        stroke.setStrokeWidth(1.2f);
-        stroke.setColor(0x66FFFFFF);
-        c.drawLine(cardL + 24f, cardT + 1.5f, cardR - 24f, cardT + 1.5f, stroke);
+        stroke.setStrokeWidth(1.4f);
+        stroke.setColor(0x55FFFFFF);
+        c.drawLine(cardL + 24f, cardT + 2f, cardR - 24f, cardT + 2f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
+        // Corner filigree brackets
+        drawCornerBrackets(c, cardL, cardT, cardR, cardB);
+
         // 3. Header
+        float headY = cardT + 65f;
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
-        text.setTextSize(42f);
+        text.setTextSize(40f);
         text.setColor(0xDD000000);
-        c.drawText("PAUSED", cx, cardT + 71.5f, text);
+        c.drawText("SANCTUM PAUSED", cx, headY + 2f, text);
         text.setColor(0xFFFFFDF8);
-        c.drawText("PAUSED", cx, cardT + 70f, text);
+        c.drawText("SANCTUM PAUSED", cx, headY, text);
 
-        text.setTextSize(20f);
+        text.setTextSize(18f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
-        c.drawText(g.levelTitle() + " • CHAPTER " + ((g.levelIndex() / 5) + 1), cx, cardT + 111f, text);
+        c.drawText(g.levelTitle() + " \u2022 CHAPTER " + ((g.levelIndex() / 5) + 1), cx, headY + 34f + 1.5f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText(g.levelTitle() + " • CHAPTER " + ((g.levelIndex() / 5) + 1), cx, cardT + 110f, text);
+        c.drawText(g.levelTitle() + " \u2022 CHAPTER " + ((g.levelIndex() / 5) + 1), cx, headY + 34f, text);
+
+        // Ornamental dividing flourish
+        float divY = cardT + 128f;
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(1.8f);
+        stroke.setColor(0x66D4AF37);
+        c.drawLine(cardL + 48f, divY, cx - 18f, divY, stroke);
+        c.drawLine(cx + 18f, divY, cardR - 48f, divY, stroke);
+        stroke.setStyle(Paint.Style.FILL);
+
+        fill.setColor(0xFFFFD54F);
+        path.reset();
+        path.moveTo(cx, divY - 5f);
+        path.lineTo(cx + 5f, divY);
+        path.lineTo(cx, divY + 5f);
+        path.lineTo(cx - 5f, divY);
+        path.close();
+        c.drawPath(path, fill);
 
         // 4. Update Button Labels
         btnResume.label = "RESUME WEAVING";
@@ -202,20 +227,42 @@ public final class PauseOverlay {
         btnChapters.label = "CHAPTER MAP";
         btnChapters.subLabel = "Select another trial";
 
-        btnSettings.label = "SETTINGS";
+        btnSettings.label = "ALCHEMICAL SETTINGS";
         btnSettings.subLabel = "Audio & Haptic preferences";
 
-        btnMainMenu.label = "TITLE SCREEN";
+        btnMainMenu.label = "MAIN MENU";
         btnMainMenu.subLabel = "Return to main entrance";
 
         // 5. Draw Buttons
-        btnResume.draw(c, fill, stroke, text, 1.0f);
-        btnRestart.draw(c, fill, stroke, text, 1.0f);
-        btnChapters.draw(c, fill, stroke, text, 1.0f);
-        btnSettings.draw(c, fill, stroke, text, 1.0f);
-        btnMainMenu.draw(c, fill, stroke, text, 1.0f);
+        float t = g.timeSeconds();
+        btnResume.draw(c, fill, stroke, text, 1.0f, t);
+        btnRestart.draw(c, fill, stroke, text, 1.0f, t);
+        btnChapters.draw(c, fill, stroke, text, 1.0f, t);
+        btnSettings.draw(c, fill, stroke, text, 1.0f, t);
+        btnMainMenu.draw(c, fill, stroke, text, 1.0f, t);
 
         c.restoreToCount(saveCard);
         text.setTextAlign(Paint.Align.LEFT);
+    }
+
+    private static void drawCornerBrackets(Canvas c, float l, float t, float r, float b) {
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2.2f);
+        stroke.setColor(0xFFD4AF37);
+
+        float len = 20f;
+        c.drawLine(l + 10f, t + 10f, l + 10f + len, t + 10f, stroke);
+        c.drawLine(l + 10f, t + 10f, l + 10f, t + 10f + len, stroke);
+
+        c.drawLine(r - 10f, t + 10f, r - 10f - len, t + 10f, stroke);
+        c.drawLine(r - 10f, t + 10f, r - 10f, t + 10f + len, stroke);
+
+        c.drawLine(l + 10f, b - 10f, l + 10f + len, b - 10f, stroke);
+        c.drawLine(l + 10f, b - 10f, l + 10f, b - 10f - len, stroke);
+
+        c.drawLine(r - 10f, b - 10f, r - 10f - len, b - 10f, stroke);
+        c.drawLine(r - 10f, b - 10f, r - 10f, b - 10f - len, stroke);
+
+        stroke.setStyle(Paint.Style.FILL);
     }
 }

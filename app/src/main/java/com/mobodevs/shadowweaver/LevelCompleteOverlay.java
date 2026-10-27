@@ -164,6 +164,9 @@ public final class LevelCompleteOverlay {
         c.drawLine(cardL + 28f, cardT + 1.5f, cardR - 28f, cardT + 1.5f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
+        // Corner filigree brackets
+        drawCornerBrackets(c, cardL, cardT, cardR, cardB, reveal);
+
         // 3. Victory Header
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
@@ -214,9 +217,10 @@ public final class LevelCompleteOverlay {
         btnRetry.label = "RETRY";
         btnSelect.label = "CHAPTER MAP";
 
-        btnNext.draw(c, fill, stroke, text, reveal);
-        btnRetry.draw(c, fill, stroke, text, reveal);
-        btnSelect.draw(c, fill, stroke, text, reveal);
+        float t = g.timeSeconds();
+        btnNext.draw(c, fill, stroke, text, reveal, t);
+        btnRetry.draw(c, fill, stroke, text, reveal, t);
+        btnSelect.draw(c, fill, stroke, text, reveal, t);
 
         c.restoreToCount(save);
         text.setTextAlign(Paint.Align.LEFT);
@@ -288,8 +292,29 @@ public final class LevelCompleteOverlay {
         text.setTextAlign(Paint.Align.RIGHT);
         text.setTypeface(SERIF_BOLD);
         text.setColor(withAlpha(achieved ? 0xFFFFD54F : 0x778090A0, (int) (255 * alpha)));
-        String mark = achieved ? " [⭐ OK]" : " [--]";
+        String mark = achieved ? " [\u2605 OK]" : " [--]";
         c.drawText(value + mark, r, y, text);
+    }
+
+    private static void drawCornerBrackets(Canvas c, float l, float t, float r, float b, float reveal) {
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2.2f);
+        stroke.setColor(withAlpha(0xFFD4AF37, (int) (240 * reveal)));
+
+        float len = 22f;
+        c.drawLine(l + 12f, t + 12f, l + 12f + len, t + 12f, stroke);
+        c.drawLine(l + 12f, t + 12f, l + 12f, t + 12f + len, stroke);
+
+        c.drawLine(r - 12f, t + 12f, r - 12f - len, t + 12f, stroke);
+        c.drawLine(r - 12f, t + 12f, r - 12f, t + 12f + len, stroke);
+
+        c.drawLine(l + 12f, b - 12f, l + 12f + len, b - 12f, stroke);
+        c.drawLine(l + 12f, b - 12f, l + 12f, b - 12f - len, stroke);
+
+        c.drawLine(r - 12f, b - 12f, r - 12f - len, b - 12f, stroke);
+        c.drawLine(r - 12f, b - 12f, r - 12f, b - 12f - len, stroke);
+
+        stroke.setStyle(Paint.Style.FILL);
     }
 
     private static String formatTime(long ms) {
