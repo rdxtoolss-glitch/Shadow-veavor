@@ -209,6 +209,7 @@ final class GameRenderer {
                 PauseOverlay.draw(canvas, g, sceneH);
             } else if (state == ScreenState.LEVEL_COMPLETE) {
                 LevelCompleteOverlay.draw(canvas, g, g.celebrationReveal(), sceneH);
+                g.particles().drawSparks(canvas, fill);
             } else if (state == ScreenState.SETTINGS) {
                 SettingsOverlay.draw(canvas, g.progress(), g.audio(), g.haptics(), g.timeSeconds(), sceneH);
             }

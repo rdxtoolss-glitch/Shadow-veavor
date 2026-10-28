@@ -67,6 +67,21 @@ public class HapticManager {
     }
 
     /**
+     * Firm, rewarding magnetic snap impulse when locking a shape into place.
+     */
+    public void snap() {
+        if (!enabled || vibrator == null || !vibrator.hasVibrator()) return;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(26, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(26);
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /**
      * Celebratory rhythmic pulse sequence on completing a level.
      */
     public void victory() {

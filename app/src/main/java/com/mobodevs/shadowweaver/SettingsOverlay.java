@@ -163,7 +163,7 @@ public final class SettingsOverlay {
                     progress.setSoundMuted(muted);
                     if (context != null) progress.save(context);
                 }
-                if (audio != null) audio.setMuted(muted);
+                if (audio != null) { audio.setMuted(muted); if (!muted) { audio.playSnap(); } }
                 act = Action.TOGGLE_SOUND;
             } else if (btnHaptics.isPressed && btnHaptics.hitTest(sx, sy)) {
                 boolean enabled = (progress != null) ? !progress.isHapticsEnabled() : true;
@@ -335,7 +335,10 @@ public final class SettingsOverlay {
             text.setTextSize(15f);
             text.setTypeface(SERIF_NORMAL);
             text.setColor(0x88FFE0A8);
-            c.drawText("SHADOW WEAVER \u2022 ALCHEMICAL MASTER EDITION v1.0.0", cx, cardT + 494f, text);
+            c.drawText("SHADOW WEAVER \u2022 v2.0 PRODUCTION EDITION", cx, cardT + 486f, text);
+            text.setTextSize(13f);
+            text.setColor(0x77FFE0A8);
+            c.drawText("Vector Icons: game-icons.net (CC BY 3.0) \u2022 Pure Java Engine", cx, cardT + 510f, text);
 
             stroke.setStyle(Paint.Style.STROKE);
             stroke.setStrokeWidth(1.2f);
