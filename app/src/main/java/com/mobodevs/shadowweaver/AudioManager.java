@@ -1,10 +1,7 @@
 package com.mobodevs.shadowweaver;
 
-import android.content.Context;
 import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
 import android.media.AudioFormat;
-import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioTrack;
 import android.os.Build;
 import android.util.Log;
@@ -15,18 +12,9 @@ import android.util.Log;
  * Pure procedural audio engine synthesized mathematically in code.
  * Zero external audio assets, zero native dependencies, zero latency.
  *
- * Provides:
- *  - Soothing, warm alchemical candle drone with phone-speaker-optimized harmonics (220-660 Hz).
- *  - Tactile UI click for all buttons and tabs (dual-voice alternating).
- *  - Shape pickup (rising warm lift tone).
- *  - Shape drop (wooden desk thud).
- *  - Magnetic snap assist (radiant dual bell lock).
- *  - Angle detent tick (crisp micro-click).
- *  - Silhouette match chimes (Tibetan singing bowls at 33%, 66%, 100%).
- *  - Puzzle solved celebration fanfare (ascending celestial chord).
- *  - Android AudioFocus lifecycle management.
+ * Fully compatible with all Android API levels from API 21 (Lollipop) through API 36+.
  */
-public class AudioManager implements OnAudioFocusChangeListener {
+public class AudioManager {
 
     private static final String TAG = "ShadowWeaverAudio";
 
@@ -51,20 +39,11 @@ public class AudioManager implements OnAudioFocusChangeListener {
     private final Object lock = new Object();
 
     private AudioTrack ambientTrack;
-
-    // Dual-voice tracks for rapid, non-blocking UI interactions
-    private AudioTrack clickTrack0;
-    private AudioTrack clickTrack1;
-    private int clickVoiceIdx = 0;
-
-    private AudioTrack tickTrack0;
-    private AudioTrack tickTrack1;
-    private int tickVoiceIdx = 0;
-
+    private AudioTrack clickTrack;
+    private AudioTrack tickTrack;
     private AudioTrack pickupTrack;
     private AudioTrack dropTrack;
     private AudioTrack snapTrack;
-
     private AudioTrack chimeHalfTrack;
     private AudioTrack chimeGoodTrack;
     private AudioTrack chimeDoneTrack;
@@ -74,11 +53,6 @@ public class AudioManager implements OnAudioFocusChangeListener {
     private volatile boolean released;
     private volatile boolean muted;
     private volatile boolean started;
-    private volatile boolean hasAudioFocus = true;
-
-    // Audio focus tracking
-    private android.media.AudioManager systemAudioManager;
-    private AudioFocusRequest audioFocusRequest;
 
     // Cached PCM buffers (shared across instances, precomputed once)
     private static short[] ambientBuffer;
@@ -96,28 +70,15 @@ public class AudioManager implements OnAudioFocusChangeListener {
     // LIFECYCLE
     // ======================================================================
 
-    public void initSystemAudio(Context context) {
-        if (context != null) {
-            try {
-                systemAudioManager = (android.media.AudioManager) context.getApplicationContext()
-                        .getSystemService(Context.AUDIO_SERVICE);
-            } catch (Throwable t) {
-                Log.w(TAG, "Failed to get system AudioManager", t);
-            }
-        }
-    }
-
     public void start() {
         if (released || started) return;
         started = true;
-
-        requestAudioFocus();
 
         prepareThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    initAllAudioTracks();
+                    initCoreAudioTracks();
                 } catch (Throwable t) {
                     Log.w(TAG, "Audio synthesis thread error", t);
                 }
@@ -127,41 +88,23 @@ public class AudioManager implements OnAudioFocusChangeListener {
         prepareThread.start();
     }
 
-    private void initAllAudioTracks() {
-        // 1. Synthesize all mathematical sound buffers
-        if (clickBuffer == null) clickBuffer = buildClickBuffer();
-        if (pickupBuffer == null) pickupBuffer = buildPickupBuffer();
-        if (dropBuffer == null) dropBuffer = buildDropBuffer();
-        if (tickBuffer == null) tickBuffer = buildTickBuffer();
-        if (snapBuffer == null) snapBuffer = buildSnapBuffer();
-        if (chimeHalfBuffer == null) chimeHalfBuffer = buildChimeBuffer(392.00f, 0.70f); // G4
-        if (chimeGoodBuffer == null) chimeGoodBuffer = buildChimeBuffer(523.25f, 0.78f); // C5
-        if (chimeDoneBuffer == null) chimeDoneBuffer = buildChimeBuffer(659.25f, 0.85f); // E5
-        if (celebrationBuffer == null) celebrationBuffer = buildCelebrationBuffer();
+    /**
+     * Initializes core tracks needed on launch (ambient drone, UI click, rotary tick).
+     * Other tracks are lazily built on-demand to minimize startup overhead.
+     */
+    private void initCoreAudioTracks() {
         if (ambientBuffer == null) ambientBuffer = buildAmbientBuffer();
+        if (clickBuffer == null) clickBuffer = buildClickBuffer();
+        if (tickBuffer == null) tickBuffer = buildTickBuffer();
 
         if (released) return;
 
         synchronized (lock) {
             if (released) return;
 
-            // 2. Build AudioTracks with exact buffer sizes (MODE_STATIC)
-            if (clickTrack0 == null) clickTrack0 = buildStaticTrack(clickBuffer, CHIME_RATE);
-            if (clickTrack1 == null) clickTrack1 = buildStaticTrack(clickBuffer, CHIME_RATE);
+            if (clickTrack == null) clickTrack = buildStaticTrack(clickBuffer, CHIME_RATE);
+            if (tickTrack == null) tickTrack = buildStaticTrack(tickBuffer, CHIME_RATE);
 
-            if (tickTrack0 == null) tickTrack0 = buildStaticTrack(tickBuffer, CHIME_RATE);
-            if (tickTrack1 == null) tickTrack1 = buildStaticTrack(tickBuffer, CHIME_RATE);
-
-            if (pickupTrack == null) pickupTrack = buildStaticTrack(pickupBuffer, CHIME_RATE);
-            if (dropTrack == null) dropTrack = buildStaticTrack(dropBuffer, CHIME_RATE);
-            if (snapTrack == null) snapTrack = buildStaticTrack(snapBuffer, CHIME_RATE);
-
-            if (chimeHalfTrack == null) chimeHalfTrack = buildStaticTrack(chimeHalfBuffer, CHIME_RATE);
-            if (chimeGoodTrack == null) chimeGoodTrack = buildStaticTrack(chimeGoodBuffer, CHIME_RATE);
-            if (chimeDoneTrack == null) chimeDoneTrack = buildStaticTrack(chimeDoneBuffer, CHIME_RATE);
-            if (celebrationTrack == null) celebrationTrack = buildStaticTrack(celebrationBuffer, CHIME_RATE);
-
-            // 3. Build and launch Ambient Looping Track
             if (ambientTrack == null) {
                 ambientTrack = buildLoopingTrack(ambientBuffer, SAMPLE_RATE);
                 applyVolume();
@@ -181,11 +124,9 @@ public class AudioManager implements OnAudioFocusChangeListener {
                 }
             }
         }
-        abandonAudioFocus();
     }
 
     public void resume() {
-        requestAudioFocus();
         synchronized (lock) {
             if (released) return;
             if (!started) {
@@ -194,7 +135,7 @@ public class AudioManager implements OnAudioFocusChangeListener {
             }
             if (ambientTrack != null) {
                 try {
-                    if (!muted && hasAudioFocus) {
+                    if (!muted) {
                         float v = masterVolume * AMBIENT_GAIN;
                         setTrackVolume(ambientTrack, v);
                         if (ambientTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
@@ -211,13 +152,10 @@ public class AudioManager implements OnAudioFocusChangeListener {
     public void release() {
         released = true;
         started = false;
-        abandonAudioFocus();
         synchronized (lock) {
             safeReleaseTrack(ambientTrack); ambientTrack = null;
-            safeReleaseTrack(clickTrack0); clickTrack0 = null;
-            safeReleaseTrack(clickTrack1); clickTrack1 = null;
-            safeReleaseTrack(tickTrack0); tickTrack0 = null;
-            safeReleaseTrack(tickTrack1); tickTrack1 = null;
+            safeReleaseTrack(clickTrack); clickTrack = null;
+            safeReleaseTrack(tickTrack); tickTrack = null;
             safeReleaseTrack(pickupTrack); pickupTrack = null;
             safeReleaseTrack(dropTrack); dropTrack = null;
             safeReleaseTrack(snapTrack); snapTrack = null;
@@ -237,75 +175,6 @@ public class AudioManager implements OnAudioFocusChangeListener {
                 t.release();
             } catch (Throwable ignored) {
             }
-        }
-    }
-
-    // ======================================================================
-    // AUDIO FOCUS MANAGEMENT
-    // ======================================================================
-
-    private void requestAudioFocus() {
-        if (systemAudioManager == null) return;
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                if (audioFocusRequest == null) {
-                    AudioAttributes attrs = new AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_GAME)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .build();
-                    audioFocusRequest = new AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN)
-                            .setAudioAttributes(attrs)
-                            .setOnAudioFocusChangeListener(this)
-                            .build();
-                }
-                int res = systemAudioManager.requestAudioFocus(audioFocusRequest);
-                hasAudioFocus = (res == android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
-            } else {
-                @SuppressWarnings("deprecation")
-                int res = systemAudioManager.requestAudioFocus(this,
-                        android.media.AudioManager.STREAM_MUSIC,
-                        android.media.AudioManager.AUDIOFOCUS_GAIN);
-                hasAudioFocus = (res == android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
-            }
-        } catch (Throwable t) {
-            Log.w(TAG, "requestAudioFocus failed", t);
-            hasAudioFocus = true; // Fallback to allowing audio
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void abandonAudioFocus() {
-        if (systemAudioManager == null) return;
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && audioFocusRequest != null) {
-                systemAudioManager.abandonAudioFocusRequest(audioFocusRequest);
-            } else {
-                systemAudioManager.abandonAudioFocus(this);
-            }
-        } catch (Throwable ignored) {
-        }
-    }
-
-    @Override
-    public void onAudioFocusChange(int focusChange) {
-        switch (focusChange) {
-            case android.media.AudioManager.AUDIOFOCUS_LOSS:
-            case android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                hasAudioFocus = false;
-                pause();
-                break;
-            case android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                // Lower ambient volume
-                synchronized (lock) {
-                    if (ambientTrack != null && !muted) {
-                        setTrackVolume(ambientTrack, masterVolume * AMBIENT_GAIN * 0.3f);
-                    }
-                }
-                break;
-            case android.media.AudioManager.AUDIOFOCUS_GAIN:
-                hasAudioFocus = true;
-                resume();
-                break;
         }
     }
 
@@ -335,9 +204,9 @@ public class AudioManager implements OnAudioFocusChangeListener {
     private void applyVolume() {
         if (ambientTrack == null) return;
         try {
-            float v = (muted || !hasAudioFocus) ? 0f : masterVolume * AMBIENT_GAIN;
+            float v = muted ? 0f : masterVolume * AMBIENT_GAIN;
             setTrackVolume(ambientTrack, v);
-            if (!muted && hasAudioFocus && ambientTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
+            if (!muted && ambientTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
                 ambientTrack.play();
             }
         } catch (Throwable ignored) {
@@ -369,13 +238,12 @@ public class AudioManager implements OnAudioFocusChangeListener {
     }
 
     // ======================================================================
-    // PLAYBACK METHODS (BULLETPROOF STATIC REPLAY WITH HEAD REWIND)
+    // PLAYBACK METHODS (SAFE STATIC REPLAY WITH HEAD REWIND)
     // ======================================================================
 
     private void playTrack(AudioTrack track, float gain) {
-        if (released || muted || track == null || !hasAudioFocus) return;
+        if (released || muted || track == null) return;
         try {
-            // Android AudioTrack MODE_STATIC replay lifecycle
             if (track.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
                 track.pause();
                 track.flush();
@@ -391,20 +259,16 @@ public class AudioManager implements OnAudioFocusChangeListener {
     }
 
     /**
-     * Tactile UI button click (dual-voice alternating for rapid tapping).
+     * Tactile UI button click.
      */
     public void playClick() {
         if (released || muted) return;
         synchronized (lock) {
-            AudioTrack target = (clickVoiceIdx == 0) ? clickTrack0 : clickTrack1;
-            clickVoiceIdx = 1 - clickVoiceIdx;
-            if (target == null) {
+            if (clickTrack == null) {
                 if (clickBuffer == null) clickBuffer = buildClickBuffer();
-                target = buildStaticTrack(clickBuffer, CHIME_RATE);
-                if (clickVoiceIdx == 1) clickTrack0 = target;
-                else clickTrack1 = target;
+                clickTrack = buildStaticTrack(clickBuffer, CHIME_RATE);
             }
-            playTrack(target, 0.75f);
+            playTrack(clickTrack, 0.75f);
         }
     }
 
@@ -437,20 +301,16 @@ public class AudioManager implements OnAudioFocusChangeListener {
     }
 
     /**
-     * Rotation detent tick (dual-voice alternating).
+     * Rotation detent tick.
      */
     public void playTick() {
         if (released || muted) return;
         synchronized (lock) {
-            AudioTrack target = (tickVoiceIdx == 0) ? tickTrack0 : tickTrack1;
-            tickVoiceIdx = 1 - tickVoiceIdx;
-            if (target == null) {
+            if (tickTrack == null) {
                 if (tickBuffer == null) tickBuffer = buildTickBuffer();
-                target = buildStaticTrack(tickBuffer, CHIME_RATE);
-                if (tickVoiceIdx == 1) tickTrack0 = target;
-                else tickTrack1 = target;
+                tickTrack = buildStaticTrack(tickBuffer, CHIME_RATE);
             }
-            playTrack(target, 0.60f);
+            playTrack(tickTrack, 0.60f);
         }
     }
 
@@ -521,14 +381,22 @@ public class AudioManager implements OnAudioFocusChangeListener {
     }
 
     // ======================================================================
-    // TRACK BUILDERS (EXACT BUFFER SIZING & OPTIMAL AUDIO ATTRIBUTES)
+    // TRACK BUILDERS (DEVICE-COMPATIBLE BUFFER SIZING & ZERO PADDING)
     // ======================================================================
 
     private static AudioTrack buildLoopingTrack(short[] pcm, int sampleRate) {
         if (pcm == null || pcm.length == 0) return null;
         int channelConfig = AudioFormat.CHANNEL_OUT_MONO;
         int encoding = AudioFormat.ENCODING_PCM_16BIT;
-        int trackBytes = pcm.length * 2; // EXACT size in bytes for MODE_STATIC
+        int minBuf = AudioTrack.getMinBufferSize(sampleRate, channelConfig, encoding);
+        int trackBytes = Math.max(minBuf, pcm.length * 2);
+
+        short[] dataToWrite = pcm;
+        if (trackBytes > pcm.length * 2) {
+            int targetShorts = trackBytes / 2;
+            dataToWrite = new short[targetShorts];
+            System.arraycopy(pcm, 0, dataToWrite, 0, pcm.length);
+        }
 
         AudioTrack t = null;
         try {
@@ -560,7 +428,7 @@ public class AudioManager implements OnAudioFocusChangeListener {
                 return null;
             }
 
-            t.write(pcm, 0, pcm.length);
+            t.write(dataToWrite, 0, dataToWrite.length);
             t.setPlaybackHeadPosition(0);
             t.setLoopPoints(0, pcm.length, -1);
             t.play();
@@ -578,7 +446,15 @@ public class AudioManager implements OnAudioFocusChangeListener {
         if (pcm == null || pcm.length == 0) return null;
         int channelConfig = AudioFormat.CHANNEL_OUT_MONO;
         int encoding = AudioFormat.ENCODING_PCM_16BIT;
-        int trackBytes = pcm.length * 2; // EXACT size in bytes for MODE_STATIC
+        int minBuf = AudioTrack.getMinBufferSize(sampleRate, channelConfig, encoding);
+        int trackBytes = Math.max(minBuf, pcm.length * 2);
+
+        short[] dataToWrite = pcm;
+        if (trackBytes > pcm.length * 2) {
+            int targetShorts = trackBytes / 2;
+            dataToWrite = new short[targetShorts];
+            System.arraycopy(pcm, 0, dataToWrite, 0, pcm.length);
+        }
 
         AudioTrack t = null;
         try {
@@ -610,7 +486,7 @@ public class AudioManager implements OnAudioFocusChangeListener {
                 return null;
             }
 
-            t.write(pcm, 0, pcm.length);
+            t.write(dataToWrite, 0, dataToWrite.length);
             return t;
         } catch (Throwable t2) {
             Log.w(TAG, "buildStaticTrack failed", t2);
@@ -656,7 +532,7 @@ public class AudioManager implements OnAudioFocusChangeListener {
             float t = i / (float) CHIME_RATE;
             float hz = 420f + 200f * (t / duration);
             double w = 2.0 * Math.PI * hz / CHIME_RATE;
-            float env = (float) Math.sin(Math.PI * (t / duration)); // Smooth bell envelope
+            float env = (float) Math.sin(Math.PI * (t / duration));
             float s = (float) (Math.sin(phase) * env);
             phase += w;
             pcm[i] = (short) (s * Short.MAX_VALUE * 0.75f);
@@ -685,7 +561,7 @@ public class AudioManager implements OnAudioFocusChangeListener {
     }
 
     /**
-     * Rotation detent tick: High crisp 12ms micro-click (1600 Hz).
+     * Rotation detent tick: High crisp 16ms micro-click (1600 Hz).
      */
     private static short[] buildTickBuffer() {
         final float duration = 0.016f;
@@ -767,7 +643,7 @@ public class AudioManager implements OnAudioFocusChangeListener {
         final int n = (int) (duration * CHIME_RATE);
         final float[] out = new float[n];
 
-        float[] notes = {523.25f, 659.25f, 783.99f, 1046.50f}; // C5, E5, G5, C6
+        float[] notes = {523.25f, 659.25f, 783.99f, 1046.50f};
         float[] startTimes = {0.0f, 0.18f, 0.36f, 0.54f};
         float[] ratios = {1.0f, 2.0f, 3.0f};
         float[] amps = {1.0f, 0.40f, 0.18f};
