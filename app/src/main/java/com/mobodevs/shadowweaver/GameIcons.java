@@ -127,34 +127,56 @@ public final class GameIcons {
     // ======================================================================
     // PRE-PARSED STATIC PATH OBJECTS (ZERO RUNTIME ALLOCATION)
     // ======================================================================
-    public static final Path PATH_PAUSE = PathParser.createPathFromPathData(D_UI_PAUSE);
-    public static final Path PATH_HINT = PathParser.createPathFromPathData(D_UI_HINT);
-    public static final Path PATH_RESET = PathParser.createPathFromPathData(D_UI_RESET);
-    public static final Path PATH_PADLOCK = PathParser.createPathFromPathData(D_UI_PADLOCK);
-    public static final Path PATH_SOUND_ON = PathParser.createPathFromPathData(D_UI_SOUND_ON);
-    public static final Path PATH_SOUND_OFF = PathParser.createPathFromPathData(D_UI_SOUND_OFF);
-    public static final Path PATH_HAPTICS = PathParser.createPathFromPathData(D_UI_HAPTICS);
-    public static final Path PATH_SETTINGS = PathParser.createPathFromPathData(D_UI_SETTINGS);
-    public static final Path PATH_BOOK = PathParser.createPathFromPathData(D_UI_BOOK);
-    public static final Path PATH_STAR = PathParser.createPathFromPathData(D_UI_STAR);
-    public static final Path PATH_TROPHY = PathParser.createPathFromPathData(D_UI_TROPHY);
+    private static Path safePath(String d) {
+        try {
+            Path p = PathParser.createPathFromPathData(d);
+            return (p != null) ? p : new Path();
+        } catch (Throwable t) {
+            return new Path();
+        }
+    }
+
+    private static void drawFallbackDiamond(Canvas c, float cx, float cy, float r, int color) {
+        Paint pnt = new Paint(Paint.ANTI_ALIAS_FLAG);
+        pnt.setStyle(Paint.Style.FILL);
+        pnt.setColor(color);
+        Path d = new Path();
+        d.moveTo(cx, cy - r);
+        d.lineTo(cx + r, cy);
+        d.lineTo(cx, cy + r);
+        d.lineTo(cx - r, cy);
+        d.close();
+        c.drawPath(d, pnt);
+    }
+
+    public static final Path PATH_PAUSE = safePath(D_UI_PAUSE);
+    public static final Path PATH_HINT = safePath(D_UI_HINT);
+    public static final Path PATH_RESET = safePath(D_UI_RESET);
+    public static final Path PATH_PADLOCK = safePath(D_UI_PADLOCK);
+    public static final Path PATH_SOUND_ON = safePath(D_UI_SOUND_ON);
+    public static final Path PATH_SOUND_OFF = safePath(D_UI_SOUND_OFF);
+    public static final Path PATH_HAPTICS = safePath(D_UI_HAPTICS);
+    public static final Path PATH_SETTINGS = safePath(D_UI_SETTINGS);
+    public static final Path PATH_BOOK = safePath(D_UI_BOOK);
+    public static final Path PATH_STAR = safePath(D_UI_STAR);
+    public static final Path PATH_TROPHY = safePath(D_UI_TROPHY);
 
     public static final Path[] RELIC_PATHS = new Path[] {
-            PathParser.createPathFromPathData(D_RELIC_0_HOUSE),
-            PathParser.createPathFromPathData(D_RELIC_1_TREE),
-            PathParser.createPathFromPathData(D_RELIC_2_BEACON),
-            PathParser.createPathFromPathData(D_RELIC_3_ARROW),
-            PathParser.createPathFromPathData(D_RELIC_4_FISH),
-            PathParser.createPathFromPathData(D_RELIC_5_GALLEON),
-            PathParser.createPathFromPathData(D_RELIC_6_CAT),
-            PathParser.createPathFromPathData(D_RELIC_7_BIRD),
-            PathParser.createPathFromPathData(D_RELIC_8_BUTTERFLY),
-            PathParser.createPathFromPathData(D_RELIC_9_FLOWER),
-            PathParser.createPathFromPathData(D_RELIC_10_CANDLE),
-            PathParser.createPathFromPathData(D_RELIC_11_KEY),
-            PathParser.createPathFromPathData(D_RELIC_12_ROBE),
-            PathParser.createPathFromPathData(D_RELIC_13_PEAKS),
-            PathParser.createPathFromPathData(D_RELIC_14_ASTROLABE),
+            safePath(D_RELIC_0_HOUSE),
+            safePath(D_RELIC_1_TREE),
+            safePath(D_RELIC_2_BEACON),
+            safePath(D_RELIC_3_ARROW),
+            safePath(D_RELIC_4_FISH),
+            safePath(D_RELIC_5_GALLEON),
+            safePath(D_RELIC_6_CAT),
+            safePath(D_RELIC_7_BIRD),
+            safePath(D_RELIC_8_BUTTERFLY),
+            safePath(D_RELIC_9_FLOWER),
+            safePath(D_RELIC_10_CANDLE),
+            safePath(D_RELIC_11_KEY),
+            safePath(D_RELIC_12_ROBE),
+            safePath(D_RELIC_13_PEAKS),
+            safePath(D_RELIC_14_ASTROLABE),
     };
 
     // ======================================================================
@@ -165,7 +187,10 @@ public final class GameIcons {
      * Draw any 512x512 game-icons.net vector path at (cx, cy) scaled to radius r.
      */
     public static void drawIcon(Canvas c, Path p, float cx, float cy, float r, int color) {
-        if (p == null) return;
+        if (p == null || p.isEmpty()) {
+            drawFallbackDiamond(c, cx, cy, r * 0.7f, color);
+            return;
+        }
         int save = c.save();
         c.translate(cx, cy);
         float s = (r * 2f) / 512f;
@@ -182,7 +207,11 @@ public final class GameIcons {
      * Draw any 512x512 game-icons.net vector path with custom paint.
      */
     public static void drawIcon(Canvas c, Path p, float cx, float cy, float r, Paint fill) {
-        if (p == null) return;
+        if (p == null || p.isEmpty()) {
+            int color = (fill != null) ? fill.getColor() : 0xFFFFD54F;
+            drawFallbackDiamond(c, cx, cy, r * 0.7f, color);
+            return;
+        }
         int save = c.save();
         c.translate(cx, cy);
         float s = (r * 2f) / 512f;

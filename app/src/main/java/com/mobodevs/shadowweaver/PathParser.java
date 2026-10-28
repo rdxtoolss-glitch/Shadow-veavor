@@ -33,12 +33,15 @@ public class PathParser {
      */
     public static Path createPathFromPathData(String pathData) {
         Path path = new Path();
-        PathDataNode[] nodes = createNodesFromPathData(pathData);
-        if (nodes != null) {
-            PathDataNode.nodesToPath(nodes, path);
-            return path;
+        try {
+            PathDataNode[] nodes = createNodesFromPathData(pathData);
+            if (nodes != null) {
+                PathDataNode.nodesToPath(nodes, path);
+            }
+        } catch (Throwable t) {
+            Log.e(LOGTAG, "Failed to create path: " + t.getMessage());
         }
-        return null;
+        return path;
     }
 
     /**
@@ -126,10 +129,10 @@ public class PathParser {
 
     private static int nextStart(String s, int end) {
         char c;
-
         while (end < s.length()) {
             c = s.charAt(end);
-            if (((c - 'A') * (c - 'Z') <= 0) || (((c - 'a') * (c - 'z') <= 0))) {
+            if (((c - 'A') * (c - 'Z') <= 0 || (c - 'a') * (c - 'z') <= 0)
+                    && c != 'e' && c != 'E') {
                 return end;
             }
             end++;
@@ -156,7 +159,7 @@ public class PathParser {
      * @return array of floats
      */
     private static float[] getFloats(String s) {
-        if (s.charAt(0) == 'z' | s.charAt(0) == 'Z') {
+        if (s.charAt(0) == 'z' || s.charAt(0) == 'Z') {
             return new float[0];
         }
         try {
@@ -168,9 +171,6 @@ public class PathParser {
             ExtractFloatResult result = new ExtractFloatResult();
             int totalLength = s.length();
 
-            // The startPosition should always be the first character of the
-            // current number, and endPosition is the character after the current
-            // number.
             while (startPosition < totalLength) {
                 extract(s, startPosition, result);
                 endPosition = result.mEndPosition;
@@ -181,33 +181,32 @@ public class PathParser {
                 }
 
                 if (result.mEndWithNegSign) {
-                    // Keep the '-' sign with next number.
+                    // Keep the '-' or second '.' with next number.
                     startPosition = endPosition;
                 } else {
                     startPosition = endPosition + 1;
                 }
             }
             return Arrays.copyOf(results, count);
-        } catch (NumberFormatException e) {
-            Log.e(LOGTAG, "error in parsing \"" + s + "\"");
-            throw e;
+        } catch (Throwable e) {
+            Log.e(LOGTAG, "error in parsing \"" + s + "\": " + e.getMessage());
+            return new float[0];
         }
     }
 
     /**
-     * Calculate the position of the next comma or space or negative sign
-     *
-     * @param s      the string to search
-     * @param start  the position to start searching
-     * @param result the result of the extraction, including the position of the
-     *               the starting position of next number, whether it is ending with a '-'.
+     * Calculate the position of the next comma, space, negative sign, or second decimal dot.
      */
     private static void extract(String s, int start, ExtractFloatResult result) {
-        // Now looking for ' ', ',' or '-' from the start.
         int currentIndex = start;
         boolean foundSeparator = false;
+        boolean isExponential = false;
+        boolean isFirstDot = false;
         result.mEndWithNegSign = false;
+
         for (; currentIndex < s.length(); currentIndex++) {
+            boolean isPrevExponential = isExponential;
+            isExponential = false;
             char currentChar = s.charAt(currentIndex);
             switch (currentChar) {
                 case ' ':
@@ -215,18 +214,28 @@ public class PathParser {
                     foundSeparator = true;
                     break;
                 case '-':
-                    if (currentIndex != start) {
+                    if (currentIndex != start && !isPrevExponential) {
                         foundSeparator = true;
                         result.mEndWithNegSign = true;
                     }
+                    break;
+                case '.':
+                    if (!isFirstDot) {
+                        isFirstDot = true;
+                    } else {
+                        foundSeparator = true;
+                        result.mEndWithNegSign = true; // Keep second dot for the next number
+                    }
+                    break;
+                case 'e':
+                case 'E':
+                    isExponential = true;
                     break;
             }
             if (foundSeparator) {
                 break;
             }
         }
-        // When there is nothing found, then we put the end position to the end
-        // of the string.
         result.mEndPosition = currentIndex;
     }
 
