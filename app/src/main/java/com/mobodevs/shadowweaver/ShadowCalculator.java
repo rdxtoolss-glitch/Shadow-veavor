@@ -230,7 +230,7 @@ public final class ShadowCalculator {
     // exact (see solveStagePositionFor).
     // ------------------------------------------------------------------
 
-    public static float rakeStrength = 1f;
+    public static float rakeStrength = 0f;
 
     /** Scene units of sideways shear per unit of caster height. */
     private static final float RAKE_REACH = 70f;

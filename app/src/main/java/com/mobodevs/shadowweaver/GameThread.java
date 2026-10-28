@@ -830,16 +830,12 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
 
     private void moveDrag(float x, float y) {
         ShapeObject s = shapes[selected];
-        float prevX = s.x;
-        float prevY = s.y;
         float nx = ShadowCalculator.dampStageX(x + dragGrabDX);
         float ny = ShadowCalculator.dampStageY(y + dragGrabDY);
         s.targetX = nx;
         s.targetY = ny;
-        s.x = nx;
-        s.y = ny;
-        float dx = nx - prevX;
-        float dy = ny - prevY;
+        float dx = nx - s.x;
+        float dy = ny - s.y;
         s.vx = s.vx * 0.35f + (dx / 0.016f) * 0.65f;
         s.vy = s.vy * 0.35f + (dy / 0.016f) * 0.65f;
         s.isDragging = true;

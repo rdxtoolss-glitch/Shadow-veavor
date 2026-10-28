@@ -157,23 +157,20 @@ public class ShapeObject {
         if (dt > 0.05f) dt = 0.05f; // cap physics dt to prevent tunnelling
 
         if (isDragging) {
-            // Direct 1:1 instant tracking under finger with ZERO lag
-            x = targetX;
-            y = targetY;
-            // Velocity decay when held stationary under finger
+            // Silky-smooth responsive tracking towards finger position (zero jitter, zero lag)
+            float smooth = 1f - (float) Math.exp(-dt * 45f);
+            x += (targetX - x) * smooth;
+            y += (targetY - y) * smooth;
             vx *= (float) Math.pow(0.01f, dt);
             vy *= (float) Math.pow(0.01f, dt);
-            // Pseudo-3D tilt from velocity for subtle dynamic response
-            float desiredTiltX = -vy * 0.035f;
-            float desiredTiltY = vx * 0.035f;
-            tiltX += (desiredTiltX - tiltX) * Math.min(1.0f, dt * 20f);
-            tiltY += (desiredTiltY - tiltY) * Math.min(1.0f, dt * 20f);
+            tiltX = 0f;
+            tiltY = 0f;
         } else if (isSnapping) {
             // Smooth magnetic snap convergence to target
             float dx = targetX - x;
             float dy = targetY - y;
-            float k = 280f;
-            float c = 28f;
+            float k = 320f;
+            float c = 32f;
             float fx = k * dx - c * vx;
             float fy = k * dy - c * vy;
             vx += (fx / mass) * dt;
@@ -181,15 +178,15 @@ public class ShapeObject {
             x += vx * dt;
             y += vy * dt;
 
-            if (Math.abs(dx) < 0.2f && Math.abs(dy) < 0.2f && Math.abs(vx) < 0.5f && Math.abs(vy) < 0.5f) {
+            if (Math.abs(dx) < 0.1f && Math.abs(dy) < 0.1f && Math.abs(vx) < 0.5f && Math.abs(vy) < 0.5f) {
                 x = targetX;
                 y = targetY;
                 vx = 0f;
                 vy = 0f;
                 isSnapping = false;
             }
-            tiltX *= (float) Math.pow(0.05f, dt);
-            tiltY *= (float) Math.pow(0.05f, dt);
+            tiltX = 0f;
+            tiltY = 0f;
         } else {
             // Inertial glide with exponential surface friction
             x += vx * dt;
@@ -197,15 +194,15 @@ public class ShapeObject {
             float friction = (float) Math.pow(0.005f, dt);
             vx *= friction;
             vy *= friction;
-            if (Math.abs(vx) < 0.5f) vx = 0f;
-            if (Math.abs(vy) < 0.5f) vy = 0f;
-
-            // Tilt relaxes to zero
-            tiltX *= (float) Math.pow(0.05f, dt);
-            tiltY *= (float) Math.pow(0.05f, dt);
+            if (Math.abs(vx) < 0.2f) vx = 0f;
+            if (Math.abs(vy) < 0.2f) vy = 0f;
+            tiltX = 0f;
+            tiltY = 0f;
 
             if (spin != 0f) {
                 rotation = normalizeAngle(rotation + spin * dt);
+                spin *= (float) Math.pow(0.01f, dt);
+                if (Math.abs(spin) < 0.2f) spin = 0f;
             }
         }
 
@@ -234,8 +231,10 @@ public class ShapeObject {
 
         // Rotation physics
         if (isRotating) {
-            // Direct 1:1 instant rotation with ZERO lag
-            rotation = targetRotation;
+            // Silky-smooth rotation tracking towards target angle with shortest-arc lerp
+            float dRot = normalizeDeltaAngle(targetRotation - rotation);
+            float rotSmooth = 1f - (float) Math.exp(-dt * 45f);
+            rotation = normalizeAngle(rotation + dRot * rotSmooth);
             angularVelocity = 0f;
         } else if (isSnapping) {
             float dRot = normalizeDeltaAngle(targetRotation - rotation);

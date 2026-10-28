@@ -790,35 +790,18 @@ final class GameRenderer {
 
             int saveShape = c.save();
 
-            // Pseudo-3D velocity tilt
-            c.translate(s.x, s.y);
-            float tiltSkewX = (float) Math.tan(Math.toRadians(s.tiltY * 0.35f));
-            float tiltSkewY = (float) Math.tan(Math.toRadians(s.tiltX * 0.35f));
-            c.skew(tiltSkewX, tiltSkewY);
-            c.translate(-s.x, -s.y);
-
+            // Clean, pure 2D planar movement and rotation without perspective distortion or skew
             float[] poly = s.applyTransform();
             buildPath(poly);
 
-            // 1. Stage drop shadow (expands with elevation and directional candle ray)
-            float shadowOffsetY = 12f + s.elevation * 24f;
-            float shadowOffsetX = (s.x - ShadowCalculator.LIGHT_X) * 0.035f * (1.0f + s.elevation);
-            float shadowAlpha = 0.28f + s.elevation * 0.20f;
+            // 1. Clean stage drop shadow directly under token
+            float shadowOffsetY = 10f + s.elevation * 12f;
+            float shadowAlpha = 0.25f + s.elevation * 0.15f;
             int saveShadow = c.save();
-            c.translate(shadowOffsetX, shadowOffsetY);
-            if (s.elevation > 0.02f) {
-                float sScale = 1.0f + s.elevation * 0.08f;
-                c.scale(sScale, sScale, s.x, s.y);
-            }
+            c.translate(0f, shadowOffsetY);
             fill.setColor(withAlpha(0xFF000000, (int) (255 * shadowAlpha)));
             c.drawPath(path, fill);
             c.restoreToCount(saveShadow);
-
-            // Subtle scale lift on the active shape itself
-            if (s.elevation > 0.01f) {
-                float liftScale = 1.0f + 0.035f * s.elevation;
-                c.scale(liftScale, liftScale, s.x, s.y);
-            }
 
             // 2. Proximity Resonance Golden Aura
             if (s.proximityResonance > 0.05f) {
