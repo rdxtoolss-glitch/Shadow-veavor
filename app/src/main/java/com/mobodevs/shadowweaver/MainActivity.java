@@ -43,11 +43,12 @@ public class MainActivity extends Activity {
         try {
             goFullscreen();
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);
 
             progress = new LevelProgress();
             progress.load(this);
 
-            audio = new AudioManager();
+            audio = new AudioManager(this);
             audio.setMuted(progress.isSoundMuted());
 
             haptic = new HapticManager(this);
