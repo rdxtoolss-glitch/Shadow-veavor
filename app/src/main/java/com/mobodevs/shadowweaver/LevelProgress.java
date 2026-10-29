@@ -16,12 +16,16 @@ public class LevelProgress {
     private static final String KEY_STARS_PREFIX = "stars_lvl_";
     private static final String KEY_BEST_TIME_PREFIX = "best_time_lvl_";
     private static final String KEY_SOUND_MUTED = "sound_muted";
+    private static final String KEY_MUSIC_MUTED = "music_muted";
+    private static final String KEY_SFX_MUTED = "sfx_muted";
     private static final String KEY_HAPTICS_ENABLED = "haptics_enabled";
 
     private final int[] stars = new int[LevelLoader.count()];
     private final long[] bestTimes = new long[LevelLoader.count()];
     private int highestUnlocked;
     private boolean soundMuted;
+    private boolean musicMuted;
+    private boolean sfxMuted;
     private boolean hapticsEnabled = true;
 
     public LevelProgress() {
@@ -79,11 +83,41 @@ public class LevelProgress {
         return bestTimes[levelIndex];
     }
 
+    public boolean isMusicMuted() {
+        return musicMuted;
+    }
+
+    public void setMusicMuted(boolean muted) {
+        this.musicMuted = muted;
+        this.soundMuted = musicMuted && sfxMuted;
+    }
+
+    public boolean isSfxMuted() {
+        return sfxMuted;
+    }
+
+    public void setSfxMuted(boolean muted) {
+        this.sfxMuted = muted;
+        this.soundMuted = musicMuted && sfxMuted;
+    }
+
+    public boolean isAllAudioMuted() {
+        return musicMuted && sfxMuted;
+    }
+
+    public void setAllAudioMuted(boolean muted) {
+        this.musicMuted = muted;
+        this.sfxMuted = muted;
+        this.soundMuted = muted;
+    }
+
     public boolean isSoundMuted() {
-        return soundMuted;
+        return musicMuted && sfxMuted;
     }
 
     public void setSoundMuted(boolean muted) {
+        this.musicMuted = muted;
+        this.sfxMuted = muted;
         this.soundMuted = muted;
     }
 
@@ -159,7 +193,10 @@ public class LevelProgress {
         try {
             SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
             highestUnlocked = p.getInt(KEY_UNLOCKED, 0);
-            soundMuted = p.getBoolean(KEY_SOUND_MUTED, false);
+            boolean legacyMuted = p.getBoolean(KEY_SOUND_MUTED, false);
+            musicMuted = p.getBoolean(KEY_MUSIC_MUTED, legacyMuted);
+            sfxMuted = p.getBoolean(KEY_SFX_MUTED, legacyMuted);
+            soundMuted = musicMuted && sfxMuted;
             hapticsEnabled = p.getBoolean(KEY_HAPTICS_ENABLED, true);
 
             for (int i = 0; i < stars.length; i++) {
@@ -195,7 +232,9 @@ public class LevelProgress {
         try {
             SharedPreferences.Editor ed = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit();
             ed.putInt(KEY_UNLOCKED, highestUnlocked);
-            ed.putBoolean(KEY_SOUND_MUTED, soundMuted);
+            ed.putBoolean(KEY_MUSIC_MUTED, musicMuted);
+            ed.putBoolean(KEY_SFX_MUTED, sfxMuted);
+            ed.putBoolean(KEY_SOUND_MUTED, musicMuted && sfxMuted);
             ed.putBoolean(KEY_HAPTICS_ENABLED, hapticsEnabled);
 
             for (int i = 0; i < stars.length; i++) {

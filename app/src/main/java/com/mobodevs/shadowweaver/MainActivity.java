@@ -49,7 +49,7 @@ public class MainActivity extends Activity {
             progress.load(this);
 
             audio = new AudioManager(this);
-            audio.setMuted(progress.isSoundMuted());
+            audio.setPreferences(progress.isMusicMuted(), progress.isSfxMuted());
 
             haptic = new HapticManager(this);
             haptic.setEnabled(progress.isHapticsEnabled());

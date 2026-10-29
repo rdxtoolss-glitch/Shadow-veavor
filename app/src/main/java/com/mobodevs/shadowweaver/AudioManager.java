@@ -80,6 +80,8 @@ public class AudioManager {
     private Thread prepareThread;
     private volatile boolean released;
     private volatile boolean muted;
+    private volatile boolean musicMuted;
+    private volatile boolean sfxMuted;
     private volatile boolean started;
 
     // Cached PCM buffers (shared statically across instances)
@@ -206,7 +208,7 @@ public class AudioManager {
 
         // Start BGM if ready and not muted
         synchronized (lock) {
-            if (!muted && bgmPlayer != null && bgmPrepared) {
+            if (!muted && !musicMuted && bgmPlayer != null && bgmPrepared) {
                 try {
                     applyBgmVolume();
                     if (!bgmPlayer.isPlaying()) {
@@ -374,7 +376,7 @@ public class AudioManager {
             }
             if (bgmPlayer != null) {
                 try {
-                    if (!muted) {
+                    if (!muted && !musicMuted) {
                         applyBgmVolume();
                         if (!bgmPlayer.isPlaying()) {
                             bgmPlayer.start();
@@ -384,7 +386,7 @@ public class AudioManager {
                 }
             } else if (context != null) {
                 initBgmPlayer();
-                if (!muted && bgmPlayer != null) {
+                if (!muted && !musicMuted && bgmPlayer != null) {
                     try { bgmPlayer.start(); } catch (Throwable ignored) {}
                 }
             }
@@ -442,11 +444,13 @@ public class AudioManager {
     // ======================================================================
 
     public boolean isMuted() {
-        return muted;
+        return muted || (musicMuted && sfxMuted);
     }
 
     public void setMuted(boolean muted) {
         this.muted = muted;
+        this.musicMuted = muted;
+        this.sfxMuted = muted;
         synchronized (lock) {
             applyBgmVolume();
             if (muted) {
@@ -461,15 +465,63 @@ public class AudioManager {
         }
     }
 
+    public boolean isMusicMuted() {
+        return musicMuted || muted;
+    }
+
+    public void setMusicMuted(boolean muted) {
+        this.musicMuted = muted;
+        this.muted = this.musicMuted && this.sfxMuted;
+        synchronized (lock) {
+            applyBgmVolume();
+            if (muted) {
+                if (bgmPlayer != null && bgmPlayer.isPlaying()) {
+                    try { bgmPlayer.pause(); } catch (Throwable ignored) {}
+                }
+            } else {
+                if (bgmPlayer != null && started && !bgmPlayer.isPlaying()) {
+                    try { bgmPlayer.start(); } catch (Throwable ignored) {}
+                }
+            }
+        }
+    }
+
+    public boolean isSfxMuted() {
+        return sfxMuted || muted;
+    }
+
+    public void setSfxMuted(boolean muted) {
+        this.sfxMuted = muted;
+        this.muted = this.musicMuted && this.sfxMuted;
+    }
+
+    public void setPreferences(boolean musicMuted, boolean sfxMuted) {
+        this.musicMuted = musicMuted;
+        this.sfxMuted = sfxMuted;
+        this.muted = musicMuted && sfxMuted;
+        synchronized (lock) {
+            applyBgmVolume();
+            if (musicMuted) {
+                if (bgmPlayer != null && bgmPlayer.isPlaying()) {
+                    try { bgmPlayer.pause(); } catch (Throwable ignored) {}
+                }
+            } else {
+                if (bgmPlayer != null && started && !bgmPlayer.isPlaying()) {
+                    try { bgmPlayer.start(); } catch (Throwable ignored) {}
+                }
+            }
+        }
+    }
+
     public boolean toggleMute() {
-        setMuted(!muted);
-        return muted;
+        setMuted(!isMuted());
+        return isMuted();
     }
 
     private void applyBgmVolume() {
         if (bgmPlayer == null) return;
         try {
-            float vol = muted ? 0f : masterVolume * BGM_GAIN;
+            float vol = (muted || musicMuted) ? 0f : masterVolume * BGM_GAIN;
             bgmPlayer.setVolume(vol, vol);
         } catch (Throwable ignored) {
         }
@@ -504,7 +556,7 @@ public class AudioManager {
     // ======================================================================
 
     private void playByIndex(int soundIdx, float gain) {
-        if (released || muted) return;
+        if (released || muted || sfxMuted) return;
 
         synchronized (lock) {
             if (soundPool != null) {
