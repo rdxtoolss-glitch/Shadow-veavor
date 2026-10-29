@@ -56,40 +56,40 @@ public final class PauseOverlay {
         lastSceneH = sceneH;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
-        float cardW = 700f;
-        float cardH = 660f;
+        float cardW = 860f;
+        float cardH = 780f;
         cardL = cx - cardW * 0.5f;
         cardT = (sceneH - cardH) * 0.5f;
         cardR = cardL + cardW;
         cardB = cardT + cardH;
 
-        float btnW = 600f;
-        float btnH = 76f;
+        float btnW = 760f;
+        float btnH = 92f;
         float btnL = cx - btnW * 0.5f;
         float btnR = cx + btnW * 0.5f;
 
-        float startY = cardT + 152f;
-        float gap = 16f;
+        float startY = cardT + 172f;
+        float gap = 18f;
 
         btnResume.setBounds(btnL, startY, btnR, startY + btnH);
         btnResume.isPrimary = true;
-        btnResume.cornerRadius = 18f;
+        btnResume.cornerRadius = 22f;
 
         float y2 = startY + btnH + gap;
         btnRestart.setBounds(btnL, y2, btnR, y2 + btnH);
-        btnRestart.cornerRadius = 18f;
+        btnRestart.cornerRadius = 22f;
 
         float y3 = y2 + btnH + gap;
         btnChapters.setBounds(btnL, y3, btnR, y3 + btnH);
-        btnChapters.cornerRadius = 18f;
+        btnChapters.cornerRadius = 22f;
 
         float y4 = y3 + btnH + gap;
         btnSettings.setBounds(btnL, y4, btnR, y4 + btnH);
-        btnSettings.cornerRadius = 18f;
+        btnSettings.cornerRadius = 22f;
 
         float y5 = y4 + btnH + gap;
         btnMainMenu.setBounds(btnL, y5, btnR, y5 + btnH);
-        btnMainMenu.cornerRadius = 18f;
+        btnMainMenu.cornerRadius = 22f;
 
         layoutReady = true;
     }
@@ -183,24 +183,24 @@ public final class PauseOverlay {
         drawCornerBrackets(c, cardL, cardT, cardR, cardB);
 
         // 3. Header
-        float headY = cardT + 65f;
+        float headY = cardT + 75f;
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
-        text.setTextSize(40f);
+        text.setTextSize(44f);
         text.setColor(0xDD000000);
         c.drawText("SANCTUM PAUSED", cx, headY + 2f, text);
         text.setColor(0xFFFFFDF8);
         c.drawText("SANCTUM PAUSED", cx, headY, text);
 
-        text.setTextSize(18f);
+        text.setTextSize(20f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
-        c.drawText(g.levelTitle() + " \u2022 CHAPTER " + ((g.levelIndex() / 5) + 1), cx, headY + 34f + 1.5f, text);
+        c.drawText(g.levelTitle() + " \u2022 CHAPTER " + ((g.levelIndex() / 5) + 1), cx, headY + 36f + 1.5f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText(g.levelTitle() + " \u2022 CHAPTER " + ((g.levelIndex() / 5) + 1), cx, headY + 34f, text);
+        c.drawText(g.levelTitle() + " \u2022 CHAPTER " + ((g.levelIndex() / 5) + 1), cx, headY + 36f, text);
 
         // Ornamental dividing flourish
-        float divY = cardT + 128f;
+        float divY = cardT + 144f;
         stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeWidth(1.8f);
         stroke.setColor(0x66D4AF37);
@@ -242,10 +242,10 @@ public final class PauseOverlay {
         btnMainMenu.draw(c, fill, stroke, text, 1.0f, t);
 
         // Official game-icons.net embellishments on pause buttons
-        GameIcons.drawPause(c, btnResume.left + 46f, btnResume.centerY(), 18f, fill, stroke, false);
-        GameIcons.drawReset(c, btnRestart.left + 46f, btnRestart.centerY(), 18f, fill, stroke);
-        GameIcons.drawIcon(c, GameIcons.RELIC_PATHS[14], btnChapters.left + 46f, btnChapters.centerY(), 18f, 0xFFFFD54F);
-        GameIcons.drawIcon(c, GameIcons.PATH_SETTINGS, btnSettings.left + 46f, btnSettings.centerY(), 18f, 0xFFFFD54F);
+        GameIcons.drawPause(c, btnResume.left + 54f, btnResume.centerY(), 22f, fill, stroke, false);
+        GameIcons.drawReset(c, btnRestart.left + 54f, btnRestart.centerY(), 22f, fill, stroke);
+        GameIcons.drawIcon(c, GameIcons.RELIC_PATHS[14], btnChapters.left + 54f, btnChapters.centerY(), 22f, 0xFFFFD54F);
+        GameIcons.drawIcon(c, GameIcons.PATH_SETTINGS, btnSettings.left + 54f, btnSettings.centerY(), 22f, 0xFFFFD54F);
 
         c.restoreToCount(saveCard);
         text.setTextAlign(Paint.Align.LEFT);

@@ -114,37 +114,37 @@ public final class TitleScreen {
         ensureEmbers();
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
-        // Industry-standard 70% button width on 1000px canvas (150px left/right margins)
-        float btnW = 700f;
+        // Industry-standard 80% button width on 1080px canvas (110px margins)
+        float btnW = 860f;
         float l = cx - btnW * 0.5f;
         float r = cx + btnW * 0.5f;
-        float splitGap = 16f;
-        float splitW = (btnW - splitGap) * 0.5f; // 342f
+        float splitGap = 18f;
+        float splitW = (btnW - splitGap) * 0.5f; // 421f
 
         // Interactive stack component heights
-        float heroH = 106f;
-        float btnH = 84f;
-        float gap = 16f;
-        float cardGap = 20f;
-        float cardH = 175f;
+        float heroH = 118f;
+        float btnH = 96f;
+        float gap = 18f;
+        float cardGap = 22f;
+        float cardH = 195f;
 
         // Total height of the interactive block (Hero + Chapter Map + Split Row + Settings + Rank Card)
-        float stackH = heroH + gap + btnH + gap + btnH + gap + btnH + cardGap + cardH; // 601f
+        float stackH = heroH + gap + btnH + gap + btnH + gap + btnH + cardGap + cardH; // 677f
 
-        // Header estimated height (Candle to divider line): ~250f
-        float headerH = 250f;
+        // Header estimated height (Candle to divider line): ~260f
+        float headerH = 260f;
         // Footer estimated height (Crest to version): ~195f
         float footerH = 195f;
 
         // Total content height and remaining vertical space
-        float totalContentH = headerH + stackH + footerH; // ~1046f
-        float remainingH = Math.max(60f, sceneH - totalContentH);
+        float totalContentH = headerH + stackH + footerH; // ~1132f
+        float remainingH = Math.max(50f, sceneH - totalContentH);
 
         // Golden-ratio distribution of remaining vertical space:
-        float topPad = remainingH * 0.18f;
+        float topPad = remainingH * 0.16f;
         float gapHeaderStack = remainingH * 0.28f;
         float gapStackFooter = remainingH * 0.36f;
-        float bottomPad = remainingH * 0.18f;
+        float bottomPad = remainingH * 0.20f;
 
         // 1. Header Coordinates
         cachedCandleY = topPad + 48f;
@@ -163,19 +163,19 @@ public final class TitleScreen {
         // Chapter Map
         float y2 = stackStartY + heroH + gap;
         btnChapters.setBounds(l, y2, r, y2 + btnH);
-        btnChapters.cornerRadius = 18f;
+        btnChapters.cornerRadius = 22f;
 
         // How to Play & Codex (Side-by-side, perfect bilateral symmetry)
         float y3 = y2 + btnH + gap;
         btnTutorial.setBounds(l, y3, l + splitW, y3 + btnH);
-        btnTutorial.cornerRadius = 18f;
+        btnTutorial.cornerRadius = 22f;
         btnCodex.setBounds(l + splitW + splitGap, y3, r, y3 + btnH);
-        btnCodex.cornerRadius = 18f;
+        btnCodex.cornerRadius = 22f;
 
         // Settings
         float y4 = y3 + btnH + gap;
         btnSettings.setBounds(l, y4, r, y4 + btnH);
-        btnSettings.cornerRadius = 18f;
+        btnSettings.cornerRadius = 22f;
 
         // Rank Card
         cachedCardTop = y4 + btnH + cardGap;
@@ -373,13 +373,13 @@ public final class TitleScreen {
         btnSettings.draw(c, fill, stroke, text, 1.0f, time);
 
         // Official game-icons.net embellishments on menu buttons
-        GameIcons.drawIcon(c, GameIcons.RELIC_PATHS[14], btnChapters.left + 50f, btnChapters.centerY(), 20f, 0xFFFFD54F);
-        GameIcons.drawIcon(c, GameIcons.PATH_SETTINGS, btnSettings.left + 50f, btnSettings.centerY(), 19f, 0xFFFFD54F);
+        GameIcons.drawIcon(c, GameIcons.RELIC_PATHS[14], btnChapters.left + 54f, btnChapters.centerY(), 22f, 0xFFFFD54F);
+        GameIcons.drawIcon(c, GameIcons.PATH_SETTINGS, btnSettings.left + 54f, btnSettings.centerY(), 22f, 0xFFFFD54F);
 
         // ---------------------------------------------------------------------
-        // 10. ALCHEMIST MASTERY STATUS CARD (700PX WIDTH - MATCHES BUTTONS)
+        // 10. ALCHEMIST MASTERY STATUS CARD (860PX WIDTH - MATCHES BUTTONS)
         // ---------------------------------------------------------------------
-        float cardW = 700f;
+        float cardW = 860f;
         float cardL = cx - cardW * 0.5f;
         float cardR = cx + cardW * 0.5f;
         float cardT = cachedCardTop;
@@ -387,61 +387,61 @@ public final class TitleScreen {
 
         // Card glassmorphic panel
         fill.setColor(0xF2131926);
-        c.drawRoundRect(cardL, cardT, cardR, cardB, 22f, 22f, fill);
+        c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, fill);
         stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeWidth(2.2f);
         stroke.setColor(0xFFD4AF37);
-        c.drawRoundRect(cardL, cardT, cardR, cardB, 22f, 22f, stroke);
+        c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, stroke);
 
         // Top specular highlight
         stroke.setStrokeWidth(1.2f);
         stroke.setColor(0x55FFFFFF);
-        c.drawLine(cardL + 22f, cardT + 1.5f, cardR - 22f, cardT + 1.5f, stroke);
+        c.drawLine(cardL + 24f, cardT + 1.5f, cardR - 24f, cardT + 1.5f, stroke);
 
         // Corner diamond accents
-        drawCornerDiamond(c, cardL + 16f, cardT + 16f);
-        drawCornerDiamond(c, cardR - 16f, cardT + 16f);
-        drawCornerDiamond(c, cardL + 16f, cardB - 16f);
-        drawCornerDiamond(c, cardR - 16f, cardB - 16f);
+        drawCornerDiamond(c, cardL + 18f, cardT + 18f);
+        drawCornerDiamond(c, cardR - 18f, cardT + 18f);
+        drawCornerDiamond(c, cardL + 18f, cardB - 18f);
+        drawCornerDiamond(c, cardR - 18f, cardB - 18f);
 
         // Card Typography
         text.setTextAlign(Paint.Align.CENTER);
         String rank = (progress != null) ? progress.getPlayerRank() : "Apprentice of Shadows";
-        text.setTextSize(16f);
+        text.setTextSize(18f);
         text.setTypeface(SERIF_BOLD);
         text.setColor(0xCCFFE0A8);
-        c.drawText("\u2726  ALCHEMIST MASTERY RANK  \u2726", cx, cardT + 38f, text);
+        c.drawText("\u2726  ALCHEMIST MASTERY RANK  \u2726", cx, cardT + 40f, text);
 
-        text.setTextSize(28f);
+        text.setTextSize(32f);
         text.setColor(0xFFFFFDF8);
-        c.drawText(rank, cx, cardT + 78f, text);
+        c.drawText(rank, cx, cardT + 82f, text);
 
         // Star constellation progress bar
-        float barW = 540f;
-        float barH = 16f;
+        float barW = 720f;
+        float barH = 18f;
         float barL = cx - barW * 0.5f;
-        float barT = cardT + 104f;
+        float barT = cardT + 112f;
         fill.setColor(0x660B0F18);
-        c.drawRoundRect(barL, barT, barL + barW, barT + barH, 8f, 8f, fill);
-        stroke.setStrokeWidth(1.0f);
-        stroke.setColor(0x33D4AF37);
-        c.drawRoundRect(barL, barT, barL + barW, barT + barH, 8f, 8f, stroke);
+        c.drawRoundRect(barL, barT, barL + barW, barT + barH, 9f, 9f, fill);
+        stroke.setStrokeWidth(1.2f);
+        stroke.setColor(0x44D4AF37);
+        c.drawRoundRect(barL, barT, barL + barW, barT + barH, 9f, 9f, stroke);
 
         float pct = Math.min(1.0f, totalStars / (float) LevelProgress.TOTAL_MAX_STARS);
         if (pct > 0.01f) {
             float fillW = barW * pct;
             fill.setColor(0xFFFFB300);
-            c.drawRoundRect(barL, barT, barL + fillW, barT + barH, 8f, 8f, fill);
+            c.drawRoundRect(barL, barT, barL + fillW, barT + barH, 9f, 9f, fill);
 
             // Glowing head pip on progress bar
             fill.setColor(0xFFFFF4D0);
-            c.drawCircle(barL + fillW - 4f, barT + barH * 0.5f, 5.5f, fill);
+            c.drawCircle(barL + fillW - 4f, barT + barH * 0.5f, 6.5f, fill);
         }
 
-        text.setTextSize(17f);
+        text.setTextSize(18f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xEEFFE0A8);
-        c.drawText("Constellation Mastery: " + Math.round(pct * 100f) + "%  \u2022  " + totalStars + " / " + LevelProgress.TOTAL_MAX_STARS + " Stars", cx, cardT + 152f, text);
+        c.drawText("Constellation Mastery: " + Math.round(pct * 100f) + "%  \u2022  " + totalStars + " / " + LevelProgress.TOTAL_MAX_STARS + " Stars", cx, cardT + 162f, text);
 
         // ---------------------------------------------------------------------
         // 11. GRAND ANTIQUE ASTROLOGICAL COMPASS CREST (BALANCED LOWER THIRD)

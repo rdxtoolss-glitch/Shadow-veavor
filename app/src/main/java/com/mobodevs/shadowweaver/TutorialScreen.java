@@ -64,13 +64,13 @@ public final class TutorialScreen {
         lastSceneH = sceneH;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
-        float cardW = 820f;
-        float cardH = 920f;
+        float cardW = 880f;
+        float cardH = 940f;
         cardL = cx - cardW * 0.5f;
         cardR = cardL + cardW;
 
         // Dynamic vertical centering algorithm
-        float totalBlockH = 110f + 24f + cardH + 28f + 80f; // 1162f
+        float totalBlockH = 110f + 24f + cardH + 28f + 88f; // 1190f
         float remainingH = Math.max(50f, sceneH - totalBlockH);
         float topPad = remainingH * 0.38f + 30f;
 
@@ -79,24 +79,24 @@ public final class TutorialScreen {
         cardB = cardT + cardH;
 
         // Navigation buttons inside guide card
-        float btnW = 240f;
-        float btnH = 74f;
-        float btnY = cardB - 96f;
+        float btnW = 270f;
+        float btnH = 86f;
+        float btnY = cardB - 110f;
 
-        btnPrev.setBounds(cardL + 40f, btnY, cardL + 40f + btnW, btnY + btnH);
-        btnPrev.cornerRadius = 18f;
+        btnPrev.setBounds(cardL + 44f, btnY, cardL + 44f + btnW, btnY + btnH);
+        btnPrev.cornerRadius = 22f;
 
-        float nextW = 260f;
-        btnNext.setBounds(cardR - 40f - nextW, btnY, cardR - 40f, btnY + btnH);
+        float nextW = 290f;
+        btnNext.setBounds(cardR - 44f - nextW, btnY, cardR - 44f, btnY + btnH);
         btnNext.isPrimary = true;
-        btnNext.cornerRadius = 18f;
+        btnNext.cornerRadius = 22f;
 
         // Main Menu button centered below guide card
-        float backW = 460f;
-        float backH = 80f;
+        float backW = 540f;
+        float backH = 88f;
         float backY = cardB + 28f;
         btnBack.setBounds(cx - backW * 0.5f, backY, cx + backW * 0.5f, backY + backH);
-        btnBack.cornerRadius = 20f;
+        btnBack.cornerRadius = 22f;
 
         layoutReady = true;
     }
@@ -471,7 +471,7 @@ public final class TutorialScreen {
                 text.setTextSize(19f);
                 text.setTypeface(SERIF_NORMAL);
                 text.setColor(0xDDFFE0A8);
-                c.drawText("Reach 85% match to weave the silhouette and win.", cx, topY + 518f, text);
+                c.drawText("Reach 90% match to weave the silhouette and win.", cx, topY + 518f, text);
                 c.drawText("\u2605 1 Star: Silhouette solved   \u2605\u2605 2 Stars: Solved under par time", cx, topY + 556f, text);
                 c.drawText("\u2605\u2605\u2605 3 Stars: Solved under par time AND within par moves!", cx, topY + 594f, text);
                 break;

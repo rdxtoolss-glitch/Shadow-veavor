@@ -1027,7 +1027,7 @@ public class GameThread implements Runnable, SurfaceHolder.Callback {
 
         float iou = matcher.evaluate(polys);
         float percent = matcher.reportMatch(iou);
-        boolean complete = matcher.isComplete(iou);
+        boolean complete = matcher.isComplete(iou) || percent >= 90f;
 
         int chimes = 0;
         synchronized (stateLock) {

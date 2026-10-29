@@ -1097,7 +1097,7 @@ final class GameRenderer {
             text.setColor(0xAAFFE0A8);
             c.drawText("SILHOUETTE", col1X, tT + 34f, text);
             text.setTextSize(26f);
-            text.setColor(match >= 85f ? 0xFFFFD54F : 0xFFFFFDF8);
+            text.setColor(match >= 90f ? 0xFFFFD54F : 0xFFFFFDF8);
             c.drawText(Math.round(match) + "%", col1X, tT + 72f, text);
 
             // Divider 1
@@ -1177,7 +1177,7 @@ final class GameRenderer {
 
         // Active Arc Progress
         stroke.setStrokeWidth(5.5f);
-        stroke.setColor(match >= 85f ? 0xFFFFD54F : 0xFFFFB300);
+        stroke.setColor(match >= 90f ? 0xFFFFD54F : 0xFFFFB300);
         float sweep = (match / 100f) * 360f;
         c.drawArc(cx - r + 6f, cy - r + 6f, cx + r - 6f, cy + r - 6f, -90, sweep, false, stroke);
 
@@ -1211,7 +1211,7 @@ final class GameRenderer {
         // Active Progress Arc
         float sweep = (match / 100f) * 360f;
         stroke.setStrokeWidth(4.5f);
-        stroke.setColor(match >= 85f ? 0xFFFFD54F : 0xFFFFB300);
+        stroke.setColor(match >= 90f ? 0xFFFFD54F : 0xFFFFB300);
         c.drawArc(cx - r + 4f, cy - r + 4f, cx + r - 4f, cy + r - 4f, -90, sweep, false, stroke);
 
         // Center label

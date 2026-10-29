@@ -179,7 +179,7 @@ public class UiButton {
 
         if (subLabel == null || subLabel.isEmpty()) {
             // Single line centered
-            text.setTextSize(Math.min(28f, height() * 0.44f));
+            text.setTextSize(Math.min(36f, height() * 0.44f));
             if (!enabled) {
                 text.setColor(withAlpha(0x6690A0B8, a));
                 float textOffset = (text.descent() + text.ascent()) * 0.5f;
@@ -198,21 +198,21 @@ public class UiButton {
             }
         } else {
             // Main label + Sub label
-            text.setTextSize(Math.min(24f, height() * 0.36f));
+            text.setTextSize(Math.min(30f, height() * 0.35f));
             if (!enabled) {
                 text.setColor(withAlpha(0x6690A0B8, a));
-                c.drawText(label, cx, cy - 6f, text);
+                c.drawText(label, cx, cy - 7f, text);
             } else if (isPrimary) {
                 text.setColor(withAlpha(0xFF140802, a));
-                c.drawText(label, cx, cy - 6f, text);
+                c.drawText(label, cx, cy - 7f, text);
             } else {
                 text.setColor(withAlpha(0xFF000000, (int) (180 * alpha)));
-                c.drawText(label, cx, cy - 4.2f, text);
+                c.drawText(label, cx, cy - 5.2f, text);
                 text.setColor(withAlpha(0xFFFFFDF8, a));
-                c.drawText(label, cx, cy - 6f, text);
+                c.drawText(label, cx, cy - 7f, text);
             }
 
-            text.setTextSize(Math.min(18f, height() * 0.26f));
+            text.setTextSize(Math.min(20f, height() * 0.24f));
             text.setTypeface(SERIF_NORMAL);
             if (!enabled) {
                 text.setColor(withAlpha(0x4490A0B8, a));
@@ -221,7 +221,7 @@ public class UiButton {
             } else {
                 text.setColor(withAlpha(0xFFE2D4BA, a));
             }
-            c.drawText(subLabel, cx, cy + 20f, text);
+            c.drawText(subLabel, cx, cy + 22f, text);
         }
 
         c.restoreToCount(save);

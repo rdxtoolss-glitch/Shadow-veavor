@@ -41,7 +41,7 @@ public class LevelProgress {
 
     /**
      * Calculate star rating:
-     *  * 1 Star:  Silhouette solved (Match >= 85%).
+     *  * 1 Star:  Silhouette solved (Match >= 90%).
      *  ** 2 Stars: Solved under par time.
      *  *** 3 Stars: Solved under par time AND within par moves.
      */

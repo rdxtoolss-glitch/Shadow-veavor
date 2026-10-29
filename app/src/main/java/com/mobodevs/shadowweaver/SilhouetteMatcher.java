@@ -324,7 +324,9 @@ public class SilhouetteMatcher {
     }
 
     public boolean isComplete(float rawIoU) {
-        return targetReady && rawIoU >= MATCH_THRESHOLD;
+        if (!targetReady) return false;
+        // Level completes and advances to next level when player reaches 90% match
+        return reportMatch(rawIoU) >= 90f || rawIoU >= (MATCH_THRESHOLD * 0.90f);
     }
 
     // ------------------------------------------------------------------
@@ -337,7 +339,7 @@ public class SilhouetteMatcher {
     public static final int CHIME_DONE = 2;
 
     /**
-     * Check whether the player has just crossed one of the 50 / 75 / 100
+     * Check whether the player has just crossed one of the 50 / 75 / 90
      * marks, and remember it so it only ever fires once per crossing.
      *
      * Call this with the raw IoU after evaluate(). The returned value is a
@@ -352,7 +354,7 @@ public class SilhouetteMatcher {
         int fired = 0;
         float pct = reportMatch(rawIoU);
 
-        float[] marks = {50f, 75f, 100f};
+        float[] marks = {50f, 75f, 90f};
         for (int i = 0; i < marks.length; i++) {
             if (pct >= marks[i] && celebratedUpTo < i) {
                 celebratedUpTo = i;

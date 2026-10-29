@@ -63,55 +63,55 @@ public final class SettingsOverlay {
         lastSceneH = sceneH;
 
         float cx = ShadowCalculator.SCENE_W * 0.5f;
-        float cardW = 720f;
-        float cardH = 680f;
+        float cardW = 880f;
+        float cardH = 800f;
         cardL = cx - cardW * 0.5f;
         cardT = (sceneH - cardH) * 0.5f;
         cardR = cardL + cardW;
         cardB = cardT + cardH;
 
-        float btnW = 640f;
-        float btnH = 84f;
+        float btnW = 780f;
+        float btnH = 96f;
         float btnL = cx - btnW * 0.5f;
         float btnR = cx + btnW * 0.5f;
 
-        float startY = cardT + 160f;
-        float gap = 18f;
+        float startY = cardT + 170f;
+        float gap = 20f;
 
         // Button 1: Sound
         btnSound.setBounds(btnL, startY, btnR, startY + btnH);
-        btnSound.cornerRadius = 18f;
+        btnSound.cornerRadius = 22f;
 
         // Button 2: Haptics
         float y2 = startY + btnH + gap;
         btnHaptics.setBounds(btnL, y2, btnR, y2 + btnH);
-        btnHaptics.cornerRadius = 18f;
+        btnHaptics.cornerRadius = 22f;
 
         // Button 3: Reset
         float y3 = y2 + btnH + gap;
         btnReset.setBounds(btnL, y3, btnR, y3 + btnH);
-        btnReset.cornerRadius = 18f;
+        btnReset.cornerRadius = 22f;
 
         // Confirmation buttons (side-by-side)
-        float confirmH = 74f;
-        float confirmY = cardT + 466f;
-        float splitGap = 16f;
+        float confirmH = 86f;
+        float confirmY = cardT + 530f;
+        float splitGap = 20f;
         float halfW = (btnW - splitGap) * 0.5f;
         btnConfirmYes.setBounds(btnL, confirmY, btnL + halfW, confirmY + confirmH);
-        btnConfirmYes.cornerRadius = 18f;
+        btnConfirmYes.cornerRadius = 20f;
         btnConfirmYes.isPrimary = true;
 
         btnConfirmNo.setBounds(btnL + halfW + splitGap, confirmY, btnR, confirmY + confirmH);
-        btnConfirmNo.cornerRadius = 18f;
+        btnConfirmNo.cornerRadius = 20f;
         btnConfirmNo.isPrimary = false;
 
         // Close Button (Primary gold sheen)
-        float closeW = 360f;
-        float closeH = 74f;
-        float yClose = cardT + 574f;
+        float closeW = 460f;
+        float closeH = 88f;
+        float yClose = cardT + 660f;
         btnClose.setBounds(cx - closeW * 0.5f, yClose, cx + closeW * 0.5f, yClose + closeH);
         btnClose.isPrimary = true;
-        btnClose.cornerRadius = 20f;
+        btnClose.cornerRadius = 22f;
 
         layoutReady = true;
     }
@@ -242,24 +242,24 @@ public final class SettingsOverlay {
         drawCornerBrackets(c, cardL, cardT, cardR, cardB);
 
         // 3. Header
-        float headY = cardT + 68f;
+        float headY = cardT + 75f;
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
-        text.setTextSize(38f);
+        text.setTextSize(44f);
         text.setColor(0xDD000000);
         c.drawText("ALCHEMICAL SETTINGS", cx, headY + 2f, text);
         text.setColor(0xFFFFFDF8);
         c.drawText("ALCHEMICAL SETTINGS", cx, headY, text);
 
-        text.setTextSize(17f);
+        text.setTextSize(20f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
-        c.drawText("Acoustic Chimes, Haptic Resonance & Progress", cx, headY + 36f + 1.5f, text);
+        c.drawText("Acoustic Chimes, Haptic Resonance & Progress", cx, headY + 38f + 1.5f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText("Acoustic Chimes, Haptic Resonance & Progress", cx, headY + 36f, text);
+        c.drawText("Acoustic Chimes, Haptic Resonance & Progress", cx, headY + 38f, text);
 
         // Ornamental divider with center diamond pip
-        float divY = cardT + 138f;
+        float divY = cardT + 144f;
         stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeWidth(1.8f);
         stroke.setColor(0x66D4AF37);
@@ -289,15 +289,15 @@ public final class SettingsOverlay {
         btnHaptics.draw(c, fill, stroke, text, 1.0f, time);
 
         // Render official game-icons.net badges inside settings buttons
-        GameIcons.drawSpeaker(c, btnSound.left + 44f, btnSound.centerY(), 20f, soundMuted, soundMuted ? 0x99FFE0A8 : 0xFFFFD54F);
-        GameIcons.drawHaptics(c, btnHaptics.left + 44f, btnHaptics.centerY(), 20f, hapticsOn ? 0xFFFFD54F : 0x99FFE0A8);
+        GameIcons.drawSpeaker(c, btnSound.left + 54f, btnSound.centerY(), 22f, soundMuted, soundMuted ? 0x99FFE0A8 : 0xFFFFD54F);
+        GameIcons.drawHaptics(c, btnHaptics.left + 54f, btnHaptics.centerY(), 22f, hapticsOn ? 0xFFFFD54F : 0x99FFE0A8);
 
         if (confirmingReset) {
             // Danger Warning Plate
-            float warnT = cardT + 364f;
-            float warnB = cardT + 452f;
-            float warnL = cardL + 40f;
-            float warnR = cardR - 40f;
+            float warnT = cardT + 400f;
+            float warnB = cardT + 510f;
+            float warnL = cardL + 48f;
+            float warnR = cardR - 48f;
 
             fill.setColor(0x33B71C1C);
             c.drawRoundRect(warnL, warnT, warnR, warnB, 16f, 16f, fill);
@@ -308,15 +308,15 @@ public final class SettingsOverlay {
             c.drawRoundRect(warnL, warnT, warnR, warnB, 16f, 16f, stroke);
             stroke.setStyle(Paint.Style.FILL);
 
-            text.setTextSize(19f);
+            text.setTextSize(22f);
             text.setTypeface(SERIF_BOLD);
             text.setColor(0xFFFF8A80);
-            c.drawText("RESET ALL 15 STARS & PROGRESS?", cx, warnT + 36f, text);
+            c.drawText("RESET ALL 45 STARS & PROGRESS?", cx, warnT + 42f, text);
 
-            text.setTextSize(15f);
+            text.setTextSize(17f);
             text.setTypeface(SERIF_NORMAL);
             text.setColor(0xFFFFCDD2);
-            c.drawText("All times, stars and codex relics will be permanently cleared.", cx, warnT + 64f, text);
+            c.drawText("All times, stars and codex relics will be permanently cleared.", cx, warnT + 76f, text);
 
             btnConfirmYes.label = "CONFIRM RESET";
             btnConfirmYes.subLabel = "Irreversible";
@@ -329,21 +329,21 @@ public final class SettingsOverlay {
             btnReset.label = "RESET ASTRAL JOURNEY";
             btnReset.subLabel = "Clear all unlocked stars, times, and relics";
             btnReset.draw(c, fill, stroke, text, 1.0f, time);
-            GameIcons.drawReset(c, btnReset.left + 44f, btnReset.centerY(), 20f, fill, stroke);
+            GameIcons.drawReset(c, btnReset.left + 54f, btnReset.centerY(), 22f, fill, stroke);
 
             // Subtle edition hallmark
-            text.setTextSize(15f);
+            text.setTextSize(18f);
             text.setTypeface(SERIF_NORMAL);
-            text.setColor(0x88FFE0A8);
-            c.drawText("SHADOW WEAVER \u2022 v2.0 PRODUCTION EDITION", cx, cardT + 486f, text);
-            text.setTextSize(13f);
+            text.setColor(0x99FFE0A8);
+            c.drawText("SHADOW WEAVER \u2022 v2.0 PRODUCTION EDITION", cx, cardT + 545f, text);
+            text.setTextSize(15f);
             text.setColor(0x77FFE0A8);
-            c.drawText("Atmospheric Music: The Cynic Project \u2022 Icons: game-icons.net", cx, cardT + 510f, text);
+            c.drawText("Atmospheric Music: The Cynic Project \u2022 Icons: game-icons.net", cx, cardT + 575f, text);
 
             stroke.setStyle(Paint.Style.STROKE);
             stroke.setStrokeWidth(1.2f);
             stroke.setColor(0x33D4AF37);
-            c.drawLine(cardL + 120f, cardT + 524f, cardR - 120f, cardT + 524f, stroke);
+            c.drawLine(cardL + 120f, cardT + 605f, cardR - 120f, cardT + 605f, stroke);
             stroke.setStyle(Paint.Style.FILL);
         }
 
