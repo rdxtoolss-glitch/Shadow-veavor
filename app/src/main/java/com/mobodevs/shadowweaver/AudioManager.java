@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioTrack;
+import android.media.MediaPlayer;
 import android.media.SoundPool;
 import android.os.Build;
 import android.util.Log;
@@ -18,25 +19,26 @@ import java.util.Map;
 /**
  * Shadow Weaver - AudioManager
  * ===========================
- * Pure procedural audio engine synthesized mathematically in code.
- * Zero external audio assets, zero native dependencies, zero latency.
+ * Professional dual-engine game audio architecture:
+ * 1. Background Music (BGM):
+ *    - Android MediaPlayer hardware-accelerated playback of studio-mastered
+ *      mysterious ambient theme (R.raw.bgm_ambient), matching Shadowmatic and The Room.
+ *    - Seamless looping, smooth volume attenuation, and zero-battery overhead.
  *
- * Employs Android SoundPool with AudioAttributes USAGE_GAME and CONTENT_TYPE_MUSIC
- * (STREAM_MUSIC) to guarantee clear, reliable, polyphonic playback across all
- * Android devices (even when device ringer is set to vibrate or silent mode).
- * Includes an AudioTrack fallback for environments where SoundPool is restricted.
+ * 2. Sound Effects (SFX):
+ *    - Android SoundPool on STREAM_MUSIC / USAGE_GAME + CONTENT_TYPE_MUSIC
+ *    - Tactile procedural clicks, rotary ticks, puppet pickup/drop, magnetic snap,
+ *      and celestial Tibetan singing bowl chimes with zero latency and full polyphony.
  */
 public class AudioManager {
 
     private static final String TAG = "ShadowWeaverAudio";
 
-    // Audio format
+    // Audio format for synthesized SFX
     private static final int SAMPLE_RATE = 22050;
-    private static final int AMBIENT_SECONDS = 6;
-    private static final float CROSSFADE_SECONDS = 0.40f;
 
-    // Audible, rich harmonic alchemical candle drone (optimized for phone speakers)
-    private static final float AMBIENT_GAIN = 0.50f;
+    // Volume balance
+    private static final float BGM_GAIN = 0.55f;
     private static float masterVolume = 0.95f;
 
     // Silhouette match chime marks
@@ -44,7 +46,7 @@ public class AudioManager {
     public static final int CHIME_GOOD = SilhouetteMatcher.CHIME_GOOD;
     public static final int CHIME_DONE = SilhouetteMatcher.CHIME_DONE;
 
-    // Sound indexes for SoundPool
+    // Sound indexes for SoundPool SFX
     private static final int IDX_CLICK = 0;
     private static final int IDX_TICK = 1;
     private static final int IDX_PICKUP = 2;
@@ -54,23 +56,25 @@ public class AudioManager {
     private static final int IDX_CHIME_GOOD = 6;
     private static final int IDX_CHIME_DONE = 7;
     private static final int IDX_CELEBRATION = 8;
-    private static final int IDX_AMBIENT = 9;
-    private static final int SOUND_COUNT = 10;
+    private static final int SFX_COUNT = 9;
 
     // State & synchronization
     private final Object lock = new Object();
     private Context context;
 
+    // BGM engine
+    private MediaPlayer bgmPlayer;
+    private boolean bgmPrepared;
+
+    // SFX engine
     private SoundPool soundPool;
-    private final int[] soundPoolIds = new int[SOUND_COUNT];
-    private final boolean[] isLoaded = new boolean[SOUND_COUNT];
-    private final boolean[] pendingPlay = new boolean[SOUND_COUNT];
-    private final long[] pendingPlayTime = new long[SOUND_COUNT];
-    private final float[] pendingGain = new float[SOUND_COUNT];
+    private final int[] soundPoolIds = new int[SFX_COUNT];
+    private final boolean[] isLoaded = new boolean[SFX_COUNT];
+    private final boolean[] pendingPlay = new boolean[SFX_COUNT];
+    private final long[] pendingPlayTime = new long[SFX_COUNT];
+    private final float[] pendingGain = new float[SFX_COUNT];
     private final Map<Integer, Integer> sampleToSoundIndex = new HashMap<>();
 
-    private int ambientStreamId = 0;
-    private AudioTrack fallbackAmbientTrack;
     private AudioTrack fallbackClickTrack;
 
     private Thread prepareThread;
@@ -79,7 +83,6 @@ public class AudioManager {
     private volatile boolean started;
 
     // Cached PCM buffers (shared statically across instances)
-    private static short[] ambientBuffer;
     private static short[] clickBuffer;
     private static short[] tickBuffer;
     private static short[] pickupBuffer;
@@ -103,7 +106,40 @@ public class AudioManager {
             this.context = ctx.getApplicationContext();
         }
         initSoundPool();
+        initBgmPlayer();
         start();
+    }
+
+    private void initBgmPlayer() {
+        if (context == null) return;
+        try {
+            bgmPlayer = MediaPlayer.create(context, R.raw.bgm_ambient);
+            if (bgmPlayer != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    AudioAttributes attrs = new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_GAME)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build();
+                    bgmPlayer.setAudioAttributes(attrs);
+                } else {
+                    bgmPlayer.setAudioStreamType(android.media.AudioManager.STREAM_MUSIC);
+                }
+
+                bgmPlayer.setLooping(true);
+                bgmPrepared = true;
+                applyBgmVolume();
+
+                bgmPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                    @Override
+                    public boolean onError(MediaPlayer mp, int what, int extra) {
+                        Log.w(TAG, "MediaPlayer error: " + what + ", " + extra);
+                        return true; // Handled
+                    }
+                });
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to initialize BGM MediaPlayer", t);
+        }
     }
 
     private void initSoundPool() {
@@ -114,12 +150,12 @@ public class AudioManager {
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build();
                 soundPool = new SoundPool.Builder()
-                        .setMaxStreams(12)
+                        .setMaxStreams(10)
                         .setAudioAttributes(attrs)
                         .build();
             } else {
                 @SuppressWarnings("deprecation")
-                SoundPool legacy = new SoundPool(12, android.media.AudioManager.STREAM_MUSIC, 0);
+                SoundPool legacy = new SoundPool(10, android.media.AudioManager.STREAM_MUSIC, 0);
                 soundPool = legacy;
             }
 
@@ -131,12 +167,6 @@ public class AudioManager {
                         Integer idx = sampleToSoundIndex.get(sampleId);
                         if (idx != null && status == 0) {
                             isLoaded[idx] = true;
-                            // If ambient loaded and game is active, start ambient loop
-                            if (idx == IDX_AMBIENT) {
-                                if (started && !muted && ambientStreamId == 0) {
-                                    startAmbientLoop();
-                                }
-                            }
                             // Process any pending play triggered during cold start
                             if (pendingPlay[idx]) {
                                 pendingPlay[idx] = false;
@@ -149,7 +179,7 @@ public class AudioManager {
                 }
             });
 
-            // Diagnostic volume check
+            // Diagnostic stream volume check
             if (context != null) {
                 try {
                     android.media.AudioManager am = (android.media.AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
@@ -173,6 +203,20 @@ public class AudioManager {
     public void start() {
         if (released || started) return;
         started = true;
+
+        // Start BGM if ready and not muted
+        synchronized (lock) {
+            if (!muted && bgmPlayer != null && bgmPrepared) {
+                try {
+                    applyBgmVolume();
+                    if (!bgmPlayer.isPlaying()) {
+                        bgmPlayer.start();
+                    }
+                } catch (Throwable t) {
+                    Log.w(TAG, "Error starting BGM on start()", t);
+                }
+            }
+        }
 
         prepareThread = new Thread(new Runnable() {
             @Override
@@ -266,14 +310,6 @@ public class AudioManager {
                 return celebrationBuffer;
             }
         });
-
-        // Priority 4: Ambient drone
-        loadOrSynthesize(IDX_AMBIENT, "sfx_ambient.wav", cacheDir, new BufferGenerator() {
-            @Override public short[] generate() {
-                if (ambientBuffer == null) ambientBuffer = buildAmbientBuffer();
-                return ambientBuffer;
-            }
-        });
     }
 
     private interface BufferGenerator {
@@ -303,7 +339,6 @@ public class AudioManager {
                     sampleToSoundIndex.put(id, soundIndex);
                 }
             } else if (soundPool == null) {
-                // If SoundPool is not available, generate buffer into memory for AudioTrack fallback
                 gen.generate();
             }
         } catch (Throwable t) {
@@ -313,17 +348,17 @@ public class AudioManager {
 
     public void pause() {
         synchronized (lock) {
-            if (soundPool != null) {
+            if (bgmPlayer != null) {
                 try {
-                    soundPool.autoPause();
+                    if (bgmPlayer.isPlaying()) {
+                        bgmPlayer.pause();
+                    }
                 } catch (Throwable ignored) {
                 }
             }
-            if (fallbackAmbientTrack != null) {
+            if (soundPool != null) {
                 try {
-                    if (fallbackAmbientTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
-                        fallbackAmbientTrack.pause();
-                    }
+                    soundPool.autoPause();
                 } catch (Throwable ignored) {
                 }
             }
@@ -337,21 +372,26 @@ public class AudioManager {
                 start();
                 return;
             }
-            if (soundPool != null) {
+            if (bgmPlayer != null) {
                 try {
-                    soundPool.autoResume();
-                    if (!muted && isLoaded[IDX_AMBIENT]) {
-                        if (ambientStreamId != 0) {
-                            soundPool.setVolume(ambientStreamId, masterVolume * AMBIENT_GAIN, masterVolume * AMBIENT_GAIN);
-                        } else {
-                            startAmbientLoop();
+                    if (!muted) {
+                        applyBgmVolume();
+                        if (!bgmPlayer.isPlaying()) {
+                            bgmPlayer.start();
                         }
                     }
                 } catch (Throwable ignored) {
                 }
-            } else if (fallbackAmbientTrack != null && !muted) {
+            } else if (context != null) {
+                initBgmPlayer();
+                if (!muted && bgmPlayer != null) {
+                    try { bgmPlayer.start(); } catch (Throwable ignored) {}
+                }
+            }
+
+            if (soundPool != null) {
                 try {
-                    fallbackAmbientTrack.play();
+                    soundPool.autoResume();
                 } catch (Throwable ignored) {
                 }
             }
@@ -362,6 +402,18 @@ public class AudioManager {
         released = true;
         started = false;
         synchronized (lock) {
+            if (bgmPlayer != null) {
+                try {
+                    if (bgmPlayer.isPlaying()) {
+                        bgmPlayer.stop();
+                    }
+                    bgmPlayer.release();
+                } catch (Throwable ignored) {
+                }
+                bgmPlayer = null;
+                bgmPrepared = false;
+            }
+
             if (soundPool != null) {
                 try {
                     soundPool.release();
@@ -369,7 +421,6 @@ public class AudioManager {
                 }
                 soundPool = null;
             }
-            safeReleaseTrack(fallbackAmbientTrack); fallbackAmbientTrack = null;
             safeReleaseTrack(fallbackClickTrack); fallbackClickTrack = null;
         }
     }
@@ -397,38 +448,30 @@ public class AudioManager {
     public void setMuted(boolean muted) {
         this.muted = muted;
         synchronized (lock) {
-            applyVolume();
+            applyBgmVolume();
+            if (muted) {
+                if (bgmPlayer != null && bgmPlayer.isPlaying()) {
+                    try { bgmPlayer.pause(); } catch (Throwable ignored) {}
+                }
+            } else {
+                if (bgmPlayer != null && started && !bgmPlayer.isPlaying()) {
+                    try { bgmPlayer.start(); } catch (Throwable ignored) {}
+                }
+            }
         }
     }
 
     public boolean toggleMute() {
-        muted = !muted;
-        synchronized (lock) {
-            applyVolume();
-        }
+        setMuted(!muted);
         return muted;
     }
 
-    private void applyVolume() {
-        float ambVol = muted ? 0f : masterVolume * AMBIENT_GAIN;
-        if (soundPool != null) {
-            try {
-                if (ambientStreamId != 0) {
-                    soundPool.setVolume(ambientStreamId, ambVol, ambVol);
-                } else if (!muted && isLoaded[IDX_AMBIENT]) {
-                    startAmbientLoop();
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-        if (fallbackAmbientTrack != null) {
-            try {
-                setTrackVolume(fallbackAmbientTrack, ambVol);
-                if (!muted && fallbackAmbientTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
-                    fallbackAmbientTrack.play();
-                }
-            } catch (Throwable ignored) {
-            }
+    private void applyBgmVolume() {
+        if (bgmPlayer == null) return;
+        try {
+            float vol = muted ? 0f : masterVolume * BGM_GAIN;
+            bgmPlayer.setVolume(vol, vol);
+        } catch (Throwable ignored) {
         }
     }
 
@@ -439,7 +482,7 @@ public class AudioManager {
     public void setVolume(float v) {
         masterVolume = Math.max(0f, Math.min(1f, v));
         synchronized (lock) {
-            applyVolume();
+            applyBgmVolume();
         }
     }
 
@@ -457,19 +500,8 @@ public class AudioManager {
     }
 
     // ======================================================================
-    // PLAYBACK METHODS
+    // SFX PLAYBACK METHODS (NON-BLOCKING POLYPHONIC SOUNDPOOL)
     // ======================================================================
-
-    private void startAmbientLoop() {
-        if (released || muted || soundPool == null || !isLoaded[IDX_AMBIENT]) return;
-        try {
-            float vol = masterVolume * AMBIENT_GAIN;
-            int sid = soundPoolIds[IDX_AMBIENT];
-            ambientStreamId = soundPool.play(sid, vol, vol, 1, -1, 1.0f);
-        } catch (Throwable t) {
-            Log.w(TAG, "Error starting SoundPool ambient loop", t);
-        }
-    }
 
     private void playByIndex(int soundIdx, float gain) {
         if (released || muted) return;
@@ -590,7 +622,7 @@ public class AudioManager {
     }
 
     // ======================================================================
-    // PROCEDURAL SYNTHESIS (ACOUSTICALLY TUNED FOR SMARTPHONE SPEAKERS)
+    // PROCEDURAL SFX SYNTHESIS (ACOUSTICALLY TUNED FOR SMARTPHONE SPEAKERS)
     // ======================================================================
 
     /**
@@ -808,68 +840,6 @@ public class AudioManager {
             pcm[i] = (short) (v * 32500);
         }
         return pcm;
-    }
-
-    /**
-     * Ambient candle drone: Warm, meditative harmonic sanctuary.
-     * Tuned to 220Hz-660Hz acoustic sweet spot of smartphone speakers.
-     */
-    public static short[] buildAmbientBuffer() {
-        final int n = SAMPLE_RATE * AMBIENT_SECONDS;
-        final float[] out = new float[n];
-        final float seconds = (float) n / SAMPLE_RATE;
-
-        final float[] partials = {220.0f, 329.6f, 440.0f, 554.4f, 659.2f};
-        final float[] gains = {0.85f, 0.65f, 0.50f, 0.35f, 0.20f};
-
-        for (int p = 0; p < partials.length; p++) {
-            float hz = snapToWholeCycles(partials[p], seconds);
-            if (hz <= 0f) continue;
-            double w = 2.0 * Math.PI * hz / SAMPLE_RATE;
-            double phase = p * 1.1;
-            for (int i = 0; i < n; i++) {
-                out[i] += (float) (gains[p] * Math.sin(phase));
-                phase += w;
-            }
-        }
-
-        for (int i = 0; i < n; i++) {
-            float t = i / (float) SAMPLE_RATE;
-            float lfo = 1.0f
-                    + 0.12f * (float) Math.sin(2 * Math.PI * 0.05f * t)
-                    + 0.06f * (float) Math.sin(2 * Math.PI * 0.02f * t + 0.8f);
-            out[i] *= lfo;
-        }
-
-        int fade = (int) (CROSSFADE_SECONDS * SAMPLE_RATE);
-        if (fade * 2 < n) {
-            for (int i = 0; i < fade; i++) {
-                float t = i / (float) fade;
-                out[n - fade + i] *= (1f - t);
-                out[i] = out[i] * t + out[n - fade + i] * (1f - t);
-            }
-        }
-
-        float peak = 0f;
-        for (int i = 0; i < n; i++) {
-            float a = Math.abs(out[i]);
-            if (a > peak) peak = a;
-        }
-        float norm = peak > 1e-6f ? 0.92f / peak : 0f;
-
-        short[] pcm = new short[n];
-        for (int i = 0; i < n; i++) {
-            float v = (float) Math.tanh(out[i] * norm * 1.20f);
-            pcm[i] = (short) (v * 30000);
-        }
-        return pcm;
-    }
-
-    private static float snapToWholeCycles(float hz, float seconds) {
-        if (hz <= 0f || seconds <= 0f) return 0f;
-        long cycles = Math.round(hz * seconds);
-        if (cycles < 1) cycles = 1;
-        return cycles / seconds;
     }
 
     // ======================================================================

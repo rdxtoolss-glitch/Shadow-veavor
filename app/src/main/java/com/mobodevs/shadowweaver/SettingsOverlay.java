@@ -278,8 +278,8 @@ public final class SettingsOverlay {
 
         // 4. Update Button Labels
         boolean soundMuted = (progress != null && progress.isSoundMuted());
-        btnSound.label = soundMuted ? "ACOUSTIC CHIMES: MUTED" : "ACOUSTIC CHIMES: ENABLED";
-        btnSound.subLabel = soundMuted ? "Pure silence for dark contemplative play" : "Harmonic Tibetan singing bowls on rotation & snaps";
+        btnSound.label = soundMuted ? "MUSIC & CHIMES: MUTED" : "MUSIC & CHIMES: ENABLED";
+        btnSound.subLabel = soundMuted ? "Pure silence for dark contemplative play" : "Atmospheric piano & celestial Tibetan singing bowls";
 
         boolean hapticsOn = (progress == null || progress.isHapticsEnabled());
         btnHaptics.label = hapticsOn ? "HAPTIC RESONANCE: ACTIVE" : "HAPTIC RESONANCE: OFF";
@@ -338,7 +338,7 @@ public final class SettingsOverlay {
             c.drawText("SHADOW WEAVER \u2022 v2.0 PRODUCTION EDITION", cx, cardT + 486f, text);
             text.setTextSize(13f);
             text.setColor(0x77FFE0A8);
-            c.drawText("Vector Icons: game-icons.net (CC BY 3.0) \u2022 Pure Java Engine", cx, cardT + 510f, text);
+            c.drawText("Atmospheric Music: The Cynic Project \u2022 Icons: game-icons.net", cx, cardT + 510f, text);
 
             stroke.setStyle(Paint.Style.STROKE);
             stroke.setStrokeWidth(1.2f);
