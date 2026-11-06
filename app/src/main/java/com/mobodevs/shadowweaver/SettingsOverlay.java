@@ -283,7 +283,6 @@ public final class SettingsOverlay {
         stroke.setStyle(Paint.Style.FILL);
 
         // 4 Corner Brass Filigree Brackets
-        drawCornerBrackets(c, cardL, cardT, cardR, cardB);
 
         // 3. Header
         float headY = cardT + 75f;
@@ -291,16 +290,16 @@ public final class SettingsOverlay {
         text.setTypeface(SERIF_BOLD);
         text.setTextSize(44f);
         text.setColor(0xDD000000);
-        c.drawText("ALCHEMICAL SETTINGS", cx, headY + 2f, text);
+        c.drawText("SETTINGS", cx, headY + 2f, text);
         text.setColor(0xFFFFFDF8);
-        c.drawText("ALCHEMICAL SETTINGS", cx, headY, text);
+        c.drawText("SETTINGS", cx, headY, text);
 
         text.setTextSize(20f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
-        c.drawText("Acoustic Chimes, Ambient Music & Haptics", cx, headY + 38f + 1.5f, text);
+        c.drawText("Audio & Haptics", cx, headY + 38f + 1.5f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText("Acoustic Chimes, Ambient Music & Haptics", cx, headY + 38f, text);
+        c.drawText("Audio & Haptics", cx, headY + 38f, text);
 
         // Ornamental divider with center diamond pip
         float divY = cardT + 138f;
@@ -334,8 +333,8 @@ public final class SettingsOverlay {
         btnAllAudio.subLabel = allMuted ? "Tap to restore both music & sound effects" : "One-tap toggle to mute all music and sound";
 
         boolean hapticsOn = (progress == null || progress.isHapticsEnabled());
-        btnHaptics.label = hapticsOn ? "HAPTIC RESONANCE: ACTIVE" : "HAPTIC RESONANCE: OFF";
-        btnHaptics.subLabel = hapticsOn ? "Tactile detent ticks and magnetic snap impulses" : "Vibration feedback disabled";
+        btnHaptics.label = hapticsOn ? "HAPTICS: ON" : "HAPTICS: OFF";
+        btnHaptics.subLabel = hapticsOn ? "Tactile vibration feedback" : "Vibration feedback disabled";
 
         btnMusic.draw(c, fill, stroke, text, 1.0f, time);
         btnSfx.draw(c, fill, stroke, text, 1.0f, time);
@@ -367,12 +366,12 @@ public final class SettingsOverlay {
             text.setTextSize(22f);
             text.setTypeface(SERIF_BOLD);
             text.setColor(0xFFFF8A80);
-            c.drawText("RESET ALL 45 STARS & PROGRESS?", cx, warnT + 40f, text);
+            c.drawText("RESET ALL PROGRESS?", cx, warnT + 40f, text);
 
             text.setTextSize(17f);
             text.setTypeface(SERIF_NORMAL);
             text.setColor(0xFFFFCDD2);
-            c.drawText("All times, stars and codex relics will be permanently cleared.", cx, warnT + 72f, text);
+            c.drawText("All times, stars, and journal entries will be reset.", cx, warnT + 72f, text);
 
             btnConfirmYes.label = "CONFIRM RESET";
             btnConfirmYes.subLabel = "Irreversible";
@@ -382,57 +381,19 @@ public final class SettingsOverlay {
             btnConfirmNo.subLabel = "Keep Progress";
             btnConfirmNo.draw(c, fill, stroke, text, 1.0f, time);
         } else {
-            btnReset.label = "RESET ASTRAL JOURNEY";
-            btnReset.subLabel = "Clear all unlocked stars, times, and relics";
+            btnReset.label = "RESET PROGRESS";
+            btnReset.subLabel = "Clear all unlocked levels, stars, and records";
             btnReset.draw(c, fill, stroke, text, 1.0f, time);
             GameIcons.drawReset(c, btnReset.left + 54f, btnReset.centerY(), 22f, fill, stroke);
 
-            // Subtle edition hallmark
-            text.setTextSize(18f);
-            text.setTypeface(SERIF_NORMAL);
-            text.setColor(0x99FFE0A8);
-            c.drawText("SHADOW WEAVER • v2.0 PRODUCTION EDITION", cx, cardT + 606f, text);
-            text.setTextSize(15f);
-            text.setColor(0x77FFE0A8);
-            c.drawText("Atmospheric Music: The Cynic Project • Icons: game-icons.net", cx, cardT + 634f, text);
 
-            stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(1.2f);
-            stroke.setColor(0x33D4AF37);
-            c.drawLine(cardL + 120f, cardT + 662f, cardR - 120f, cardT + 662f, stroke);
-            stroke.setStyle(Paint.Style.FILL);
         }
 
         // 5. Close Button
-        btnClose.label = "RETURN";
+        btnClose.label = "CLOSE";
         btnClose.draw(c, fill, stroke, text, 1.0f, time);
 
         c.restoreToCount(saveCard);
         text.setTextAlign(Paint.Align.LEFT);
-    }
-
-    private static void drawCornerBrackets(Canvas c, float l, float t, float r, float b) {
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.2f);
-        stroke.setColor(0xFFD4AF37);
-
-        float len = 20f;
-        // Top-Left
-        c.drawLine(l + 10f, t + 10f, l + 10f + len, t + 10f, stroke);
-        c.drawLine(l + 10f, t + 10f, l + 10f, t + 10f + len, stroke);
-
-        // Top-Right
-        c.drawLine(r - 10f, t + 10f, r - 10f - len, t + 10f, stroke);
-        c.drawLine(r - 10f, t + 10f, r - 10f, t + 10f + len, stroke);
-
-        // Bottom-Left
-        c.drawLine(l + 10f, b - 10f, l + 10f + len, b - 10f, stroke);
-        c.drawLine(l + 10f, b - 10f, l + 10f, b - 10f - len, stroke);
-
-        // Bottom-Right
-        c.drawLine(r - 10f, b - 10f, r - 10f - len, b - 10f, stroke);
-        c.drawLine(r - 10f, b - 10f, r - 10f, b - 10f - len, stroke);
-
-        stroke.setStyle(Paint.Style.FILL);
     }
 }

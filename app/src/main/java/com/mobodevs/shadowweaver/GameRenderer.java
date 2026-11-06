@@ -629,38 +629,22 @@ final class GameRenderer {
             return;
         }
 
-        // Unsolved state: Enchanting Celestial Blueprint with star diamond nodes
+        // Unsolved state: Architectural vellum blueprint outline
+        fill.setColor(0x0EC8A870);
+        for (float[] poly : target) {
+            buildPath(poly);
+            c.drawPath(path, fill);
+        }
+
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.4f);
-        stroke.setColor(0x88A07A38); // Warm antique sepia
+        stroke.setStrokeWidth(2.0f);
+        stroke.setColor(0x55C8A870); // Soft antique vellum charcoal
 
         for (float[] poly : target) {
             buildPath(poly);
             c.drawPath(path, stroke);
-
-            // Draw glowing star diamond nodes at key vertices
-            for (int i = 0; i < poly.length; i += 2) {
-                float px = poly[i];
-                float py = poly[i + 1];
-                drawStarNode(c, px, py, 5.0f, 0xBBFFE082);
-            }
         }
         stroke.setStyle(Paint.Style.FILL);
-    }
-
-    private static void drawStarNode(Canvas c, float cx, float cy, float r, int color) {
-        fill.setColor(color);
-        path2.reset();
-        path2.moveTo(cx, cy - r);
-        path2.lineTo(cx + r * 0.45f, cy);
-        path2.lineTo(cx, cy + r);
-        path2.lineTo(cx - r * 0.45f, cy);
-        path2.close();
-        c.drawPath(path2, fill);
-
-        // Center white star pearl
-        fill.setColor(0xFFFFFFFF);
-        c.drawCircle(cx, cy, 1.8f, fill);
     }
 
     // ======================================================================
@@ -668,6 +652,7 @@ final class GameRenderer {
     // ======================================================================
 
     private static void drawMagneticTethers(Canvas c, GameThread g) {
+        if (!g.isHintActive()) return;
         ShapeObject s = g.getSelectedShape();
         if (s == null || g.isSolved()) return;
 
@@ -833,36 +818,26 @@ final class GameRenderer {
                     : withAlpha(0xFFE5B048, 230));
             c.drawPath(path, stroke);
 
-            // Top-left specular directional highlight (reflecting candle flame)
-            stroke.setStrokeWidth(1.8f);
-            stroke.setColor(withAlpha(0xFFFFF8E1, isSel ? 240 : 160));
-            c.drawPath(path, stroke);
-            stroke.setStyle(Paint.Style.FILL);
-
-            // Inlaid Runic Sacred Geometry Lines from center to vertices
+            // Concentric precision brass inlay (zero bicycle spokes)
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(1.2f);
+            stroke.setStrokeWidth(1.6f);
             stroke.setColor(isSel ? 0x99FFE082 : 0x44D4AF37);
-            for (int k = 0; k < poly.length; k += 2) {
-                c.drawLine(s.x, s.y, poly[k], poly[k + 1], stroke);
+            if (s.kind == ShapeObject.Kind.CIRCLE) {
+                c.drawCircle(s.x, s.y, s.maxRadius() * 0.50f, stroke);
             }
             stroke.setStyle(Paint.Style.FILL);
 
-            // Center brass astrolabe pivot rivet
+            // Center horological brass fastener rivet
             fill.setColor(isSel ? 0xFFFFD54F : 0xFFC5A059);
-            c.drawCircle(s.x, s.y, 10f, fill);
+            c.drawCircle(s.x, s.y, 8f, fill);
 
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(2.2f);
+            stroke.setStrokeWidth(2.0f);
             stroke.setColor(0xFF1B0E05);
-            c.drawCircle(s.x, s.y, 10f, stroke);
+            c.drawCircle(s.x, s.y, 8f, stroke);
 
-            // Center faceted jewel (glowing ruby when selected, lapis lazuli when idle)
-            fill.setColor(isSel ? 0xFFE53935 : 0xFF283593);
-            c.drawCircle(s.x, s.y, 5.0f, fill);
-
-            fill.setColor(0xFFFFFFFF);
-            c.drawCircle(s.x - 1.5f, s.y - 1.5f, 1.6f, fill);
+            fill.setColor(0xFF2E1B0E);
+            c.drawCircle(s.x, s.y, 3.0f, fill);
             stroke.setStyle(Paint.Style.FILL);
 
             // 4. Mechanical Precision Astrolabe Rotation Dial
@@ -893,9 +868,7 @@ final class GameRenderer {
                     stroke.setStrokeWidth(isMajor ? 2.6f : 1.4f);
                     stroke.setColor(isMajor ? 0xFFFFF8E1 : 0x99FFE082);
                     c.drawLine(s.x + cos * t1, s.y + sin * t1, s.x + cos * t2, s.y + sin * t2, stroke);
-                    if (isMajor) {
-                        drawStarNode(c, s.x + cos * (dialR + 10f), s.y + sin * (dialR + 10f), 3.2f, 0xBBFFE082);
-                    }
+
                 }
 
                 // Rotary spoke arm
@@ -1057,7 +1030,7 @@ final class GameRenderer {
         text.setTextSize(16f);
         text.setTypeface(SERIF_BOLD);
         text.setColor(hintOn ? 0xFFFFD54F : 0xCCFFE0A8);
-        c.drawText(hintOn ? "\u2726 THE ORACLE'S REVELATION \u2726" : "\u2726 THE ORACLE'S GUIDANCE \u2726", cx, scT + 28f, text);
+        c.drawText(hintOn ? "HINT" : "GUIDANCE", cx, scT + 28f, text);
 
         // Hint Text
         text.setTextSize(21f);
@@ -1065,67 +1038,21 @@ final class GameRenderer {
         text.setColor(hintOn ? 0xFFFFFDF8 : 0xFFFFE0A8);
         c.drawText(hint, cx, scT + 66f, text);
 
-        // C. Live Alchemical Telemetry Tablet (On tall screens)
+        // C. Clean Understated Status Telemetry (On tall screens)
         if (tall) {
             float teleY = 1820f;
-            float teleW = 820f;
-            float teleH = 96f;
-            float tL = cx - teleW * 0.5f;
-            float tR = cx + teleW * 0.5f;
-            float tT = teleY - teleH * 0.5f;
-            float tB = teleY + teleH * 0.5f;
-
-            fill.setColor(0xF0181F2E);
-            c.drawRoundRect(tL, tT, tR, tB, 18f, 18f, fill);
-
-            stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(1.8f);
-            stroke.setColor(0x55D4AF37);
-            c.drawRoundRect(tL, tT, tR, tB, 18f, 18f, stroke);
-            stroke.setStyle(Paint.Style.FILL);
-
-            // 3 Badges inside tablet
             long elapsed = g.elapsedMillis();
             long parTime = LevelProgress.getParTimeMillis(g.levelIndex());
             int parMoves = LevelProgress.getParMoves(g.levelIndex());
             int moves = g.moveCount();
 
-            // Badge 1: Silhouette Match
-            float col1X = tL + 140f;
-            text.setTextSize(15f);
-            text.setTypeface(SERIF_BOLD);
-            text.setColor(0xAAFFE0A8);
-            c.drawText("SILHOUETTE", col1X, tT + 34f, text);
-            text.setTextSize(26f);
-            text.setColor(match >= 90f ? 0xFFFFD54F : 0xFFFFFDF8);
-            c.drawText(Math.round(match) + "%", col1X, tT + 72f, text);
-
-            // Divider 1
-            stroke.setStrokeWidth(1.4f);
-            stroke.setColor(0x33D4AF37);
-            c.drawLine(tL + 270f, tT + 16f, tL + 270f, tB - 16f, stroke);
-
-            // Badge 2: Chronometer
-            float col2X = cx;
-            text.setTextSize(15f);
-            text.setColor(0xAAFFE0A8);
-            c.drawText("CHRONOMETER", col2X, tT + 34f, text);
-            text.setTextSize(26f);
-            text.setColor(elapsed <= parTime ? 0xFFFFD54F : 0xFFE0E0E0);
-            c.drawText(formatTimeSec(elapsed) + " / " + (parTime / 1000L) + "s", col2X, tT + 72f, text);
-
-            // Divider 2
-            c.drawLine(tR - 270f, tT + 16f, tR - 270f, tB - 16f, stroke);
-
-            // Badge 3: Move Precision
-            float col3X = tR - 140f;
-            text.setTextSize(15f);
-            text.setColor(0xAAFFE0A8);
-            c.drawText("PRECISION", col3X, tT + 34f, text);
-            text.setTextSize(26f);
-            text.setColor(moves <= parMoves ? 0xFFFFD54F : 0xFFE0E0E0);
-            c.drawText(moves + " / " + parMoves, col3X, tT + 72f, text);
-            stroke.setStyle(Paint.Style.FILL);
+            text.setTextAlign(Paint.Align.CENTER);
+            text.setTextSize(16f);
+            text.setTypeface(SERIF_NORMAL);
+            text.setColor(0x88FFE0A8);
+            c.drawText("Par: " + (parTime / 1000L) + "s • " + parMoves + " Moves", cx, teleY - 12f, text);
+            text.setColor(0xCCFFFDF8);
+            c.drawText("Time: " + formatTimeSec(elapsed) + " • Moves: " + moves, cx, teleY + 14f, text);
         }
 
         // D. Tactile Command Controls (Anchored near bottom)
@@ -1139,7 +1066,7 @@ final class GameRenderer {
         text.setTextSize(18f);
         text.setTypeface(SERIF_BOLD);
         text.setColor(hintOn ? 0xFFFFD54F : 0xEEFFE0A8);
-        c.drawText("ORACLE HINT", hintX, ctrlY + btnR + 28f, text);
+        c.drawText("HINT", hintX, ctrlY + btnR + 28f, text);
 
         // 2. Central Celestial Match Astrolabe Dial
         drawConsoleMatchAstrolabe(c, cx, ctrlY, match);
@@ -1148,7 +1075,7 @@ final class GameRenderer {
         float rstX = getResetX();
         GameIcons.drawReset(c, rstX, ctrlY, btnR, fill, stroke);
         text.setColor(0xEEFFE0A8);
-        c.drawText("RESTART TRIAL", rstX, ctrlY + btnR + 28f, text);
+        c.drawText("RESTART", rstX, ctrlY + btnR + 28f, text);
 
         text.setTextAlign(Paint.Align.LEFT);
     }

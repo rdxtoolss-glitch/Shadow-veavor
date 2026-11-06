@@ -157,12 +157,18 @@ public class ShapeObject {
         if (dt > 0.05f) dt = 0.05f; // cap physics dt to prevent tunnelling
 
         if (isDragging) {
-            // Silky-smooth responsive tracking towards finger position (zero jitter, zero lag)
+            // Silky-smooth responsive tracking towards finger position with physical momentum retention
+            float prevX = x;
+            float prevY = y;
             float smooth = 1f - (float) Math.exp(-dt * 45f);
             x += (targetX - x) * smooth;
             y += (targetY - y) * smooth;
-            vx *= (float) Math.pow(0.01f, dt);
-            vy *= (float) Math.pow(0.01f, dt);
+            if (dt > 0.001f) {
+                float instVx = (x - prevX) / dt;
+                float instVy = (y - prevY) / dt;
+                vx = vx * 0.35f + instVx * 0.65f;
+                vy = vy * 0.35f + instVy * 0.65f;
+            }
             tiltX = 0f;
             tiltY = 0f;
         } else if (isSnapping) {
@@ -188,22 +194,16 @@ public class ShapeObject {
             tiltX = 0f;
             tiltY = 0f;
         } else {
-            // Inertial glide with exponential surface friction
+            // Inertial glide with natural studio surface friction
             x += vx * dt;
             y += vy * dt;
-            float friction = (float) Math.pow(0.005f, dt);
+            float friction = (float) Math.pow(0.04f, dt);
             vx *= friction;
             vy *= friction;
             if (Math.abs(vx) < 0.2f) vx = 0f;
             if (Math.abs(vy) < 0.2f) vy = 0f;
             tiltX = 0f;
             tiltY = 0f;
-
-            if (spin != 0f) {
-                rotation = normalizeAngle(rotation + spin * dt);
-                spin *= (float) Math.pow(0.01f, dt);
-                if (Math.abs(spin) < 0.2f) spin = 0f;
-            }
         }
 
         // Boundary collision with soft restitution bounce
@@ -229,13 +229,17 @@ public class ShapeObject {
             vy = -Math.abs(vy) * restitution;
         }
 
-        // Rotation physics
+        // Rotation physics with momentum conservation
         if (isRotating) {
             // Silky-smooth rotation tracking towards target angle with shortest-arc lerp
+            float prevRot = rotation;
             float dRot = normalizeDeltaAngle(targetRotation - rotation);
             float rotSmooth = 1f - (float) Math.exp(-dt * 45f);
             rotation = normalizeAngle(rotation + dRot * rotSmooth);
-            angularVelocity = 0f;
+            if (dt > 0.001f) {
+                float instW = normalizeDeltaAngle(rotation - prevRot) / dt;
+                angularVelocity = angularVelocity * 0.35f + instW * 0.65f;
+            }
         } else if (isSnapping) {
             float dRot = normalizeDeltaAngle(targetRotation - rotation);
             float kRot = 240f;
@@ -250,8 +254,8 @@ public class ShapeObject {
             }
         } else if (angularVelocity != 0f) {
             rotation = normalizeAngle(rotation + angularVelocity * dt);
-            angularVelocity *= (float) Math.pow(0.12f, dt);
-            if (Math.abs(angularVelocity) < 0.4f) angularVelocity = 0f;
+            angularVelocity *= (float) Math.pow(0.06f, dt);
+            if (Math.abs(angularVelocity) < 0.3f) angularVelocity = 0f;
         }
 
         updateElevation(dt);

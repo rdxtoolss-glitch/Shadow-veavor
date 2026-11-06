@@ -177,9 +177,9 @@ public final class TutorialScreen {
         text.setTextSize(20f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xCC000000);
-        c.drawText("THE PRINCIPLES OF ASTRAL PERSPECTIVE", cx, headerY + 42f + 2f, text);
+        c.drawText("PRINCIPLES OF SHADOW & PERSPECTIVE", cx, headerY + 42f + 2f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText("THE PRINCIPLES OF ASTRAL PERSPECTIVE", cx, headerY + 42f, text);
+        c.drawText("PRINCIPLES OF SHADOW & PERSPECTIVE", cx, headerY + 42f, text);
 
         // Ornamental brass dividing line
         float divY = headerY + 60f;
@@ -214,8 +214,6 @@ public final class TutorialScreen {
         c.drawLine(cardL + 24f, cardT + 2f, cardR - 24f, cardT + 2f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
-        // Corner filigree brackets
-        drawCornerBrackets(c, cardL, cardT, cardR, cardB);
 
         // 4. Page Content
         drawCardContent(c, cx, cardT + 42f, currentPage, time);
@@ -243,7 +241,7 @@ public final class TutorialScreen {
         btnPrev.enabled = (currentPage > 0);
 
         if (currentPage == TOTAL_PAGES - 1) {
-            btnNext.label = "BEGIN WEAVING";
+            btnNext.label = "PLAY";
         } else {
             btnNext.label = "NEXT";
         }
@@ -466,12 +464,12 @@ public final class TutorialScreen {
                 text.setTextSize(23f);
                 text.setTypeface(SERIF_BOLD);
                 text.setColor(0xFFFFFDF8);
-                c.drawText("Master trials with speed and efficiency.", cx, topY + 475f, text);
+                c.drawText("Master each level with speed and precision.", cx, topY + 475f, text);
 
                 text.setTextSize(19f);
                 text.setTypeface(SERIF_NORMAL);
                 text.setColor(0xDDFFE0A8);
-                c.drawText("Reach 90% match to weave the silhouette and win.", cx, topY + 518f, text);
+                c.drawText("Reach 90% match to complete the shadow.", cx, topY + 518f, text);
                 c.drawText("\u2605 1 Star: Silhouette solved   \u2605\u2605 2 Stars: Solved under par time", cx, topY + 556f, text);
                 c.drawText("\u2605\u2605\u2605 3 Stars: Solved under par time AND within par moves!", cx, topY + 594f, text);
                 break;
@@ -530,26 +528,5 @@ public final class TutorialScreen {
             fill.setColor(0xFFFFFFFF);
             c.drawCircle(cx, cy - 2f, 3.5f, fill);
         }
-    }
-
-    private static void drawCornerBrackets(Canvas c, float l, float t, float r, float b) {
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.2f);
-        stroke.setColor(0xFFD4AF37);
-
-        float len = 22f;
-        c.drawLine(l + 10f, t + 10f, l + 10f + len, t + 10f, stroke);
-        c.drawLine(l + 10f, t + 10f, l + 10f, t + 10f + len, stroke);
-
-        c.drawLine(r - 10f, t + 10f, r - 10f - len, t + 10f, stroke);
-        c.drawLine(r - 10f, t + 10f, r - 10f, t + 10f + len, stroke);
-
-        c.drawLine(l + 10f, b - 10f, l + 10f + len, b - 10f, stroke);
-        c.drawLine(l + 10f, b - 10f, l + 10f, b - 10f - len, stroke);
-
-        c.drawLine(r - 10f, b - 10f, r - 10f - len, b - 10f, stroke);
-        c.drawLine(r - 10f, b - 10f, r - 10f, b - 10f - len, stroke);
-
-        stroke.setStyle(Paint.Style.FILL);
     }
 }

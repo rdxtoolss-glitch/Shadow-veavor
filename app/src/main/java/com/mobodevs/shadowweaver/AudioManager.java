@@ -678,118 +678,115 @@ public class AudioManager {
     // ======================================================================
 
     /**
-     * Tactile UI click: 75ms dual-frequency tap (1850Hz transient + 820Hz wooden body).
+     * Tactile UI button tap: 45ms warm wooden click (340Hz fundamental + 680Hz overtone).
      */
     public static short[] buildClickBuffer() {
-        final float duration = 0.075f;
-        final int n = (int) (duration * SAMPLE_RATE);
-        final short[] pcm = new short[n];
-
-        double phaseA = 0;
-        double phaseB = 0;
-        double wA = 2.0 * Math.PI * 1850.0 / SAMPLE_RATE;
-        double wB = 2.0 * Math.PI * 820.0 / SAMPLE_RATE;
-
-        for (int i = 0; i < n; i++) {
-            float t = i / (float) SAMPLE_RATE;
-            float attack = Math.min(1.0f, t / 0.002f);
-            float envA = (float) Math.exp(-t * 90f);
-            float envB = (float) Math.exp(-t * 45f);
-
-            float s = (float) (Math.sin(phaseA) * envA * 0.55f + Math.sin(phaseB) * envB * 0.45f) * attack;
-            phaseA += wA;
-            phaseB += wB;
-
-            float saturated = (float) Math.tanh(s * 1.5f);
-            pcm[i] = (short) (saturated * 32000);
-        }
-        return pcm;
-    }
-
-    /**
-     * Rotation detent tick: 45ms mechanical rotary notch (2200Hz + 1400Hz).
-     */
-    public static short[] buildTickBuffer() {
         final float duration = 0.045f;
         final int n = (int) (duration * SAMPLE_RATE);
         final short[] pcm = new short[n];
 
         double phaseA = 0;
         double phaseB = 0;
-        double wA = 2.0 * Math.PI * 2200.0 / SAMPLE_RATE;
-        double wB = 2.0 * Math.PI * 1400.0 / SAMPLE_RATE;
+        double wA = 2.0 * Math.PI * 340.0 / SAMPLE_RATE;
+        double wB = 2.0 * Math.PI * 680.0 / SAMPLE_RATE;
+
+        for (int i = 0; i < n; i++) {
+            float t = i / (float) SAMPLE_RATE;
+            float attack = Math.min(1.0f, t / 0.002f);
+            float env = (float) Math.exp(-t * 95f);
+
+            float s = (float) (Math.sin(phaseA) * 0.70f + Math.sin(phaseB) * 0.30f) * env * attack;
+            phaseA += wA;
+            phaseB += wB;
+
+            pcm[i] = (short) (s * 26000);
+        }
+        return pcm;
+    }
+
+    /**
+     * Rotation detent tick: 35ms crisp horological brass escapement notch (920Hz + 460Hz).
+     */
+    public static short[] buildTickBuffer() {
+        final float duration = 0.035f;
+        final int n = (int) (duration * SAMPLE_RATE);
+        final short[] pcm = new short[n];
+
+        double phaseA = 0;
+        double phaseB = 0;
+        double wA = 2.0 * Math.PI * 920.0 / SAMPLE_RATE;
+        double wB = 2.0 * Math.PI * 460.0 / SAMPLE_RATE;
 
         for (int i = 0; i < n; i++) {
             float t = i / (float) SAMPLE_RATE;
             float attack = Math.min(1.0f, t / 0.0015f);
-            float envA = (float) Math.exp(-t * 140f);
-            float envB = (float) Math.exp(-t * 80f);
+            float env = (float) Math.exp(-t * 130f);
 
-            float s = (float) (Math.sin(phaseA) * envA * 0.60f + Math.sin(phaseB) * envB * 0.40f) * attack;
+            float s = (float) (Math.sin(phaseA) * 0.65f + Math.sin(phaseB) * 0.35f) * env * attack;
             phaseA += wA;
             phaseB += wB;
 
-            float saturated = (float) Math.tanh(s * 1.4f);
-            pcm[i] = (short) (saturated * 31000);
+            pcm[i] = (short) (s * 24000);
         }
         return pcm;
     }
 
     /**
-     * Shape pickup: 110ms warm upward wooden lift (440 Hz -> 720 Hz).
+     * Shape pickup: 65ms soft wooden lift on felt workbench (220Hz hollow resonance).
      */
     public static short[] buildPickupBuffer() {
-        final float duration = 0.110f;
+        final float duration = 0.065f;
         final int n = (int) (duration * SAMPLE_RATE);
         final short[] pcm = new short[n];
 
         double phase = 0;
-        for (int i = 0; i < n; i++) {
-            float t = i / (float) SAMPLE_RATE;
-            float attack = Math.min(1.0f, t / 0.004f);
-            float hz = 440f + 280f * (float) Math.sqrt(t / duration);
-            double w = 2.0 * Math.PI * hz / SAMPLE_RATE;
-            float env = (float) Math.sin(Math.PI * (t / duration));
+        double w = 2.0 * Math.PI * 220.0 / SAMPLE_RATE;
 
-            float s = (float) (Math.sin(phase) * env) * attack;
-            phase += w;
-
-            float saturated = (float) Math.tanh(s * 1.35f);
-            pcm[i] = (short) (saturated * 31500);
-        }
-        return pcm;
-    }
-
-    /**
-     * Shape drop: 120ms resonant wooden desk contact (340 Hz -> 220 Hz).
-     */
-    public static short[] buildDropBuffer() {
-        final float duration = 0.120f;
-        final int n = (int) (duration * SAMPLE_RATE);
-        final short[] pcm = new short[n];
-
-        double phase = 0;
         for (int i = 0; i < n; i++) {
             float t = i / (float) SAMPLE_RATE;
             float attack = Math.min(1.0f, t / 0.003f);
-            float hz = 340f - 120f * (t / duration);
-            double w = 2.0 * Math.PI * hz / SAMPLE_RATE;
-            float env = (float) Math.exp(-t * 32f);
+            float env = (float) Math.exp(-t * 55f);
 
-            float s = (float) (Math.sin(phase) * env) * attack;
+            float s = (float) Math.sin(phase) * env * attack;
             phase += w;
 
-            float saturated = (float) Math.tanh(s * 1.35f);
-            pcm[i] = (short) (saturated * 31000);
+            pcm[i] = (short) (s * 22000);
         }
         return pcm;
     }
 
     /**
-     * Magnetic snap assist: 220ms resonant dual-bell celestial lock (D5 + A5 + D6).
+     * Shape drop: 80ms resonant wooden contact (180Hz fundamental + 360Hz body).
+     */
+    public static short[] buildDropBuffer() {
+        final float duration = 0.080f;
+        final int n = (int) (duration * SAMPLE_RATE);
+        final short[] pcm = new short[n];
+
+        double phaseA = 0;
+        double phaseB = 0;
+        double wA = 2.0 * Math.PI * 180.0 / SAMPLE_RATE;
+        double wB = 2.0 * Math.PI * 360.0 / SAMPLE_RATE;
+
+        for (int i = 0; i < n; i++) {
+            float t = i / (float) SAMPLE_RATE;
+            float attack = Math.min(1.0f, t / 0.002f);
+            float env = (float) Math.exp(-t * 50f);
+
+            float s = (float) (Math.sin(phaseA) * 0.70f + Math.sin(phaseB) * 0.30f) * env * attack;
+            phaseA += wA;
+            phaseB += wB;
+
+            pcm[i] = (short) (s * 26000);
+        }
+        return pcm;
+    }
+
+    /**
+     * Magnetic snap assist: 280ms pure harmonic bell chime (D5 + A5 + D6 triad).
      */
     public static short[] buildSnapBuffer() {
-        final float duration = 0.220f;
+        final float duration = 0.280f;
         final int n = (int) (duration * SAMPLE_RATE);
         final short[] pcm = new short[n];
 
@@ -803,20 +800,19 @@ public class AudioManager {
         for (int i = 0; i < n; i++) {
             float t = i / (float) SAMPLE_RATE;
             float attack = Math.min(1.0f, t / 0.003f);
-            float envA = (float) Math.exp(-t * 18f);
-            float envB = (float) Math.exp(-t * 22f);
-            float envC = (float) Math.exp(-t * 36f);
+            float envA = (float) Math.exp(-t * 12f);
+            float envB = (float) Math.exp(-t * 16f);
+            float envC = (float) Math.exp(-t * 24f);
 
-            float sA = (float) (Math.sin(phaseA) * envA * 0.55f);
+            float sA = (float) (Math.sin(phaseA) * envA * 0.50f);
             float sB = (float) (Math.sin(phaseB) * envB * 0.35f);
-            float sC = (float) (Math.sin(phaseC) * envC * 0.20f);
+            float sC = (float) (Math.sin(phaseC) * envC * 0.15f);
             phaseA += wA;
             phaseB += wB;
             phaseC += wC;
 
             float combined = (sA + sB + sC) * attack;
-            float saturated = (float) Math.tanh(combined * 1.35f);
-            pcm[i] = (short) (saturated * 32000);
+            pcm[i] = (short) (combined * 28000);
         }
         return pcm;
     }
@@ -847,7 +843,7 @@ public class AudioManager {
 
         short[] pcm = new short[n];
         for (int i = 0; i < n; i++) {
-            float v = (float) Math.tanh(out[i] * gain * 1.30f);
+            float v = (float) Math.tanh(out[i] * gain * 0.95f);
             pcm[i] = (short) (v * 32500);
         }
         return pcm;
@@ -888,7 +884,7 @@ public class AudioManager {
 
         short[] pcm = new short[n];
         for (int i = 0; i < n; i++) {
-            float v = (float) Math.tanh(out[i] * 1.25f);
+            float v = (float) Math.tanh(out[i] * 0.95f);
             pcm[i] = (short) (v * 32500);
         }
         return pcm;

@@ -293,7 +293,7 @@ public final class ShadowCalculator {
      * penumbra. Offset fractions are 1.0 / 0.45 / 0.0, so the bands tile the
      * soft edge without leaving gaps between them.
      */
-    private static final float[] LAYER_ALPHA = {30f, 52f, 224f};
+    private static final float[] LAYER_ALPHA = {24f, 64f, 196f};
     private static final float[] LAYER_SPREAD = {1.0f, 0.45f, 0.0f};
 
     /** The near-black the shadow is composited in, so it is never pure black. */

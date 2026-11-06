@@ -169,69 +169,59 @@ public final class PauseOverlay {
         c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, fill);
 
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.8f);
+        stroke.setStrokeWidth(2.0f);
         stroke.setColor(0xFFD4AF37);
         c.drawRoundRect(cardL, cardT, cardR, cardB, 24f, 24f, stroke);
 
         // Specular top highlight
-        stroke.setStrokeWidth(1.4f);
-        stroke.setColor(0x55FFFFFF);
+        stroke.setStrokeWidth(1.2f);
+        stroke.setColor(0x40FFFFFF);
         c.drawLine(cardL + 24f, cardT + 2f, cardR - 24f, cardT + 2f, stroke);
         stroke.setStyle(Paint.Style.FILL);
-
-        // Corner filigree brackets
-        drawCornerBrackets(c, cardL, cardT, cardR, cardB);
 
         // 3. Header
         float headY = cardT + 75f;
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
-        text.setTextSize(44f);
-        text.setColor(0xDD000000);
-        c.drawText("SANCTUM PAUSED", cx, headY + 2f, text);
-        text.setColor(0xFFFFFDF8);
-        c.drawText("SANCTUM PAUSED", cx, headY, text);
-
-        text.setTextSize(20f);
-        text.setTypeface(SERIF_NORMAL);
+        text.setTextSize(40f);
         text.setColor(0xCC000000);
-        c.drawText(g.levelTitle() + " \u2022 CHAPTER " + ((g.levelIndex() / 5) + 1), cx, headY + 36f + 1.5f, text);
-        text.setColor(0xFFFFE0A8);
-        c.drawText(g.levelTitle() + " \u2022 CHAPTER " + ((g.levelIndex() / 5) + 1), cx, headY + 36f, text);
+        c.drawText("PAUSED", cx, headY + 2f, text);
+        text.setColor(0xFFFFFDF8);
+        c.drawText("PAUSED", cx, headY, text);
 
-        // Ornamental dividing flourish
+        text.setTextSize(19f);
+        text.setTypeface(SERIF_NORMAL);
+        text.setColor(0x99000000);
+        String sub = "Chapter " + ((g.levelIndex() / 5) + 1) + " • " + g.levelTitle();
+        c.drawText(sub, cx, headY + 36f + 1.5f, text);
+        text.setColor(0xFFFFE0A8);
+        c.drawText(sub, cx, headY + 36f, text);
+
+        // Dividing hairline
         float divY = cardT + 144f;
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(1.8f);
-        stroke.setColor(0x66D4AF37);
-        c.drawLine(cardL + 48f, divY, cx - 18f, divY, stroke);
-        c.drawLine(cx + 18f, divY, cardR - 48f, divY, stroke);
-        stroke.setStyle(Paint.Style.FILL);
-
-        fill.setColor(0xFFFFD54F);
-        path.reset();
-        path.moveTo(cx, divY - 5f);
-        path.lineTo(cx + 5f, divY);
-        path.lineTo(cx, divY + 5f);
-        path.lineTo(cx - 5f, divY);
-        path.close();
-        c.drawPath(path, fill);
+        stroke.setStrokeWidth(1.4f);
+        stroke.setColor(0x55D4AF37);
+        c.drawLine(cardL + 60f, divY, cardR - 60f, divY, stroke);
+        fill.setStyle(Paint.Style.FILL);
+        fill.setColor(0xFFFFE082);
+        c.drawCircle(cx, divY, 3.5f, fill);
 
         // 4. Update Button Labels
-        btnResume.label = "RESUME WEAVING";
-        btnResume.subLabel = "Continue this trial";
+        btnResume.label = "RESUME";
+        btnResume.subLabel = "Continue puzzle";
 
-        btnRestart.label = "RESTART TRIAL";
+        btnRestart.label = "RESTART";
         btnRestart.subLabel = "Reset piece coordinates";
 
-        btnChapters.label = "CHAPTER MAP";
-        btnChapters.subLabel = "Select another trial";
+        btnChapters.label = "CHAPTERS";
+        btnChapters.subLabel = "Select level";
 
-        btnSettings.label = "ALCHEMICAL SETTINGS";
-        btnSettings.subLabel = "Audio & Haptic preferences";
+        btnSettings.label = "SETTINGS";
+        btnSettings.subLabel = "Audio & Haptics";
 
         btnMainMenu.label = "MAIN MENU";
-        btnMainMenu.subLabel = "Return to main entrance";
+        btnMainMenu.subLabel = "Return to title";
 
         // 5. Draw Buttons
         float t = g.timeSeconds();
@@ -240,12 +230,6 @@ public final class PauseOverlay {
         btnChapters.draw(c, fill, stroke, text, 1.0f, t);
         btnSettings.draw(c, fill, stroke, text, 1.0f, t);
         btnMainMenu.draw(c, fill, stroke, text, 1.0f, t);
-
-        // Official game-icons.net embellishments on pause buttons
-        GameIcons.drawPause(c, btnResume.left + 54f, btnResume.centerY(), 22f, fill, stroke, false);
-        GameIcons.drawReset(c, btnRestart.left + 54f, btnRestart.centerY(), 22f, fill, stroke);
-        GameIcons.drawIcon(c, GameIcons.RELIC_PATHS[14], btnChapters.left + 54f, btnChapters.centerY(), 22f, 0xFFFFD54F);
-        GameIcons.drawIcon(c, GameIcons.PATH_SETTINGS, btnSettings.left + 54f, btnSettings.centerY(), 22f, 0xFFFFD54F);
 
         c.restoreToCount(saveCard);
         text.setTextAlign(Paint.Align.LEFT);

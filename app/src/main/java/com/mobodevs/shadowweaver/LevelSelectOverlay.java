@@ -256,43 +256,35 @@ public final class LevelSelectOverlay {
         float headerY = cachedHeaderY;
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
-        text.setTextSize(48f);
+        text.setTextSize(46f);
 
         text.setColor(0xDD000000);
-        c.drawText("CHAPTER MAP", cx, headerY + 2f, text);
+        c.drawText("CHAPTERS", cx, headerY + 2f, text);
         text.setColor(0xFFFFFDF8);
-        c.drawText("CHAPTER MAP", cx, headerY, text);
+        c.drawText("CHAPTERS", cx, headerY, text);
 
-        text.setTextSize(21f);
+        text.setTextSize(20f);
         text.setTypeface(SERIF_NORMAL);
-        text.setColor(0xCC000000);
+        text.setColor(0xAA000000);
 
         String[] chapterNames = {
-                "CHAPTER I: THE APPRENTICE'S STUDY",
-                "CHAPTER II: THE ALCHEMIST'S CHAMBER",
-                "CHAPTER III: THE CELESTIAL OBSERVATORY"
+                "CHAPTER I: THE WORKSHOP",
+                "CHAPTER II: THE STUDY",
+                "CHAPTER III: THE OBSERVATORY"
         };
-        c.drawText(chapterNames[activeChapter], cx, headerY + 42f + 2f, text);
+        c.drawText(chapterNames[activeChapter], cx, headerY + 42f + 1.5f, text);
         text.setColor(0xFFFFE0A8);
         c.drawText(chapterNames[activeChapter], cx, headerY + 42f, text);
 
         // Dividing flourish
         float divY = headerY + 58f;
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(1.8f);
-        stroke.setColor(0x66D4AF37);
-        c.drawLine(cx - 240f, divY, cx - 18f, divY, stroke);
-        c.drawLine(cx + 18f, divY, cx + 240f, divY, stroke);
-        stroke.setStyle(Paint.Style.FILL);
-
-        fill.setColor(0xFFFFD54F);
-        path.reset();
-        path.moveTo(cx, divY - 5f);
-        path.lineTo(cx + 5f, divY);
-        path.lineTo(cx, divY + 5f);
-        path.lineTo(cx - 5f, divY);
-        path.close();
-        c.drawPath(path, fill);
+        stroke.setStrokeWidth(1.4f);
+        stroke.setColor(0x55D4AF37);
+        c.drawLine(cx - 200f, divY, cx + 200f, divY, stroke);
+        fill.setStyle(Paint.Style.FILL);
+        fill.setColor(0xFFFFE082);
+        c.drawCircle(cx, divY, 3.5f, fill);
 
         // 3. Chapter Tabs
         String[] roman = {"CHAPTER I", "CHAPTER II", "CHAPTER III"};
@@ -304,7 +296,7 @@ public final class LevelSelectOverlay {
             c.drawRoundRect(TAB_L[i], TAB_T[i], TAB_R[i], TAB_B[i], 16f, 16f, fill);
 
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(isSel ? 2.6f : 1.8f);
+            stroke.setStrokeWidth(isSel ? 2.4f : 1.6f);
             stroke.setColor(isSel ? 0xFFFFF4D0 : (isUnlocked ? 0xFFD4AF37 : 0x44607080));
             c.drawRoundRect(TAB_L[i], TAB_T[i], TAB_R[i], TAB_B[i], 16f, 16f, stroke);
             stroke.setStyle(Paint.Style.FILL);
@@ -312,16 +304,16 @@ public final class LevelSelectOverlay {
             float tabCx = (TAB_L[i] + TAB_R[i]) * 0.5f;
             float tabCy = (TAB_T[i] + TAB_B[i]) * 0.5f;
 
-            text.setTextSize(21f);
+            text.setTextSize(20f);
             text.setTypeface(SERIF_BOLD);
             text.setColor(isSel ? 0xFF140802 : (isUnlocked ? 0xFFFFFDF8 : 0x6690A0B8));
             c.drawText(roman[i], tabCx, tabCy - 5f, text);
 
             int chapterStars = (progress != null) ? progress.getChapterStars(i) : 0;
-            text.setTextSize(16f);
+            text.setTextSize(15f);
             text.setTypeface(SERIF_NORMAL);
             text.setColor(isSel ? 0xDD2A1404 : (isUnlocked ? 0xFFFFE0A8 : 0x4490A0B8));
-            c.drawText("\u2605 " + chapterStars + " / 15", tabCx, tabCy + 20f, text);
+            c.drawText("★ " + chapterStars + " / 15", tabCx, tabCy + 20f, text);
         }
 
         // 4. 5 Level Cards for Active Chapter
@@ -352,26 +344,26 @@ public final class LevelSelectOverlay {
 
             // Card Border
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(isCurrent ? 3.0f : (isSolved ? 2.2f : (isUnlocked ? 1.6f : 1.2f)));
+            stroke.setStrokeWidth(isCurrent ? 2.6f : (isSolved ? 2.0f : (isUnlocked ? 1.5f : 1.0f)));
             stroke.setColor(isCurrent ? 0xFFFFD54F : (isSolved ? 0xFFD4AF37 : (isUnlocked ? 0x88D4AF37 : 0x33607080)));
             c.drawRoundRect(l, t, r, b, 20f, 20f, stroke);
 
             // Specular top highlight
             if (isUnlocked) {
-                stroke.setStrokeWidth(1.2f);
-                stroke.setColor(0x55FFFFFF);
+                stroke.setStrokeWidth(1.0f);
+                stroke.setColor(0x40FFFFFF);
                 c.drawLine(l + 20f, t + 2f, r - 20f, t + 2f, stroke);
             }
             stroke.setStyle(Paint.Style.FILL);
 
             LevelData level = LevelLoader.get(globalLevel);
-            String title = (level != null) ? level.title : ("Trial " + (globalLevel + 1));
+            String title = (level != null) ? level.title : ("Level " + (globalLevel + 1));
 
-            // Trial badge
-            text.setTextSize(17f);
+            // Level badge
+            text.setTextSize(16f);
             text.setTypeface(SERIF_BOLD);
             text.setColor(isCurrent ? 0xFFFFD54F : (isSolved ? 0xFFFFE0A8 : (isUnlocked ? 0xAAFFE0A8 : 0x448090A0)));
-            String badge = "TRIAL " + String.format("%02d", globalLevel + 1) + (i == 4 ? " \u2022 CAPSTONE" : "");
+            String badge = "LEVEL " + (globalLevel + 1);
             c.drawText(badge, cardCx, t + 32f, text);
 
             if (isSolved) {
@@ -405,18 +397,18 @@ public final class LevelSelectOverlay {
                 text.setColor(0xEEFFFDF8);
                 c.drawText(title, cardCx, t + 132f, text);
 
-                text.setTextSize(17f);
+                text.setTextSize(16f);
                 text.setTypeface(SERIF_NORMAL);
                 text.setColor(isCurrent ? 0xFFFFD54F : 0xAAFFE0A8);
-                c.drawText(isCurrent ? "\u25B6 CURRENT TRIAL" : "UNLOCKED", cardCx, t + 168f, text);
+                c.drawText(isCurrent ? "CURRENT" : "UNLOCKED", cardCx, t + 168f, text);
             } else {
                 // Locked Padlock
                 GameIcons.drawPadlock(c, cardCx, t + 82f, fill, stroke);
 
-                text.setTextSize(20f);
+                text.setTextSize(18f);
                 text.setTypeface(SERIF_NORMAL);
                 text.setColor(0x668090A0);
-                c.drawText("SEALED VAULT", cardCx, t + 145f, text);
+                c.drawText("LOCKED", cardCx, t + 145f, text);
             }
         }
 
@@ -424,16 +416,16 @@ public final class LevelSelectOverlay {
         fill.setColor(0xEE141A28);
         c.drawRoundRect(summaryL, summaryT, summaryR, summaryB, 14f, 14f, fill);
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(1.6f);
+        stroke.setStrokeWidth(1.4f);
         stroke.setColor(0x88D4AF37);
         c.drawRoundRect(summaryL, summaryT, summaryR, summaryB, 14f, 14f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
         int totalStars = (progress != null) ? progress.getTotalStars() : 0;
-        text.setTextSize(18f);
+        text.setTextSize(17f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0xFFFFE0A8);
-        c.drawText("TOTAL STARS: " + totalStars + " / 45   \u2022   ASTRONOMER RANK: " + ((progress != null) ? progress.getPlayerRank() : "Apprentice"), cx, summaryT + 28f, text);
+        c.drawText("STARS COLLECTED: " + totalStars + " / 45", cx, summaryT + 28f, text);
 
         // 6. Back Button
         btnBack.label = "MAIN MENU";

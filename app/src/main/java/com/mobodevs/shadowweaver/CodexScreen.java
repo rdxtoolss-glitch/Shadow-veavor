@@ -58,39 +58,39 @@ public final class CodexScreen {
     private static float lastSceneH = 0f;
 
     private static final String[] RELIC_TITLES = {
-            "The Apprentice's Domicile",
-            "The Arbor of Ancient Wisdom",
-            "The Radiant Astral Beacon",
-            "The Vector of Illumination",
-            "The Sacred Golden Carp",
-            "The Celestial Astrolabe Galleon",
-            "The Feline Guardian of Shadows",
-            "The Soaring Solar Phoenix",
-            "The Psyche Chrysalis Butterfly",
-            "The Blossom of Philosophers",
-            "The Eternal Vesper Candle",
-            "The Key of Celestial Gates",
-            "The Master Shadow Weaver",
-            "The Obsidian Astral Peaks",
-            "The Great Nautical Chronometer"
+            "Timber Cabin",
+            "Old Pine",
+            "Compass Star",
+            "Iron Arrow",
+            "Golden Carp",
+            "Galleon",
+            "Shadow Cat",
+            "Phoenix",
+            "Butterfly",
+            "Lotus Bloom",
+            "Studio Candle",
+            "Brass Key",
+            "Shadow Weaver",
+            "Twin Peaks",
+            "Astrolabe"
     };
 
     private static final String[] RELIC_LORE = {
-            "The humble timber dwelling where the alchemical study of light and shade first commenced.",
-            "Deep in the ancient groves, branches filter celestial rays to cast geometric shadow tapestries upon the moss.",
-            "An octagonal star forged from celestial bronze, aligning midnight horizons with cardinal rays.",
-            "The true trajectory of illumination, demonstrating that every ray cast into darkness must find its origin in flame.",
-            "Swims through currents of pure starlight, guiding lost alchemists across the ethereal celestial sea.",
-            "Carries celestial voyagers across the boundary between candlelight and obsidian night.",
-            "Worshiped in ancient temples for its keen sight through darkest umbra and deepest midnight.",
-            "Born from eternal solar embers, ascending with outstretched wings of pure golden silhouette.",
-            "Emblem of transformative illumination, folding delicate wings of umbra into radiant daylight.",
-            "Unfolds concentric petals of golden brass only when touched by the exact focal convergence of light.",
-            "The prime luminary of the alchemist's sanctum, whose living flame casts every trial into existence.",
-            "Unlocks the hidden vaults beneath the Observatory, where the primordial tablets of optics remain preserved.",
-            "The sacred silhouette of the practitioner who has mastered the delicate art of weaving light into form.",
-            "High pinnacles of obsidian where the twin moons cast double penumbras across the celestial horizon.",
-            "The ultimate navigational relic of the ancients, combining azimuth rings, sundial rays, and magnetic star finials."
+            "A timber shelter crafted with notched pine beams, standing firmly against the mountain wind.",
+            "An ancient evergreen that casts long geometric shadow needles across morning snow.",
+            "A four-point navigational compass forged from maritime bronze.",
+            "A balanced iron arrow showing the exact trajectory of projected light.",
+            "A stream fish carved from willow wood, swimming through quiet mountain waters.",
+            "A three-masted wooden vessel built for crossing the open ocean under starlight.",
+            "A silent domestic companion that moves soundlessly through cast shadows.",
+            "A mythic bird with outspread wings, carved to catch the warm glow of candlelight.",
+            "A delicate winged insect that rests upon the studio sill in early spring.",
+            "A water lily whose symmetrical petals open under direct optical illumination.",
+            "The primary wax luminary of the studio, casting every silhouette into existence.",
+            "An antique skeleton key cut to open the mahogany observation cabinet.",
+            "The silhouette of the artisan who weaves light and shade into recognizable form.",
+            "Granite mountain summits that cast deep umbra across the valley at sunset.",
+            "A precision navigational instrument combining degree rings, sights, and celestial coordinates."
     };
 
     public static void layout() {
@@ -104,30 +104,24 @@ public final class CodexScreen {
         float cx = ShadowCalculator.SCENE_W * 0.5f;
 
         // Content sizes
-        float headerH = 100f;
-        float bannerH = 100f;
+        float headerH = 80f;
         float cardH = 152f;
         float gapY = 12f;
         float gridH = ROWS * cardH + (ROWS - 1) * gapY; // 480f
-
         float backH = 88f;
 
         // Dynamic vertical centering algorithm
-        float baseH = headerH + 16f + bannerH + 18f + gridH + 16f + 320f + 18f + backH; // ~1142f
+        float baseH = headerH + 20f + gridH + 20f + 320f + 20f + backH; // ~948f
         float remaining = Math.max(40f, sceneH - baseH);
-        float topPad = remaining * 0.32f + 25f;
+        float topPad = remaining * 0.35f + 30f;
 
-        cachedHeaderY = topPad + 42f;
-
-        // Player Alchemist Rank Banner
-        cachedBannerT = cachedHeaderY + 58f;
-        cachedBannerB = cachedBannerT + bannerH;
+        cachedHeaderY = topPad + 40f;
 
         // Grid of 15 Collectible Relic Cards
         float padX = 52f;
         float gapX = 14f;
         float cardW = (ShadowCalculator.SCENE_W - padX * 2 - gapX * (COLS - 1)) / COLS; // 168f
-        float top = cachedBannerB + 16f;
+        float top = cachedHeaderY + 68f;
 
         for (int i = 0; i < TOTAL_ITEMS; i++) {
             int col = i % COLS;
@@ -216,84 +210,30 @@ public final class CodexScreen {
         float headerY = cachedHeaderY;
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
-        text.setTextSize(46f);
+        text.setTextSize(44f);
         text.setColor(0xDD000000);
-        c.drawText("ASTRONOMY JOURNAL", cx, headerY + 2f, text);
+        c.drawText("JOURNAL", cx, headerY + 2f, text);
         text.setColor(0xFFFFFDF8);
-        c.drawText("ASTRONOMY JOURNAL", cx, headerY, text);
+        c.drawText("JOURNAL", cx, headerY, text);
 
-        text.setTextSize(20f);
+        text.setTextSize(19f);
         text.setTypeface(SERIF_NORMAL);
-        text.setColor(0xCC000000);
-        c.drawText("TREASURY OF COLLECTED CELESTIAL SHADOW RELICS", cx, headerY + 40f + 2f, text);
+        text.setColor(0xAA000000);
+        c.drawText("FOLIO OF SHADOW RELICS", cx, headerY + 38f + 1.5f, text);
         text.setColor(0xFFFFE0A8);
-        c.drawText("TREASURY OF COLLECTED CELESTIAL SHADOW RELICS", cx, headerY + 40f, text);
+        c.drawText("FOLIO OF SHADOW RELICS", cx, headerY + 38f, text);
 
         // Header flourish
-        float divY = headerY + 54f;
+        float divY = headerY + 52f;
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(1.8f);
-        stroke.setColor(0x66D4AF37);
-        c.drawLine(cx - 240f, divY, cx - 18f, divY, stroke);
-        c.drawLine(cx + 18f, divY, cx + 240f, divY, stroke);
-        stroke.setStyle(Paint.Style.FILL);
+        stroke.setStrokeWidth(1.4f);
+        stroke.setColor(0x55D4AF37);
+        c.drawLine(cx - 200f, divY, cx + 200f, divY, stroke);
+        fill.setStyle(Paint.Style.FILL);
+        fill.setColor(0xFFFFE082);
+        c.drawCircle(cx, divY, 3.5f, fill);
 
-        fill.setColor(0xFFFFD54F);
-        path.reset();
-        path.moveTo(cx, divY - 5f);
-        path.lineTo(cx + 5f, divY);
-        path.lineTo(cx, divY + 5f);
-        path.lineTo(cx - 5f, divY);
-        path.close();
-        c.drawPath(path, fill);
-
-        // 3. Player Alchemist Rank Banner
-        float bannerL = 52f;
-        float bannerR = sw - 52f;
-        float bannerT = cachedBannerT;
-        float bannerB = cachedBannerB;
-
-        fill.setColor(0xEE141A28);
-        c.drawRoundRect(bannerL, bannerT, bannerR, bannerB, 20f, 20f, fill);
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.2f);
-        stroke.setColor(0xFFD4AF37);
-        c.drawRoundRect(bannerL, bannerT, bannerR, bannerB, 20f, 20f, stroke);
-
-        // Top specular highlight
-        stroke.setStrokeWidth(1.2f);
-        stroke.setColor(0x55FFFFFF);
-        c.drawLine(bannerL + 20f, bannerT + 2f, bannerR - 20f, bannerT + 2f, stroke);
-        stroke.setStyle(Paint.Style.FILL);
-
-        int totalStars = (progress != null) ? progress.getTotalStars() : 0;
-        String rankTitle = (progress != null) ? progress.getPlayerRank() : "Apprentice of Shadows";
-
-        text.setTextSize(15f);
-        text.setTypeface(SERIF_BOLD);
-        text.setColor(0xCCFFE0A8);
-        c.drawText("ASTRONOMER RANK", cx, bannerT + 28f, text);
-
-        text.setTextSize(26f);
-        text.setColor(0xFFFFD54F);
-        c.drawText(rankTitle + "  \u2022  " + totalStars + " / " + LevelProgress.TOTAL_MAX_STARS + " \u2605", cx, bannerT + 58f, text);
-
-        // Star progress bar in banner
-        float barW = 540f;
-        float barH = 12f;
-        float barL = cx - barW * 0.5f;
-        float barT = bannerT + 72f;
-
-        fill.setColor(0x66080C14);
-        c.drawRoundRect(barL, barT, barL + barW, barT + barH, 6f, 6f, fill);
-
-        float fillRatio = totalStars / (float) LevelProgress.TOTAL_MAX_STARS;
-        if (fillRatio > 0.01f) {
-            fill.setColor(0xFFFFB300);
-            c.drawRoundRect(barL, barT, barL + barW * fillRatio, barT + barH, 6f, 6f, fill);
-        }
-
-        // 4. Grid of 15 Collectible Relic Cards
+        // 3. Grid of 15 Collectible Relic Cards
         int highestUnlocked = (progress != null) ? progress.getHighestUnlocked() : 0;
 
         for (int i = 0; i < TOTAL_ITEMS; i++) {
@@ -423,14 +363,14 @@ public final class CodexScreen {
         if (isSelSolved) {
             long best = (progress != null) ? progress.getBestTime(selectedRelic) : 0L;
             text.setColor(0xFFFFD54F);
-            String starsStr = (starsSel == 3 ? "\u2605\u2605\u2605 3 STARS - MASTER WEAVER" : (starsSel == 2 ? "\u2605\u2605 2 STARS - ADEPT" : "\u2605 1 STAR - SOLVED"));
+            String starsStr = (starsSel == 3 ? "★★★ MASTER WEAVER" : (starsSel == 2 ? "★★ ADEPT" : "★ SOLVED"));
             c.drawText(starsStr + " (Best: " + (best / 1000L) + "s)", cx, specT + 98f, text);
         } else if (isSelUnlocked) {
             text.setColor(0xFF80D8FF);
-            c.drawText("\u2726 TRIAL UNLOCKED \u2022 READY TO WEAVE \u2726", cx, specT + 98f, text);
+            c.drawText("UNLOCKED • READY TO PLAY", cx, specT + 98f, text);
         } else {
             text.setColor(0xFF90A0B8);
-            c.drawText("SEALED VAULT \u2022 COMPLETE PREVIOUS CHAPTER TRIALS", cx, specT + 98f, text);
+            c.drawText("LOCKED • COMPLETE PREVIOUS CHAPTERS", cx, specT + 98f, text);
         }
 
         // Large Bespoke Relic Emblem Showcase
@@ -484,7 +424,7 @@ public final class CodexScreen {
         text.setTextSize(15f);
         text.setTypeface(SERIF_NORMAL);
         text.setColor(0x77D4AF37);
-        c.drawText("Tap any relic card above to inspect ancient celestial lore", cx, sh - 36f, text);
+        c.drawText("Tap any relic above to view its folio notes", cx, sh - 36f, text);
         text.setTextAlign(Paint.Align.LEFT);
     }
 

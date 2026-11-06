@@ -44,6 +44,7 @@ public final class LevelCompleteOverlay {
     private static final UiButton btnSelect = new UiButton();
 
     private static boolean layoutReady;
+    private static int lastChimedStar = -1;
     private static float lastSceneH = 0f;
 
     public static void layout() {
@@ -164,21 +165,18 @@ public final class LevelCompleteOverlay {
         c.drawLine(cardL + 28f, cardT + 1.5f, cardR - 28f, cardT + 1.5f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
-        // Corner filigree brackets
-        drawCornerBrackets(c, cardL, cardT, cardR, cardB, reveal);
-
         // 3. Victory Header
         text.setTextAlign(Paint.Align.CENTER);
         text.setTypeface(SERIF_BOLD);
-        text.setTextSize(52f);
-        text.setColor(withAlpha(0xEE000000, (int) (255 * reveal)));
-        c.drawText("SHADOW WOVEN", cx, cardT + 81.5f, text);
-        text.setColor(withAlpha(0xFFFFFDF8, (int) (255 * reveal)));
-        c.drawText("SHADOW WOVEN", cx, cardT + 80f, text);
-
-        text.setTextSize(28f);
-        text.setTypeface(SERIF_NORMAL);
+        text.setTextSize(48f);
         text.setColor(withAlpha(0xCC000000, (int) (255 * reveal)));
+        c.drawText("LEVEL COMPLETE", cx, cardT + 81.5f, text);
+        text.setColor(withAlpha(0xFFFFFDF8, (int) (255 * reveal)));
+        c.drawText("LEVEL COMPLETE", cx, cardT + 80f, text);
+
+        text.setTextSize(26f);
+        text.setTypeface(SERIF_NORMAL);
+        text.setColor(withAlpha(0xAA000000, (int) (255 * reveal)));
         c.drawText(g.levelTitle(), cx, cardT + 126.5f, text);
         text.setColor(withAlpha(0xFFFFE0A8, (int) (255 * reveal)));
         c.drawText(g.levelTitle(), cx, cardT + 125f, text);
@@ -189,9 +187,9 @@ public final class LevelCompleteOverlay {
         int earnedStars = LevelProgress.calculateStars(g.levelIndex(), elapsed, moves);
 
         // 5. Draw Sequential 3 Stars
-        drawSequentialStars(c, cx, cardT + 215f, earnedStars, reveal);
+        drawSequentialStars(c, cx, cardT + 215f, earnedStars, reveal, g.audio());
 
-        // 6. Par Performance Breakdown Table
+        // 6. Performance Breakdown Table
         long parTime = LevelProgress.getParTimeMillis(g.levelIndex());
         int parMoves = LevelProgress.getParMoves(g.levelIndex());
 
@@ -203,33 +201,30 @@ public final class LevelCompleteOverlay {
         fill.setColor(withAlpha(0x440E131E, (int) (255 * reveal)));
         c.drawRoundRect(cx - 360f, tableT - 22f, cx + 360f, tableT + 155f, 18f, 18f, fill);
         stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(1.6f);
+        stroke.setStrokeWidth(1.4f);
         stroke.setColor(withAlpha(0x44D4AF37, (int) (180 * reveal)));
         c.drawRoundRect(cx - 360f, tableT - 22f, cx + 360f, tableT + 155f, 18f, 18f, stroke);
         stroke.setStyle(Paint.Style.FILL);
 
-        drawStatRow(c, cx, tableT + 18f, "Silhouette Completed", "90%+ Match", true, reveal);
+        drawStatRow(c, cx, tableT + 18f, "Silhouette Matched", "90%+", true, reveal);
         drawStatRow(c, cx, tableT + 72f, "Time Efficiency", formatTime(elapsed) + " (Par " + (parTime / 1000L) + "s)", timeStar, reveal);
         drawStatRow(c, cx, tableT + 126f, "Move Precision", moves + " (Par " + parMoves + ")", moveStar, reveal);
 
         // 7. Navigation Buttons
-        btnNext.label = "NEXT TRIAL";
+        btnNext.label = "NEXT LEVEL";
         btnRetry.label = "RETRY";
-        btnSelect.label = "CHAPTER MAP";
+        btnSelect.label = "CHAPTERS";
 
         float t = g.timeSeconds();
         btnNext.draw(c, fill, stroke, text, reveal, t);
         btnRetry.draw(c, fill, stroke, text, reveal, t);
         btnSelect.draw(c, fill, stroke, text, reveal, t);
 
-        GameIcons.drawReset(c, btnRetry.left + 44f, btnRetry.centerY(), 20f, fill, stroke);
-        GameIcons.drawIcon(c, GameIcons.RELIC_PATHS[14], btnSelect.left + 52f, btnSelect.centerY(), 22f, 0xFFFFD54F);
-
         c.restoreToCount(save);
         text.setTextAlign(Paint.Align.LEFT);
     }
 
-    private static void drawSequentialStars(Canvas c, float cx, float cy, int stars, float reveal) {
+    private static void drawSequentialStars(Canvas c, float cx, float cy, int stars, float reveal, AudioManager audio) {
         float spacing = 110f;
         for (int i = 0; i < 3; i++) {
             float sx = cx + (i - 1) * spacing;
@@ -241,6 +236,12 @@ public final class LevelCompleteOverlay {
 
             float r = 44f;
             if (active && starProgress > 0f) {
+                if (i > lastChimedStar) {
+                    lastChimedStar = i;
+                    if (audio != null) {
+                        audio.playChime(i);
+                    }
+                }
                 // Bounce scale on entrance
                 float bounceScale = 1.0f + 0.35f * (float) Math.sin(starProgress * Math.PI);
                 r *= bounceScale;
@@ -272,30 +273,11 @@ public final class LevelCompleteOverlay {
         text.setTextAlign(Paint.Align.RIGHT);
         text.setTypeface(SERIF_BOLD);
         text.setColor(withAlpha(achieved ? 0xFFFFD54F : 0x778090A0, (int) (255 * alpha)));
-        String mark = achieved ? " [\u2605 OK]" : " [--]";
+        String mark = achieved ? "  ★" : "  -";
         c.drawText(value + mark, r, y, text);
     }
 
-    private static void drawCornerBrackets(Canvas c, float l, float t, float r, float b, float reveal) {
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(2.2f);
-        stroke.setColor(withAlpha(0xFFD4AF37, (int) (240 * reveal)));
 
-        float len = 22f;
-        c.drawLine(l + 12f, t + 12f, l + 12f + len, t + 12f, stroke);
-        c.drawLine(l + 12f, t + 12f, l + 12f, t + 12f + len, stroke);
-
-        c.drawLine(r - 12f, t + 12f, r - 12f - len, t + 12f, stroke);
-        c.drawLine(r - 12f, t + 12f, r - 12f, t + 12f + len, stroke);
-
-        c.drawLine(l + 12f, b - 12f, l + 12f + len, b - 12f, stroke);
-        c.drawLine(l + 12f, b - 12f, l + 12f, b - 12f - len, stroke);
-
-        c.drawLine(r - 12f, b - 12f, r - 12f - len, b - 12f, stroke);
-        c.drawLine(r - 12f, b - 12f, r - 12f, b - 12f - len, stroke);
-
-        stroke.setStyle(Paint.Style.FILL);
-    }
 
     private static String formatTime(long ms) {
         long s = ms / 1000L;

@@ -108,65 +108,32 @@ public class UiButton {
             stroke.setColor(withAlpha(0x446A758A, a));
             c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, stroke);
         } else if (isPrimary) {
-            // Luminous golden alchemical brass with radiant sheen
+            // Luminous warm amber brass plate
             int baseColor = isPressed ? 0xFFC68824 : 0xFFE5A836;
             fill.setColor(withAlpha(baseColor, a));
             c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, fill);
 
-            // Specular sheen sweep animation
-            if (time > 0f) {
-                float sweepCycle = 3.2f;
-                float frac = (time % sweepCycle) / sweepCycle;
-                if (frac < 0.36f) {
-                    float p = frac / 0.36f;
-                    float beamX = left - 90f + (width() + 180f) * p;
-                    int saveSweep = c.save();
-                    c.clipRect(left, top, right, bottom);
-                    fill.setShader(new android.graphics.LinearGradient(
-                            beamX - 45f, top, beamX + 45f, bottom,
-                            new int[]{0x00FFFFFF, withAlpha(0x55FFFDF8, a), 0x00FFFFFF},
-                            new float[]{0f, 0.5f, 1f},
-                            android.graphics.Shader.TileMode.CLAMP));
-                    c.drawRect(left, top, right, bottom, fill);
-                    fill.setShader(null);
-                    c.restoreToCount(saveSweep);
-                }
-            }
-
-            // Inner bevel highlight on top edge
+            // Subtle top bevel highlight
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(2.0f);
+            stroke.setStrokeWidth(1.6f);
             stroke.setColor(withAlpha(0xFFFFF4D0, (int) (220 * alpha)));
             c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, stroke);
-
-            // Subtle outer glow
-            stroke.setStrokeWidth(1.0f);
-            stroke.setColor(withAlpha(0xFFFFE082, (int) (140 * alpha)));
-            c.drawRoundRect(left - 1f, top - 1f, right + 1f, bottom + 1f, cornerRadius + 1f, cornerRadius + 1f, stroke);
         } else {
-            // Luminous celestial obsidian-slate plate (high contrast, non-muddy)
+            // Refined obsidian slate plate
             int baseColor = isPressed ? 0xFA141A28 : 0xEE1C2234;
             fill.setColor(withAlpha(baseColor, a));
             c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, fill);
 
-            // Polished antique brass frame
+            // Antique brass border
             stroke.setStyle(Paint.Style.STROKE);
-            stroke.setStrokeWidth(2.2f);
-            stroke.setColor(withAlpha(0xFFD4AF37, (int) (230 * alpha)));
+            stroke.setStrokeWidth(1.6f);
+            stroke.setColor(withAlpha(0xFFD4AF37, (int) (210 * alpha)));
             c.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, stroke);
 
-            // Top specular highlight
-            stroke.setStrokeWidth(1.2f);
-            stroke.setColor(withAlpha(0x55FFFFFF, (int) (180 * alpha)));
+            // Top hairline edge highlight
+            stroke.setStrokeWidth(1.0f);
+            stroke.setColor(withAlpha(0x40FFFFFF, (int) (160 * alpha)));
             c.drawLine(left + cornerRadius, top + 1f, right - cornerRadius, top + 1f, stroke);
-
-            // Delicate corner rivets
-            float rOff = Math.min(cornerRadius * 0.7f, 14f);
-            fill.setColor(withAlpha(0xFFD4AF37, (int) (180 * alpha)));
-            c.drawCircle(left + rOff, top + rOff, 2.2f, fill);
-            c.drawCircle(right - rOff, top + rOff, 2.2f, fill);
-            c.drawCircle(left + rOff, bottom - rOff, 2.2f, fill);
-            c.drawCircle(right - rOff, bottom - rOff, 2.2f, fill);
         }
         stroke.setStyle(Paint.Style.FILL);
 
